@@ -1,22 +1,21 @@
 -- =============================================================================
 -- EcoFind - SecondHand Map Platform
--- Script khởi tạo CSDL PostgreSQL và 6 bảng dữ liệu (Task STT 2 - Ngày 1 - Sprint 1)
--- Tuân thủ tài liệu thiết kế hệ thống SDD mục 6.1 và SRS mục 3.4
+-- PostgreSQL Database Initialization Script - 6 Tables (Task STT 2 - Day 1 - Sprint 1)
+-- Adhering to System Design Document (SDD 6.1) and SRS 3.4
 --
--- Đặc tả kỹ thuật:
--- 1. Idempotency: Script có thể chạy lặp lại nhiều lần không phát sinh lỗi.
--- 2. Đầy đủ PK/FK, UNIQUE email, UNIQUE tên danh mục.
--- 3. Ràng buộc CHECK giá 0 - 1.000.000.000 (BR-05).
--- 4. Ràng buộc CHECK điểm 0 - 10 (4 cột: ngoại quan, chức năng, phụ kiện, tổng).
--- 5. Ràng buộc status thuộc {pending, selling, rejected, sold, hidden}.
--- 6. Hỗ trợ tiếng Việt có dấu (UTF-8).
+-- Technical Specifications:
+-- 1. Idempotency: Script can be safely re-executed without errors.
+-- 2. Complete PK/FK, UNIQUE email, UNIQUE category name.
+-- 3. CHECK price constraint: 0 - 1,000,000,000 (BR-05).
+-- 4. CHECK score constraint: 0 - 10 for appearance, function, accessories, and total score.
+-- 5. CHECK status constraint: {pending, selling, rejected, sold, hidden}.
+-- 6. Full UTF-8 support for Vietnamese text.
 -- =============================================================================
 
--- Thiết lập mã hóa client UTF-8 để hỗ trợ tiếng Việt có dấu
 SET client_encoding = 'UTF8';
 
 -- -----------------------------------------------------------------------------
--- 0. Xóa các bảng cũ theo thứ tự quan hệ khóa ngoại (Idempotent cleanup)
+-- 0. Clean up existing tables in reverse dependency order (Idempotent cleanup)
 -- -----------------------------------------------------------------------------
 DROP TABLE IF EXISTS reports CASCADE;
 DROP TABLE IF EXISTS favorites CASCADE;
@@ -26,8 +25,8 @@ DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
 -- -----------------------------------------------------------------------------
--- 1. Bảng USERS: Quản lý thông tin tài khoản người dùng và quản trị viên (Admin)
--- Truy vết: SDD 6.1, FR-01, FR-02, NFR-SEC-01
+-- 1. USERS: User account and administrator management
+-- Traceability: SDD 6.1, FR-01, FR-02, NFR-SEC-01
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
     user_id SERIAL,
@@ -45,8 +44,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- -----------------------------------------------------------------------------
--- 2. Bảng CATEGORIES: Quản lý danh mục đồ cũ (nội thất, điện tử, sách, quần áo...)
--- Truy vết: SDD 6.1, SRS 3.4
+-- 2. CATEGORIES: Second-hand item categories (furniture, electronics, books, etc.)
+-- Traceability: SDD 6.1, SRS 3.4
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS categories (
     category_id SERIAL,
@@ -56,8 +55,8 @@ CREATE TABLE IF NOT EXISTS categories (
 );
 
 -- -----------------------------------------------------------------------------
--- 3. Bảng LISTINGS: Quản lý thông tin tin đăng bán món đồ cũ
--- Truy vết: SDD 6.1, FR-08, BR-01, BR-02, BR-03, BR-05, SRS 3.4
+-- 3. LISTINGS: Second-hand item listings
+-- Traceability: SDD 6.1, FR-08, BR-01, BR-02, BR-03, BR-05, SRS 3.4
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS listings (
     listing_id SERIAL,
@@ -95,8 +94,8 @@ CREATE TABLE IF NOT EXISTS listings (
 );
 
 -- -----------------------------------------------------------------------------
--- 4. Bảng LISTING_PHOTOS: Quản lý danh sách hình ảnh thực tế của tin đăng (1-5 ảnh)
--- Truy vết: SDD 6.1, BR-04, SRS 3.4
+-- 4. LISTING_PHOTOS: Item photo URLs (1 to 5 photos per listing)
+-- Traceability: SDD 6.1, BR-04, SRS 3.4
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS listing_photos (
     photo_id SERIAL,
@@ -110,8 +109,8 @@ CREATE TABLE IF NOT EXISTS listing_photos (
 );
 
 -- -----------------------------------------------------------------------------
--- 5. Bảng FAVORITES: Quản lý danh sách tin đăng người dùng yêu thích (Lưu tin)
--- Truy vết: SDD 6.1, FR-11, SRS 3.4
+-- 5. FAVORITES: Saved listings bookmarked by users
+-- Traceability: SDD 6.1, FR-11, SRS 3.4
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS favorites (
     user_id INT NOT NULL,
@@ -125,8 +124,8 @@ CREATE TABLE IF NOT EXISTS favorites (
 );
 
 -- -----------------------------------------------------------------------------
--- 6. Bảng REPORTS: Quản lý báo cáo vi phạm tin đăng từ người dùng
--- Truy vết: SDD 6.1, FR-12, FR-15, SRS 3.4
+-- 6. REPORTS: User violation reports for listings
+-- Traceability: SDD 6.1, FR-12, FR-15, SRS 3.4
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS reports (
     report_id SERIAL,
