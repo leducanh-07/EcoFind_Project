@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS users (
     failed_attempts SMALLINT NOT NULL DEFAULT 0,
     locked_until TIMESTAMPTZ,
     CONSTRAINT pk_users PRIMARY KEY (user_id),
-    CONSTRAINT uq_users_email UNIQUE (email),
+    CONSTRAINT users_email_key UNIQUE (email),
     CONSTRAINT chk_users_role CHECK (role IN ('user', 'admin')),
     CONSTRAINT chk_users_failed_attempts CHECK (failed_attempts >= 0)
 );
