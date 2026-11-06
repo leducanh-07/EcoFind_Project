@@ -21,9 +21,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register routers: support both /api/health and /health
+# Đăng ký router với tiền tố chuẩn /api theo SDD 7.1
 app.include_router(health_router, prefix="/api")
-app.include_router(health_router)
 
 
 @app.get("/", tags=["Root"])
