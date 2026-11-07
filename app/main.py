@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.error_handlers import register_exception_handlers
 from app.routers.health import router as health_router
+from app.routers.auth import router as auth_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -25,8 +26,9 @@ app.add_middleware(
 # Đăng ký các bộ xử lý ngoại lệ chuẩn hoá theo SDD 7.1
 register_exception_handlers(app)
 
-# Đăng ký router với tiền tố chuẩn /api theo SDD 7.1
+# Đăng ký các router với tiền tố chuẩn /api theo SDD 7.1
 app.include_router(health_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
 
 
 @app.get("/", tags=["Root"])
