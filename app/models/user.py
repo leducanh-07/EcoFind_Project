@@ -2,7 +2,6 @@
 SQLAlchemy ORM Model for User entity (SDD 6.1, SRS 3.4).
 """
 
-from datetime import datetime
 from typing import Optional
 from sqlalchemy import Column, Integer, String, SmallInteger, DateTime
 from app.core.database import Base
@@ -19,4 +18,3 @@ class User(Base):
     role = Column(String(10), nullable=False, default="user")
     failed_attempts = Column(SmallInteger, nullable=False, default=0)
     locked_until = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)

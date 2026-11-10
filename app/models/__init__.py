@@ -1,4 +1,10 @@
-"""SQLAlchemy ORM Models package."""
-from app.models.user import User
+"""
+SQLAlchemy Models registration.
+"""
 
-__all__ = ["User"]
+from app.models.user import User
+from app.models.category import Category
+from app.models.listing import Listing
+from app.models.listing_photo import ListingPhoto
+
+__all__ = ["User", "Category", "Listing", "ListingPhoto"]
