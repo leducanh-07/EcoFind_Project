@@ -1,12 +1,14 @@
 """
-Listings Router (SDD 4, SDD 7.2, UC-02, UC-03, FR-03).
+Listings Router (SDD 4, SDD 7.2, UC-02, UC-03, UC-04, FR-03, FR-07).
 """
 
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
-from app.schemas.listing import ListingMapItem
+from app.core.dependencies import get_optional_user
+from app.models.user import User
+from app.schemas.listing import ListingMapItem, ListingDetailResponse
 from app.services.listing_service import ListingService
 
 router = APIRouter(prefix="/listings", tags=["Listings"])
@@ -41,3 +43,22 @@ async def get_listings(
     """
     return await listing_service.get_listings(db, bbox=bbox, limit=limit)
 
+
+@router.get(
+    "/{id}",
+    response_model=ListingDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Xem chi tiết tin đăng (UC-04, FR-07)",
+)
+async def get_listing_detail(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user),
+):
+    """
+    Xem chi tiết tin đăng theo ID:
+      - Trả về ảnh (theo sort_order), giá, mô tả, địa chỉ, người bán, 3 điểm thành phần, điểm tổng, hạng.
+      - Trường phone chỉ xuất hiện khi có token xác thực hợp lệ (TC-04).
+      - Tin đã bán, đã ẩn, không tồn tại trả 404 'Tin không còn hiển thị'.
+    """
+    return await listing_service.get_listing_detail(db, listing_id=id, current_user=current_user)

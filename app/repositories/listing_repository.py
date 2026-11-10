@@ -5,6 +5,7 @@ Uses SQLAlchemy 2.0 AsyncSession.
 
 from typing import List, Optional
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.listing import Listing
 
@@ -64,3 +65,16 @@ class ListingRepository:
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def find_by_id_with_relations(self, db: AsyncSession, listing_id: int) -> Optional[Listing]:
+        """Tìm tin đăng theo listing_id kèm ảnh, danh mục và người bán (UC-04, FR-07)."""
+        stmt = (
+            select(Listing)
+            .options(
+                selectinload(Listing.photos),
+                selectinload(Listing.category),
+                selectinload(Listing.seller),
+            )
+            .where(Listing.listing_id == listing_id)
+        )
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()

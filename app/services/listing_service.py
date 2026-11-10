@@ -1,18 +1,19 @@
 """
-Listing Service (SDD 4, UC-02, FR-03, BR-01..BR-03, TC-07).
-Handles listings query by map bounding box, rank calculation, and business rules.
+Listing Service (SDD 4, UC-02, UC-03, UC-04, FR-03, FR-07, BR-01..BR-03, TC-04, TC-07).
+Handles listings query by map bounding box, detail retrieval, rank calculation, and business rules.
 """
 
 from typing import List, Optional, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.user import User
 from app.repositories.listing_repository import ListingRepository
-from app.schemas.listing import ListingMapItem
+from app.schemas.listing import ListingMapItem, ListingDetailResponse, PhotoItem
 from app.services.score_calculator import ScoreCalculator
-from app.core.exceptions import BadRequestException
+from app.core.exceptions import BadRequestException, NotFoundException
 
 
 class ListingService:
-    """Service xử lý nghiệp vụ tìm kiếm, hiển thị tin đăng trên bản đồ."""
+    """Service xử lý nghiệp vụ tìm kiếm, hiển thị tin đăng trên bản đồ và chi tiết tin."""
 
     def __init__(self, listing_repo: Optional[ListingRepository] = None):
         self.listing_repo = listing_repo or ListingRepository()
@@ -87,7 +88,6 @@ class ListingService:
           - Tin 'pending' hoặc trạng thái khác tuyệt đối không xuất hiện.
           - Tự động gán hạng tình trạng (rank) theo chuẩn BR-02 qua ScoreCalculator.
         """
-        # Giới hạn an toàn tối đa 50 tin theo SDD 7.2
         safe_limit = min(max(1, limit), 50)
 
         if bbox is not None:
@@ -121,3 +121,65 @@ class ListingService:
 
         return result
 
+    async def get_listing_detail(
+        self,
+        db: AsyncSession,
+        listing_id: int,
+        current_user: Optional[User] = None,
+    ) -> ListingDetailResponse:
+        """
+        Lấy chi tiết tin đăng (UC-04, FR-07, TC-04):
+          - Trả về thông tin đầy đủ, danh mục, người bán, điểm thành phần và điểm tổng.
+          - Sắp xếp ảnh theo sort_order (BR-04).
+          - Tin đã bán, đã ẩn, bị từ chối hoặc không tồn tại: Trả 404 'Tin không còn hiển thị'.
+          - Trường phone chỉ hiển thị khi đã đăng nhập (current_user có giá trị).
+        """
+        listing = await self.listing_repo.find_by_id_with_relations(db, listing_id)
+        if not listing:
+            raise NotFoundException(message="Tin không còn hiển thị")
+
+        # Kiểm tra quyền xem tin nếu tin không ở trạng thái 'selling'
+        if listing.status != "selling":
+            is_authorized = (
+                current_user is not None
+                and (current_user.user_id == listing.seller_id or current_user.role == "admin")
+            )
+            if not is_authorized:
+                raise NotFoundException(message="Tin không còn hiển thị")
+
+        # TC-04: SĐT người bán chỉ trả về khi người dùng đã đăng nhập hợp lệ
+        phone = listing.seller.phone if (current_user and listing.seller) else None
+        seller_name = listing.seller.full_name if listing.seller else "Người bán EcoFind"
+        category_name = listing.category.name if listing.category else None
+
+        # Sắp xếp ảnh theo thứ tự sort_order
+        photos = [
+            PhotoItem(id=p.photo_id, url=p.url, sort_order=p.sort_order)
+            for p in sorted(listing.photos, key=lambda x: x.sort_order)
+        ]
+
+        total_score_val = float(listing.total_score)
+        rank_label = ScoreCalculator.get_rank(total_score_val)
+
+        return ListingDetailResponse(
+            id=listing.listing_id,
+            seller_id=listing.seller_id,
+            seller_name=seller_name,
+            phone=phone,
+            category_id=listing.category_id,
+            category_name=category_name,
+            title=listing.title,
+            description=listing.description,
+            price=float(listing.price),
+            address=listing.address,
+            lat=float(listing.lat),
+            lng=float(listing.lng),
+            score_appearance=float(listing.score_appearance),
+            score_function=float(listing.score_function),
+            score_accessories=float(listing.score_accessories),
+            total_score=total_score_val,
+            rank=rank_label,
+            status=listing.status,
+            photos=photos,
+            created_at=listing.created_at,
+        )
