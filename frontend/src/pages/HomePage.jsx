@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { PlusCircle, Sparkles, Compass } from 'lucide-react';
+import { PlusCircle, Compass } from 'lucide-react';
 import { useGeolocation } from '../hooks/useGeolocation';
 import MapView from '../components/MapView';
 

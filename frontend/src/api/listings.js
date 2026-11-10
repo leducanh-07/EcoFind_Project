@@ -15,6 +15,10 @@ export async function getListingsMapApi({ bbox, limit = 50 } = {}) {
   return await fetchWithAuth(endpoint, { method: 'GET' });
 }
 
+export const getMapListings = async (bbox) => {
+  return await getListingsMapApi({ bbox });
+};
+
 export async function getListingDetailApi(id) {
   return await fetchWithAuth(`/api/listings/${id}`, { method: 'GET' });
 }

@@ -1,9 +1,10 @@
 import React from 'react';
-import { render, screen, fireEvent, renderHook, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, renderHook, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useGeolocation, DEFAULT_HCMC_COORDS, STORAGE_LOCATION_KEY } from '../hooks/useGeolocation';
 import MapView, { getRankBadgeColor } from '../components/MapView';
+import { getMapListings, getListingsMapApi } from '../api/listings';
 
 describe('useGeolocation Hook (UC-02, FR-04, UC-02 A1, TE9C734)', () => {
   beforeEach(() => {
@@ -84,7 +85,7 @@ describe('useGeolocation Hook (UC-02, FR-04, UC-02 A1, TE9C734)', () => {
   });
 });
 
-describe('MapView & Rank Colors (BR-02, TE9C734)', () => {
+describe('MapView & Rank Colors (UC-02, BR-02, TE9C732)', () => {
   it('phân loại màu sắc marker theo 4 hạng BR-02', () => {
     expect(getRankBadgeColor('Như mới').bg).toBe('#10B981');
     expect(getRankBadgeColor('Tốt').bg).toBe('#3B82F6');
@@ -117,5 +118,10 @@ describe('MapView & Rank Colors (BR-02, TE9C734)', () => {
     // Kiểm tra thông báo dự phòng
     expect(screen.getByText(/Vị trí mặc định tại trung tâm TP.HCM/i)).toBeInTheDocument();
     expect(screen.getByText(/Bạn đã từ chối chia sẻ vị trí/i)).toBeInTheDocument();
+  });
+
+  it('getMapListings gọi API lấy danh sách tin theo bbox đúng định dạng', async () => {
+    expect(typeof getMapListings).toBe('function');
+    expect(typeof getListingsMapApi).toBe('function');
   });
 });

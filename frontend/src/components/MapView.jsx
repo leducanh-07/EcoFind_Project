@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
-import { Locate, Loader2, AlertCircle, X, Navigation2, ExternalLink } from 'lucide-react';
+import { Locate, Loader2, AlertCircle, X } from 'lucide-react';
 import { getListingsMapApi } from '../api/listings';
 
 // Hàm lấy màu sắc marker theo BR-02
@@ -33,7 +33,6 @@ export default function MapView({
   const listingsLayerRef = useRef(null);
   const navigate = useNavigate();
 
-  const [listings, setListings] = useState([]);
   const [loadingListings, setLoadingListings] = useState(false);
   const [showFallbackBanner, setShowFallbackBanner] = useState(true);
 
@@ -125,10 +124,18 @@ export default function MapView({
     const maxLat = bounds.getNorth();
     const bboxStr = `${minLng},${minLat},${maxLng},${maxLat}`;
 
+    const startTime = performance.now();
     setLoadingListings(true);
     try {
       const data = await getListingsMapApi({ bbox: bboxStr, limit: 50 });
-      setListings(data || []);
+
+      const elapsed = performance.now() - startTime;
+      if (typeof window !== 'undefined' && window.__FIRST_MARKER_LOADED__ === undefined) {
+        window.__FIRST_MARKER_LOADED__ = elapsed;
+        if (import.meta.env.DEV) {
+          console.info(`[NFR-PER-01] First marker batch loaded in ${elapsed.toFixed(1)}ms (target: <= 3000ms)`);
+        }
+      }
 
       // Vẽ markers lên bản đồ
       if (listingsLayerRef.current) {
@@ -163,7 +170,7 @@ export default function MapView({
               <div class="text-xs text-slate-500 mb-2">${item.address || ''}</div>
               <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
                 <span style="color: ${colors.border}" class="font-semibold">${item.rank} (${item.totalScore})</span>
-                <a href="/listings/${item.id}" class="text-emerald-600 font-medium hover:underline inline-flex items-center gap-0.5">
+                <a href="/listings/${item.id}" data-id="${item.id}" class="listing-link-${item.id} text-emerald-600 font-medium hover:underline inline-flex items-center gap-0.5 cursor-pointer">
                   Xem chi tiết →
                 </a>
               </div>
@@ -171,6 +178,16 @@ export default function MapView({
           `;
 
           marker.bindPopup(popupContent);
+          marker.on('popupopen', () => {
+            const link = document.querySelector(`.listing-link-${item.id}`);
+            if (link) {
+              link.onclick = (e) => {
+                e.preventDefault();
+                navigate(`/listings/${item.id}`);
+              };
+            }
+          });
+
           listingsLayerRef.current.addLayer(marker);
         });
       }
@@ -179,7 +196,7 @@ export default function MapView({
     } finally {
       setLoadingListings(false);
     }
-  }, []);
+  }, [navigate]);
 
   // Lắng nghe sự kiện kéo/zoom để tải lại tin
   useEffect(() => {
@@ -209,6 +226,14 @@ export default function MapView({
       {/* Container Leaflet map */}
       <div ref={mapContainerRef} className="w-full h-full z-0" tabIndex={0} />
 
+      {/* Loading listings spinner indicator */}
+      {loadingListings && (
+        <div className="absolute top-4 left-4 z-30 bg-white/90 backdrop-blur-sm border border-slate-200 px-3 py-1.5 rounded-xl shadow flex items-center gap-2 text-xs text-slate-700 animate-in fade-in duration-200">
+          <Loader2 className="w-3.5 h-3.5 text-emerald-600 animate-spin" />
+          <span>Đang tải tin đăng...</span>
+        </div>
+      )}
+
       {/* Banner thông báo phương án dự phòng (UC-02 A1, FR-04) */}
       {isFallback && showFallbackBanner && (
         <div className="absolute top-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-md z-30 bg-amber-50/95 backdrop-blur-sm border border-amber-200 text-amber-900 px-4 py-3 rounded-2xl shadow-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
@@ -222,7 +247,7 @@ export default function MapView({
               <button
                 onClick={onLocateMe}
                 disabled={loadingLocation}
-                className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium text-[11px] transition-colors disabled:opacity-50"
+                className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium text-[11px] transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {loadingLocation ? 'Đang dò vị trí...' : 'Thử lại định vị'}
               </button>
@@ -233,7 +258,7 @@ export default function MapView({
               setShowFallbackBanner(false);
               if (onClearError) onClearError();
             }}
-            className="text-amber-500 hover:text-amber-800 p-1 -mr-1"
+            className="text-amber-500 hover:text-amber-800 p-1 -mr-1 cursor-pointer"
             title="Đóng thông báo"
             aria-label="Đóng thông báo"
           >
@@ -247,7 +272,7 @@ export default function MapView({
         <button
           onClick={onLocateMe}
           disabled={loadingLocation}
-          className="w-12 h-12 rounded-2xl bg-white text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200/80 shadow-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-60"
+          className="w-12 h-12 rounded-2xl bg-white text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200/80 shadow-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-60 cursor-pointer"
           title="Vị trí của tôi"
           aria-label="Vị trí của tôi"
         >
