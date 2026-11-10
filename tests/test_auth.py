@@ -210,3 +210,87 @@ def test_login_invalid_input_validation():
     assert data["error"]["code"] == 400
     assert "fields" in data["error"]
     assert "email" in data["error"]["fields"]
+
+
+def test_register_success():
+    """Kiểm tra đăng ký tài khoản thành công: trả 201 kèm token và role user (FR-01)."""
+    mock_db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None  # Không trùng email
+    mock_db.execute.return_value = mock_result
+
+    async def mock_refresh(user):
+        user.user_id = 10
+
+    mock_db.refresh.side_effect = mock_refresh
+
+    async def override_get_db():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        response = client.post(
+            "/api/auth/register",
+            json={
+                "fullName": "Trần Thị B",
+                "email": "user.b@ecofind.vn",
+                "phone": "0987654321",
+                "password": "Password123@",
+            },
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert "accessToken" in data
+        assert data["role"] == "user"
+        assert data["user"]["email"] == "user.b@ecofind.vn"
+        assert data["user"]["fullName"] == "Trần Thị B"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_register_duplicate_email(sample_user):
+    """Đăng ký email đã tồn tại trả về 409 Conflict (FR-01, UC-01 E3)."""
+    mock_db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = sample_user  # Đã tồn tại
+    mock_db.execute.return_value = mock_result
+
+    async def override_get_db():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        response = client.post(
+            "/api/auth/register",
+            json={
+                "fullName": "Nguyễn Văn A",
+                "email": "user@ecofind.vn",
+                "phone": "0912345678",
+                "password": "Password123@",
+            },
+        )
+        assert response.status_code == 409
+        data = response.json()
+        assert data["error"]["code"] == 409
+        assert "đã được đăng ký" in data["error"]["message"]
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_register_short_password():
+    """Đăng ký mật khẩu dưới 8 ký tự trả 400 kèm fields (FR-01, UC-01 E4)."""
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "fullName": "Nguyễn Văn C",
+            "email": "user.c@ecofind.vn",
+            "phone": "0912345678",
+            "password": "short",
+        },
+    )
+    assert response.status_code == 400
+    data = response.json()
+    assert data["error"]["code"] == 400
+    assert "fields" in data["error"]
+    assert "password" in data["error"]["fields"]
+

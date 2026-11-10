@@ -1,15 +1,16 @@
 """
-Authentication Service (SDD 4, UC-01, FR-02, NFR-SEC-01, TC-01).
-Handles login, password verification, 15-minute account lockout after 5 failed attempts, and JWT token issuance.
+Authentication Service (SDD 4, UC-01, FR-01, FR-02, NFR-SEC-01, TC-01).
+Handles login, register, password verification, 15-minute account lockout after 5 failed attempts, and JWT token issuance.
 """
 
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth import LoginRequest, TokenResponse, UserBasicInfo
-from app.core.security import verify_password, create_access_token
-from app.core.exceptions import UnauthorizedException, LockedException
+from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserBasicInfo
+from app.core.security import verify_password, get_password_hash, create_access_token
+from app.core.exceptions import UnauthorizedException, LockedException, ConflictException
 
 
 class AuthService:
@@ -17,6 +18,50 @@ class AuthService:
 
     def __init__(self, user_repo: Optional[UserRepository] = None):
         self.user_repo = user_repo or UserRepository()
+
+    async def register(self, db: AsyncSession, register_data: RegisterRequest) -> TokenResponse:
+        """
+        Đăng ký tài khoản người dùng mới (FR-01, UC-01, NFR-SEC-01):
+          - Kiểm tra trùng email, trùng trả HTTP 409 Conflict.
+          - Băm mật khẩu bằng bcrypt.
+          - Mặc định role = user.
+          - Cấp JWT token và đăng nhập luôn.
+        """
+        existing_user = await self.user_repo.find_by_email(db, register_data.email)
+        if existing_user is not None:
+            raise ConflictException(message="Email đã được đăng ký trong hệ thống")
+
+        new_user = User(
+            full_name=register_data.full_name.strip(),
+            email=register_data.email.strip().lower(),
+            phone=register_data.phone.strip(),
+            password_hash=get_password_hash(register_data.password),
+            role="user",
+            failed_attempts=0,
+            locked_until=None,
+        )
+        saved_user = await self.user_repo.save(db, new_user)
+
+        token_payload = {
+            "sub": str(saved_user.user_id),
+            "email": saved_user.email,
+            "role": saved_user.role,
+            "fullName": saved_user.full_name,
+        }
+        access_token = create_access_token(token_payload)
+
+        return TokenResponse(
+            access_token=access_token,
+            token_type="bearer",
+            role=saved_user.role,
+            user=UserBasicInfo(
+                user_id=saved_user.user_id,
+                full_name=saved_user.full_name,
+                email=saved_user.email,
+                role=saved_user.role,
+                phone=saved_user.phone,
+            ),
+        )
 
     async def login(self, db: AsyncSession, login_data: LoginRequest) -> TokenResponse:
         """

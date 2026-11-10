@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { get, post, put, del, fetchWithAuth, ApiError } from '../api/client';
+import { get, post, put, del, fetchWithAuth, resolveUrl, ApiError } from '../api/client';
 
 describe('API Client Layer (src/api/client.js)', () => {
   beforeEach(() => {
@@ -77,5 +77,19 @@ describe('API Client Layer (src/api/client.js)', () => {
       expect.anything(),
       expect.objectContaining({ method: 'DELETE' })
     );
+  });
+
+  it('resolves API endpoints correctly ensuring /api prefix matches backend router', () => {
+    // Both /api/auth/login and /auth/login resolve to URL with /api/auth/login
+    const url1 = resolveUrl('/api/auth/login');
+    const url2 = resolveUrl('/auth/login');
+    const url3 = resolveUrl('auth/login');
+
+    expect(url1).toBe('http://localhost:8000/api/auth/login');
+    expect(url2).toBe('http://localhost:8000/api/auth/login');
+    expect(url3).toBe('http://localhost:8000/api/auth/login');
+
+    // Absolute URLs remain untouched
+    expect(resolveUrl('https://example.com/api/test')).toBe('https://example.com/api/test');
   });
 });

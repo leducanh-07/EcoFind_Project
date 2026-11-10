@@ -53,3 +53,9 @@ uploads/
 tmp/
 
 CONTEXT_EcoFind.md
+.agents
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local

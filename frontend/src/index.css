@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --primary: 16 185 129; /* emerald-500 */
+    --primary-dark: 5 150 105; /* emerald-600 */
+    --primary-light: 209 250 229; /* emerald-100 */
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased min-h-screen selection:bg-emerald-500 selection:text-white font-sans;
+  }
+}

@@ -4,10 +4,32 @@
  * and HTTP helper methods (get, post, put, delete).
  */
 
-const API_BASE_URL =
+const RAW_API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_API_BASE_URL ||
   'http://localhost:8000';
+
+export function resolveUrl(endpoint) {
+  if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+    return endpoint;
+  }
+
+  const base = RAW_API_BASE_URL.replace(/\/+$/, '');
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+
+  if (base.endsWith('/api')) {
+    if (path.startsWith('/api/')) {
+      return `${base}${path.slice(4)}`;
+    }
+    return `${base}${path}`;
+  }
+
+  if (!path.startsWith('/api/') && path !== '/api') {
+    return `${base}/api${path}`;
+  }
+
+  return `${base}${path}`;
+}
 
 export class ApiError extends Error {
   constructor(message, status = 400, code = 400, fields = null) {
@@ -36,9 +58,7 @@ export async function fetchWithAuth(endpoint, options = {}) {
     delete headers['Content-Type'];
   }
 
-  const url = endpoint.startsWith('http')
-    ? endpoint
-    : `${API_BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+  const url = resolveUrl(endpoint);
 
   try {
     const response = await fetch(url, {
@@ -46,19 +66,20 @@ export async function fetchWithAuth(endpoint, options = {}) {
       headers,
     });
 
-    // Handle 401 Unauthorized: clear stored token
-    if (response.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-    }
-
     // 204 No Content
     if (response.status === 204) {
       return null;
     }
 
     const data = await response.json().catch(() => null);
+
+    // Handle 401 Unauthorized: clear stored tokens
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('auth_user');
+      localStorage.removeItem('user');
+    }
 
     if (!response.ok) {
       const errorObj = data?.error || {};
