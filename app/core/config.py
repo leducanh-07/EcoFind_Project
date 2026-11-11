@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, Optional
 
 try:
     from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -17,6 +17,10 @@ try:
         DB_PASSWORD: str = "postgres"
         DB_NAME: str = "ecofind_db"
 
+        # Direct Database URL Overrides (optional, e.g. for sqlite or cloud postgres)
+        DATABASE_URL: Optional[str] = None
+        ASYNC_DATABASE_URL: Optional[str] = None
+
         # Security
         JWT_SECRET_KEY: str = "default_insecure_jwt_secret_key_change_me"
         JWT_ALGORITHM: str = "HS256"
@@ -30,10 +34,14 @@ try:
 
         @property
         def database_url(self) -> str:
+            if self.DATABASE_URL:
+                return self.DATABASE_URL
             return f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
         @property
         def async_database_url(self) -> str:
+            if self.ASYNC_DATABASE_URL:
+                return self.ASYNC_DATABASE_URL
             return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
         model_config = SettingsConfigDict(
@@ -58,6 +66,9 @@ except ImportError:
         DB_PASSWORD: str = os.getenv("DB_PASSWORD", "postgres")
         DB_NAME: str = os.getenv("DB_NAME", "ecofind_db")
 
+        DATABASE_URL: Optional[str] = os.getenv("DATABASE_URL")
+        ASYNC_DATABASE_URL: Optional[str] = os.getenv("ASYNC_DATABASE_URL")
+
         # Security
         JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "default_insecure_jwt_secret_key_change_me")
         JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
@@ -71,10 +82,14 @@ except ImportError:
 
         @property
         def database_url(self) -> str:
+            if self.DATABASE_URL:
+                return self.DATABASE_URL
             return f"postgresql+psycopg2://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
         @property
         def async_database_url(self) -> str:
+            if self.ASYNC_DATABASE_URL:
+                return self.ASYNC_DATABASE_URL
             return f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
 

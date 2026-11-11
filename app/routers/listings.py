@@ -1,5 +1,5 @@
 """
-Listings Router (SDD 4, SDD 7.2, UC-02, UC-03, UC-04, FR-03, FR-07).
+Listings Router (SDD 4, SDD 7.2, TE9C735, UC-02, UC-03, UC-04, FR-03, FR-07).
 """
 
 from typing import List, Optional
@@ -48,7 +48,7 @@ async def get_listings(
     "/{id}",
     response_model=ListingDetailResponse,
     status_code=status.HTTP_200_OK,
-    summary="Xem chi tiết tin đăng (UC-04, FR-07)",
+    summary="Xem chi tiết tin đăng (TE9C735, UC-04, FR-07)",
 )
 async def get_listing_detail(
     id: int,
@@ -56,7 +56,7 @@ async def get_listing_detail(
     current_user: Optional[User] = Depends(get_optional_user),
 ):
     """
-    Xem chi tiết tin đăng theo ID:
+    Xem chi tiết tin đăng theo ID (TE9C735, UC-04, FR-07):
       - Trả về ảnh (theo sort_order), giá, mô tả, địa chỉ, người bán, 3 điểm thành phần, điểm tổng, hạng.
       - Trường phone chỉ xuất hiện khi có token xác thực hợp lệ (TC-04).
       - Tin đã bán, đã ẩn, không tồn tại trả 404 'Tin không còn hiển thị'.

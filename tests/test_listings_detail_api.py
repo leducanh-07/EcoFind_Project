@@ -1,5 +1,5 @@
 """
-Unit and Integration Tests for Listing Detail API (UC-04, FR-07, TC-04, SDD 7.2).
+Unit and Integration Tests for Listing Detail API (TE9C735, UC-04, FR-07, TC-04, SDD 7.2).
 """
 
 from datetime import datetime, timezone
@@ -117,7 +117,6 @@ def test_get_listing_detail_authenticated_reveals_phone(mock_listing, mock_selle
 
     app.dependency_overrides[get_db] = override_get_db
     try:
-        # Patch userRepository.find_by_id in dependencies
         from app.core import dependencies
         orig_find = dependencies.user_repo.find_by_id
         dependencies.user_repo.find_by_id = AsyncMock(return_value=mock_user)
@@ -174,5 +173,93 @@ def test_get_listing_detail_sold_or_hidden(mock_listing):
         response = client.get("/api/listings/100")
         assert response.status_code == 404
         assert "Tin không còn hiển thị" in response.json()["error"]["message"]
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_listing_detail_photos_sorted_by_sort_order(mock_listing):
+    """Ảnh trong tin đăng phải được sắp xếp theo đúng sort_order tăng dần (BR-04)."""
+    # Gán ảnh không theo thứ tự (3, 1, 2)
+    mock_listing.photos = [
+        ListingPhoto(photo_id=30, listing_id=100, url="https://example.com/p3.jpg", sort_order=3),
+        ListingPhoto(photo_id=10, listing_id=100, url="https://example.com/p1.jpg", sort_order=1),
+        ListingPhoto(photo_id=20, listing_id=100, url="https://example.com/p2.jpg", sort_order=2),
+    ]
+
+    mock_db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_listing
+    mock_db.execute.return_value = mock_result
+
+    async def override_get_db():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        response = client.get("/api/listings/100")
+        assert response.status_code == 200
+        photos = response.json()["photos"]
+        assert len(photos) == 3
+        assert photos[0]["sortOrder"] == 1
+        assert photos[0]["url"] == "https://example.com/p1.jpg"
+        assert photos[1]["sortOrder"] == 2
+        assert photos[1]["url"] == "https://example.com/p2.jpg"
+        assert photos[2]["sortOrder"] == 3
+        assert photos[2]["url"] == "https://example.com/p3.jpg"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_listing_detail_all_required_fields_present(mock_listing):
+    """GET /api/listings/{id} trả đủ: ảnh, giá, mô tả, địa chỉ, người bán, 3 điểm thành phần, điểm tổng, hạng."""
+    mock_db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_listing
+    mock_db.execute.return_value = mock_result
+
+    async def override_get_db():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        response = client.get("/api/listings/100")
+        assert response.status_code == 200
+        data = response.json()
+
+        # Kiểm tra đầy đủ các trường theo SRS FR-07
+        assert "photos" in data
+        assert "price" in data and data["price"] == 450000.0
+        assert "description" in data and "Bàn còn rất mới" in data["description"]
+        assert "address" in data and "123 Nguyễn Thị Minh Khai" in data["address"]
+        assert "sellerName" in data and data["sellerName"] == "Nguyễn Văn Bán Đồ"
+        assert "scoreAppearance" in data and data["scoreAppearance"] == 8.5
+        assert "scoreFunction" in data and data["scoreFunction"] == 9.0
+        assert "scoreAccessories" in data and data["scoreAccessories"] == 7.0
+        assert "totalScore" in data and data["totalScore"] == 8.4
+        assert "rank" in data and data["rank"] == "Tốt"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_get_listing_detail_with_invalid_token_masks_phone(mock_listing):
+    """Gửi token sai định dạng hoặc hết hạn -> không lỗi 500, vẫn xem được tin và SĐT bị ẩn."""
+    mock_db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_listing
+    mock_db.execute.return_value = mock_result
+
+    async def override_get_db():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        response = client.get(
+            "/api/listings/100",
+            headers={"Authorization": "Bearer invalid.jwt.token"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == 100
+        assert data["phone"] is None  # Token sai coi như Khách -> ẩn SĐT
     finally:
         app.dependency_overrides.clear()
