@@ -4,18 +4,33 @@ import L from 'leaflet';
 import { Locate, Loader2, AlertCircle, X } from 'lucide-react';
 import { getListingsMapApi } from '../api/listings';
 
-// Hàm lấy màu sắc marker theo BR-02
-export function getRankBadgeColor(rank) {
-  switch (rank) {
+// Bảng cấu hình màu sắc và ngưỡng điểm theo BR-02
+export const RANK_COLORS = {
+  LIKE_NEW: { label: 'Như mới', scoreRange: '≥9.0', bg: '#10B981', text: '#ffffff', border: '#059669' },
+  GOOD: { label: 'Tốt', scoreRange: '7.0–8.9', bg: '#3B82F6', text: '#ffffff', border: '#2563EB' },
+  FAIR: { label: 'Khá', scoreRange: '5.0–6.9', bg: '#F59E0B', text: '#ffffff', border: '#D97706' },
+  POOR: { label: 'Cũ', scoreRange: '<5.0', bg: '#EF4444', text: '#ffffff', border: '#DC2626' },
+};
+
+// Hàm lấy màu sắc marker theo BR-02 (hỗ trợ cả rank string và fallback totalScore)
+export function getRankBadgeColor(rank, score) {
+  let resolvedRank = rank;
+  if (!resolvedRank && typeof score === 'number') {
+    if (score >= 9.0) resolvedRank = 'Như mới';
+    else if (score >= 7.0) resolvedRank = 'Tốt';
+    else if (score >= 5.0) resolvedRank = 'Khá';
+    else resolvedRank = 'Cũ';
+  }
+  switch (resolvedRank) {
     case 'Như mới':
-      return { bg: '#10B981', text: '#ffffff', border: '#059669' }; // Emerald
+      return RANK_COLORS.LIKE_NEW;
     case 'Tốt':
-      return { bg: '#3B82F6', text: '#ffffff', border: '#2563EB' }; // Blue
+      return RANK_COLORS.GOOD;
     case 'Khá':
-      return { bg: '#F59E0B', text: '#ffffff', border: '#D97706' }; // Amber
+      return RANK_COLORS.FAIR;
     case 'Cũ':
     default:
-      return { bg: '#EF4444', text: '#ffffff', border: '#DC2626' }; // Rose
+      return RANK_COLORS.POOR;
   }
 }
 
@@ -31,10 +46,12 @@ export default function MapView({
   const mapInstanceRef = useRef(null);
   const userMarkerRef = useRef(null);
   const listingsLayerRef = useRef(null);
+  const lastBboxRef = useRef(null);
   const navigate = useNavigate();
 
   const [loadingListings, setLoadingListings] = useState(false);
   const [showFallbackBanner, setShowFallbackBanner] = useState(true);
+  const [showLegend, setShowLegend] = useState(true);
 
   // Khởi tạo bản đồ Leaflet
   useEffect(() => {
@@ -112,7 +129,7 @@ export default function MapView({
   }, [coords, isFallback]);
 
   // Tải danh sách tin đăng theo khung nhìn bản đồ (bbox)
-  const loadListings = useCallback(async () => {
+  const loadListings = useCallback(async (force = false) => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
     const bounds = map.getBounds();
@@ -122,6 +139,16 @@ export default function MapView({
     const minLat = bounds.getSouth();
     const maxLng = bounds.getEast();
     const maxLat = bounds.getNorth();
+
+    // Chuẩn hóa key kiểm tra thay đổi khung nhìn (~1 mét)
+    const bboxKey = `${minLng.toFixed(5)},${minLat.toFixed(5)},${maxLng.toFixed(5)},${maxLat.toFixed(5)}`;
+
+    // Tiêu chí chấp nhận: Không gọi lại khi khung nhìn không đổi
+    if (!force && lastBboxRef.current === bboxKey) {
+      return;
+    }
+    lastBboxRef.current = bboxKey;
+
     const bboxStr = `${minLng},${minLat},${maxLng},${maxLat}`;
 
     const startTime = performance.now();
@@ -142,13 +169,14 @@ export default function MapView({
         listingsLayerRef.current.clearLayers();
 
         (data || []).forEach((item) => {
-          const colors = getRankBadgeColor(item.rank);
+          const colors = getRankBadgeColor(item.rank, item.totalScore);
 
           const itemIcon = L.divIcon({
             className: 'custom-listing-marker',
             html: `
               <div style="background-color: ${colors.bg}; border-color: ${colors.border};" 
-                   class="px-2 py-0.5 rounded-full text-white text-xs font-bold shadow-md border flex items-center gap-1 cursor-pointer transform hover:scale-110 transition-transform">
+                   class="px-2 py-0.5 rounded-full text-white text-xs font-bold shadow-md border flex items-center gap-1 cursor-pointer transform hover:scale-110 transition-transform"
+                   title="${colors.label} - ${Number(item.totalScore).toFixed(1)} điểm">
                 <span>${Number(item.totalScore).toFixed(1)}</span>
               </div>
             `,
@@ -169,7 +197,7 @@ export default function MapView({
               <div class="text-sm font-semibold text-emerald-700 mb-1">${formattedPrice}</div>
               <div class="text-xs text-slate-500 mb-2">${item.address || ''}</div>
               <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
-                <span style="color: ${colors.border}" class="font-semibold">${item.rank} (${item.totalScore})</span>
+                <span style="color: ${colors.border}" class="font-semibold">${item.rank || colors.label} (${Number(item.totalScore).toFixed(1)})</span>
                 <a href="/listings/${item.id}" data-id="${item.id}" class="listing-link-${item.id} text-emerald-600 font-medium hover:underline inline-flex items-center gap-0.5 cursor-pointer">
                   Xem chi tiết →
                 </a>
@@ -198,26 +226,29 @@ export default function MapView({
     }
   }, [navigate]);
 
-  // Lắng nghe sự kiện kéo/zoom để tải lại tin
+  // Lắng nghe sự kiện kéo/zoom để tải lại tin (sự kiện moveend/zoomend có debounce 400ms trong khoảng 300–500ms)
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
 
-    loadListings();
+    // Tải dữ liệu khung nhìn ban đầu
+    loadListings(true);
 
     let debounceTimer;
-    const handleMoveEnd = () => {
+    const handleViewportChange = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         loadListings();
-      }, 400);
+      }, 400); // Debounce 400ms theo tiêu chí 300-500ms
     };
 
-    map.on('moveend', handleMoveEnd);
+    map.on('moveend', handleViewportChange);
+    map.on('zoomend', handleViewportChange);
 
     return () => {
       clearTimeout(debounceTimer);
-      map.off('moveend', handleMoveEnd);
+      map.off('moveend', handleViewportChange);
+      map.off('zoomend', handleViewportChange);
     };
   }, [loadListings]);
 
@@ -284,25 +315,49 @@ export default function MapView({
         </button>
       </div>
 
-      {/* Bảng chú thích màu marker theo 4 hạng BR-02 */}
-      <div className="absolute bottom-6 left-6 z-30 bg-white/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-slate-200/80 shadow-md hidden sm:flex items-center gap-3 text-[11px] font-medium text-slate-700">
-        <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Hạng:</span>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-          <span>Như mới (≥9.0)</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-          <span>Tốt (7.0–8.9)</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-          <span>Khá (5.0–6.9)</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-          <span>Cũ (&lt;5.0)</span>
-        </div>
+      {/* Bảng chú thích màu marker theo 4 hạng BR-02 (Tối ưu mobile-first 360–430px & desktop) */}
+      <div className="absolute bottom-6 left-4 sm:left-6 z-30 flex flex-col gap-1.5 max-w-[calc(100vw-6rem)] sm:max-w-none">
+        {showLegend ? (
+          <div
+            data-testid="color-legend"
+            className="bg-white/95 backdrop-blur-md px-3 sm:px-3.5 py-2 rounded-2xl border border-slate-200/80 shadow-md flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 text-[11px] font-medium text-slate-700 animate-in fade-in slide-in-from-bottom-2"
+          >
+            <span className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Hạng:</span>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+              <span>Như mới (≥9.0)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0"></span>
+              <span>Tốt (7.0–8.9)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+              <span>Khá (5.0–6.9)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
+              <span>Cũ (&lt;5.0)</span>
+            </div>
+            <button
+              onClick={() => setShowLegend(false)}
+              className="sm:hidden text-slate-400 hover:text-slate-600 ml-auto p-1 cursor-pointer"
+              title="Thu nhỏ chú thích màu"
+              aria-label="Thu nhỏ chú thích màu"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowLegend(true)}
+            className="sm:hidden bg-white/95 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-slate-200/80 shadow-md text-[11px] font-medium text-slate-700 flex items-center gap-1.5 cursor-pointer hover:bg-slate-50"
+            aria-label="Hiện chú thích màu"
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <span>Chú thích màu</span>
+          </button>
+        )}
       </div>
     </div>
   );
