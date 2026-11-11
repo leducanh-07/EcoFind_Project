@@ -15,8 +15,29 @@ from app.core.exceptions import BadRequestException, NotFoundException
 class ListingService:
     """Service xử lý nghiệp vụ tìm kiếm, hiển thị tin đăng trên bản đồ và chi tiết tin."""
 
+    MAX_KEYWORD_LENGTH = 100
+    MAX_LISTINGS_LIMIT = 50
+
     def __init__(self, listing_repo: Optional[ListingRepository] = None):
         self.listing_repo = listing_repo or ListingRepository()
+
+    @classmethod
+    def validate_keyword(cls, q: Optional[str]) -> Optional[str]:
+        """
+        Kiểm tra tính hợp lệ của từ khóa tìm kiếm q (UC-03 E1, FR-05).
+        Ngoại lệ: Ném BadRequestException (400) nếu độ dài vượt quá 100 ký tự.
+        """
+        if q is None:
+            return None
+
+        if len(q) > cls.MAX_KEYWORD_LENGTH:
+            raise BadRequestException(
+                message="Từ khóa tìm kiếm không được vượt quá 100 ký tự",
+                fields={"q": f"Từ khóa tìm kiếm tối đa {cls.MAX_KEYWORD_LENGTH} ký tự"},
+            )
+
+        cleaned = q.strip()
+        return cleaned if cleaned else None
 
     @staticmethod
     def parse_bbox(bbox_str: str) -> Tuple[float, float, float, float]:
@@ -79,24 +100,29 @@ class ListingService:
         self,
         db: AsyncSession,
         bbox: Optional[str] = None,
+        q: Optional[str] = None,
         limit: int = 50,
     ) -> List[ListingMapItem]:
         """
-        Lấy danh sách tin đăng trên bản đồ (UC-02, FR-03):
+        Lấy danh sách tin đăng trên bản đồ / tìm kiếm theo từ khóa (UC-02, UC-03, FR-03, FR-05):
+          - Từ khóa q dài quá 100 ký tự trả lỗi 400 (UC-03 E1).
           - Giới hạn tối đa 50 tin mỗi lần gọi.
           - Chỉ lấy các tin có trạng thái 'selling' (Đang bán) (BR-03, TC-07).
-          - Tin 'pending' hoặc trạng thái khác tuyệt đối không xuất hiện.
+          - Tin 'pending', 'sold', 'rejected', 'hidden' tuyệt đối không xuất hiện.
           - Tự động gán hạng tình trạng (rank) theo chuẩn BR-02 qua ScoreCalculator.
         """
-        safe_limit = min(max(1, limit), 50)
+        keyword = self.validate_keyword(q)
+        safe_limit = min(max(1, limit), self.MAX_LISTINGS_LIMIT)
 
         if bbox is not None:
             min_lng, min_lat, max_lng, max_lat = self.parse_bbox(bbox)
             listings = await self.listing_repo.find_in_bounds(
-                db, min_lng, min_lat, max_lng, max_lat, limit=safe_limit
+                db, min_lng, min_lat, max_lng, max_lat, q=keyword, limit=safe_limit
             )
         else:
-            listings = await self.listing_repo.find_selling(db, limit=safe_limit)
+            listings = await self.listing_repo.find_selling(
+                db, q=keyword, limit=safe_limit
+            )
 
         result: List[ListingMapItem] = []
         for item in listings:
