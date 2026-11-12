@@ -46,6 +46,8 @@ export default function MapView({
   filters = EMPTY_FILTERS,
   onListingsLoaded,
   onFetchError,
+  onLoadingChange,
+  reloadKey = 0,
   selectedListingId,
 }) {
   const mapContainerRef = useRef(null);
@@ -65,6 +67,8 @@ export default function MapView({
   onListingsLoadedRef.current = onListingsLoaded;
   const onFetchErrorRef = useRef(onFetchError);
   onFetchErrorRef.current = onFetchError;
+  const onLoadingChangeRef = useRef(onLoadingChange);
+  onLoadingChangeRef.current = onLoadingChange;
 
   const filterKey = JSON.stringify(filters || {});
 
@@ -209,6 +213,9 @@ export default function MapView({
 
     const startTime = performance.now();
     setLoadingListings(true);
+    if (onLoadingChangeRef.current) {
+      onLoadingChangeRef.current(true);
+    }
     try {
       const data = await getListingsMapApi({
         bbox: bboxStr,
@@ -301,6 +308,9 @@ export default function MapView({
       }
     } finally {
       setLoadingListings(false);
+      if (onLoadingChangeRef.current) {
+        onLoadingChangeRef.current(false);
+      }
     }
   }, [navigate]);
 
@@ -314,6 +324,13 @@ export default function MapView({
       marker.openPopup();
     }
   }, [selectedListingId]);
+
+  // Hỗ trợ kích hoạt tải lại thủ công từ bên ngoài (ví dụ: nút Thử lại lỗi kết nối)
+  useEffect(() => {
+    if (reloadKey > 0) {
+      loadListings(true);
+    }
+  }, [reloadKey, loadListings]);
 
   // Khi filterKey thay đổi (ngoại trừ mount ban đầu), tải lại danh sách
   useEffect(() => {
