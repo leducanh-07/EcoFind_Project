@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import L from 'leaflet';
-import { Locate, Loader2, AlertCircle, X } from 'lucide-react';
+import { Locate, Loader2, AlertCircle, X, Plus, Minus } from 'lucide-react';
 import { getListingsMapApi } from '../api/listings';
 
 // Bảng cấu hình màu sắc và ngưỡng điểm theo BR-02
@@ -62,16 +62,25 @@ export default function MapView({
         center: [coords.lat, coords.lng],
         zoom: 14,
         zoomControl: false, // Tự đặt zoom control góc phải dưới
+        maxBounds: [
+          [-85.06, -180],
+          [85.06, 180],
+        ],
+        maxBoundsViscosity: 1.0,
+        worldCopyJump: false,
       });
 
-      // Thêm tile layer OpenStreetMap
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors',
+      // Thêm tile layer Google Maps (đường phố tiêu chuẩn, CDN máy chủ đặt tại VN cực nhanh, không giật lag)
+      L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        subdomains: ['0', '1', '2', '3'],
+        attribution: '&copy; Google Maps',
       }).addTo(map);
 
-      // Thêm zoom control phía dưới bên phải để tránh che thanh tìm kiếm
-      L.control.zoom({ position: 'bottomright' }).addTo(map);
+      // Kích hoạt tính lại kích thước để tránh hiện tượng khung xám khi layout render
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 200);
 
       // Layer nhóm chứa các marker sản phẩm
       const listingsLayer = L.layerGroup().addTo(map);
@@ -80,7 +89,23 @@ export default function MapView({
       mapInstanceRef.current = map;
     }
 
+    const handleResize = () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    };
+    window.addEventListener('resize', handleResize);
+
     return () => {
+      window.removeEventListener('resize', handleResize);
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+        userMarkerRef.current = null;
+      }
+      if (listingsLayerRef.current) {
+        listingsLayerRef.current.clearLayers();
+        listingsLayerRef.current = null;
+      }
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -88,37 +113,46 @@ export default function MapView({
     };
   }, []); // Run once on mount
 
-  // Di chuyển tâm bản đồ khi coords thay đổi
+  // Di chuyển tâm bản đồ khi coords thay đổi và cập nhật GPS blue dot marker
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
 
-    map.flyTo([coords.lat, coords.lng], 14, {
+    // Tự động zoom gần vào vị trí người dùng (zoom 16) để thấy rõ đường phố xung quanh
+    map.flyTo([coords.lat, coords.lng], 16, {
       duration: 1.0,
       easeLinearity: 0.25,
     });
 
-    // Cập nhật marker vị trí người dùng
-    if (userMarkerRef.current) {
-      userMarkerRef.current.setLatLng([coords.lat, coords.lng]);
-    } else {
-      const userIcon = L.divIcon({
-        className: 'custom-user-marker',
-        html: `
-          <div class="relative flex items-center justify-center">
-            <span class="animate-ping absolute inline-flex h-8 w-8 rounded-full ${isFallback ? 'bg-amber-400' : 'bg-emerald-400'} opacity-75"></span>
-            <div class="relative w-6 h-6 rounded-full ${isFallback ? 'bg-amber-500' : 'bg-emerald-600'} text-white flex items-center justify-center shadow-lg border-2 border-white">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="12" cy="12" r="10" />
-              </svg>
-            </div>
+    // Tạo icon chấm tròn xanh Google Maps GPS Blue Dot kinh điển
+    const userIcon = L.divIcon({
+      className: 'custom-google-user-marker',
+      html: `
+        <div class="relative flex items-center justify-center w-8 h-8" style="transform: translate3d(0, 0, 0);">
+          <span class="absolute w-8 h-8 rounded-full ${isFallback ? 'bg-amber-400' : 'bg-blue-500'} opacity-35 animate-ping"></span>
+          <span class="absolute w-6 h-6 rounded-full ${isFallback ? 'bg-amber-400' : 'bg-blue-400'} opacity-30 animate-pulse"></span>
+          <div class="relative w-5 h-5 rounded-full bg-white shadow-lg flex items-center justify-center border border-slate-200">
+            <div class="w-3.5 h-3.5 rounded-full ${isFallback ? 'bg-amber-500' : 'bg-[#1a73e8]'} shadow-inner"></div>
           </div>
-        `,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-      });
+        </div>
+      `,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+    });
 
-      const marker = L.marker([coords.lat, coords.lng], { icon: userIcon }).addTo(map);
+    // Đảm bảo marker luôn được vẽ lên map (tránh lỗi mồ côi ref khi React unmount/remount)
+    if (userMarkerRef.current && map.hasLayer(userMarkerRef.current)) {
+      userMarkerRef.current.setLatLng([coords.lat, coords.lng]);
+      userMarkerRef.current.setIcon(userIcon);
+    } else {
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+      }
+      const marker = L.marker([coords.lat, coords.lng], {
+        icon: userIcon,
+        zIndexOffset: 1000, // Luôn hiển thị trên các marker sản phẩm
+      }).addTo(map);
+
       marker.bindPopup(
         isFallback
           ? '<b>Vị trí mặc định (TP.HCM)</b><br><small>Chưa cấp quyền GPS</small>'
@@ -134,11 +168,11 @@ export default function MapView({
     const map = mapInstanceRef.current;
     const bounds = map.getBounds();
 
-    // Định dạng bbox: minLng,minLat,maxLng,maxLat
-    const minLng = bounds.getWest();
-    const minLat = bounds.getSouth();
-    const maxLng = bounds.getEast();
-    const maxLat = bounds.getNorth();
+    // Định dạng bbox: minLng,minLat,maxLng,maxLat (chuẩn hóa giới hạn [-180, 180] và [-90, 90])
+    const minLng = Math.max(-180, Math.min(180, bounds.getWest()));
+    const minLat = Math.max(-90, Math.min(90, bounds.getSouth()));
+    const maxLng = Math.max(-180, Math.min(180, bounds.getEast()));
+    const maxLat = Math.max(-90, Math.min(90, bounds.getNorth()));
 
     // Chuẩn hóa key kiểm tra thay đổi khung nhìn (~1 mét)
     const bboxKey = `${minLng.toFixed(5)},${minLat.toFixed(5)},${maxLng.toFixed(5)},${maxLat.toFixed(5)}`;
@@ -298,21 +332,42 @@ export default function MapView({
         </div>
       )}
 
-      {/* Nút điều khiển "Vị trí của tôi" (Floating Button) */}
-      <div className="absolute bottom-6 right-6 z-30 flex flex-col gap-2">
+      {/* Cụm công cụ điều khiển bản đồ góc phải dưới: Vị trí của tôi & Phóng to / Thu nhỏ (chuẩn UX Google Maps, không bị đè nhau) */}
+      <div className="absolute bottom-8 right-3.5 sm:right-4 z-30 flex flex-col items-center gap-2">
+        {/* Nút điều khiển "Vị trí của tôi" */}
         <button
           onClick={onLocateMe}
           disabled={loadingLocation}
-          className="w-12 h-12 rounded-2xl bg-white text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200/80 shadow-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-60 cursor-pointer"
+          className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-white text-slate-700 hover:text-emerald-700 hover:bg-emerald-50 border border-slate-200/90 shadow-md flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-60 cursor-pointer"
           title="Vị trí của tôi"
           aria-label="Vị trí của tôi"
         >
           {loadingLocation ? (
             <Loader2 className="w-5 h-5 text-emerald-600 animate-spin" />
           ) : (
-            <Locate className="w-5 h-5" />
+            <Locate className="w-5 h-5 text-slate-700" />
           )}
         </button>
+
+        {/* Cụm nút Phóng to / Thu nhỏ đồng bộ */}
+        <div className="bg-white rounded-2xl shadow-md border border-slate-200/90 overflow-hidden flex flex-col">
+          <button
+            onClick={() => mapInstanceRef.current?.zoomIn()}
+            className="w-10 h-10 sm:w-11 sm:h-10 flex items-center justify-center text-slate-700 hover:bg-slate-50 hover:text-emerald-700 border-b border-slate-100 transition-colors cursor-pointer"
+            title="Phóng to"
+            aria-label="Phóng to"
+          >
+            <Plus size={18} />
+          </button>
+          <button
+            onClick={() => mapInstanceRef.current?.zoomOut()}
+            className="w-10 h-10 sm:w-11 sm:h-10 flex items-center justify-center text-slate-700 hover:bg-slate-50 hover:text-emerald-700 transition-colors cursor-pointer"
+            title="Thu nhỏ"
+            aria-label="Thu nhỏ"
+          >
+            <Minus size={18} />
+          </button>
+        </div>
       </div>
 
       {/* Bảng chú thích màu marker theo 4 hạng BR-02 (Tối ưu mobile-first 360–430px & desktop) */}

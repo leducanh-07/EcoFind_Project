@@ -19,7 +19,7 @@ listing_service = ListingService()
     "",
     response_model=List[ListingMapItem],
     status_code=status.HTTP_200_OK,
-    summary="Lấy danh sách tin đăng theo khung nhìn bản đồ và từ khóa (UC-02, UC-03, FR-03, FR-05)",
+    summary="Lấy danh sách tin đăng theo khung nhìn bản đồ và từ khóa",
 )
 async def get_listings(
     bbox: Optional[str] = Query(
@@ -54,7 +54,7 @@ async def get_listings(
     "/{id}",
     response_model=ListingDetailResponse,
     status_code=status.HTTP_200_OK,
-    summary="Xem chi tiết tin đăng (TE9C735, UC-04, FR-07)",
+    summary="Xem chi tiết tin đăng",
 )
 async def get_listing_detail(
     id: int,

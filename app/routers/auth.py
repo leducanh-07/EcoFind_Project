@@ -17,7 +17,7 @@ auth_service = AuthService()
     "/register",
     response_model=TokenResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Đăng ký tài khoản người dùng mới (FR-01, UC-01)",
+    summary="Đăng ký tài khoản người dùng mới",
 )
 async def register(
     register_data: RegisterRequest,

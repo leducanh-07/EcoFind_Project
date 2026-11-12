@@ -17,7 +17,7 @@ category_service = CategoryService()
     "",
     response_model=List[CategoryResponse],
     status_code=status.HTTP_200_OK,
-    summary="Lấy danh sách danh mục sản phẩm (UC-03)",
+    summary="Lấy danh sách danh mục sản phẩm",
 )
 async def list_categories(
     db: AsyncSession = Depends(get_db),
