@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PlusCircle, Compass } from 'lucide-react';
 import { useGeolocation } from '../hooks/useGeolocation';
 import MapView from '../components/MapView';
+import SearchAndFilterBar, { INITIAL_FILTERS } from '../components/SearchAndFilterBar';
 
 export default function HomePage() {
   const {
@@ -14,8 +15,21 @@ export default function HomePage() {
     clearError,
   } = useGeolocation();
 
+  const [filters, setFilters] = useState(INITIAL_FILTERS);
+  const [listings, setListings] = useState([]);
+  const [listingsError, setListingsError] = useState(null);
+  const [selectedListingId, setSelectedListingId] = useState(null);
+
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters);
+  };
+
+  const handleResetFilters = () => {
+    setFilters(INITIAL_FILTERS);
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Top Banner / Hero Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 rounded-2xl px-5 py-3.5 text-white shadow-sm">
         <div className="flex items-center gap-2.5">
@@ -42,7 +56,15 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Main Interactive Leaflet Map */}
+      {/* Thanh tìm kiếm & Bộ lọc nâng cao */}
+      <SearchAndFilterBar
+        filters={filters}
+        onApplyFilters={handleApplyFilters}
+        onResetFilters={handleResetFilters}
+        totalResults={listings.length}
+      />
+
+      {/* Bản đồ chính */}
       <MapView
         coords={coords}
         loadingLocation={loadingLocation}
@@ -50,6 +72,10 @@ export default function HomePage() {
         isFallback={isFallback}
         onLocateMe={() => requestLocation(true)}
         onClearError={clearError}
+        filters={filters}
+        onListingsLoaded={setListings}
+        onFetchError={setListingsError}
+        selectedListingId={selectedListingId}
       />
     </div>
   );

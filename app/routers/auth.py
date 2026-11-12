@@ -1,5 +1,5 @@
 """
-Authentication Router (SDD 4, SDD 7.2, UC-01).
+Authentication Router
 Endpoints for registration and login.
 """
 

@@ -1,5 +1,5 @@
 """
-Listings Router (SDD 4, SDD 7.2, TE9C735, TE9C737, UC-02, UC-03, UC-04, FR-03, FR-05, FR-07).
+Listings Router
 """
 
 from typing import List, Optional
@@ -19,35 +19,80 @@ listing_service = ListingService()
     "",
     response_model=List[ListingMapItem],
     status_code=status.HTTP_200_OK,
-    summary="Lấy danh sách tin đăng theo khung nhìn bản đồ và từ khóa",
+    summary="Lấy danh sách tin đăng theo khung nhìn bản đồ, từ khóa và bộ lọc",
 )
 async def get_listings(
     bbox: Optional[str] = Query(
         None,
-        description="Khung nhìn bản đồ phân cách bằng dấu phẩy: minLng,minLat,maxLng,maxLat (ví dụ: 106.6,10.7,106.8,10.9)",
+        description="Khung nhìn bản đồ phân cách bằng dấu phẩy: minLng,minLat,maxLng,maxLat",
     ),
     q: Optional[str] = Query(
         None,
-        description="Từ khóa tìm kiếm trên tiêu đề và mô tả (tối đa 100 ký tự, không phân biệt hoa thường)",
+        description="Từ khóa tìm kiếm trên tiêu đề và mô tả (tối đa 100 ký tự)",
+    ),
+    category_id: Optional[int] = Query(
+        None,
+        description="Lọc theo mã danh mục sản phẩm",
+    ),
+    min_score: Optional[float] = Query(
+        None,
+        ge=0.0,
+        le=10.0,
+        description="Lọc theo điểm tình trạng tối thiểu (0.0 - 10.0)",
+    ),
+    district: Optional[str] = Query(
+        None,
+        description="Lọc theo tên quận/huyện",
+    ),
+    lat: Optional[float] = Query(
+        None,
+        ge=-90.0,
+        le=90.0,
+        description="Vĩ độ tâm vị trí để tính khoảng cách",
+    ),
+    lng: Optional[float] = Query(
+        None,
+        ge=-180.0,
+        le=180.0,
+        description="Kinh độ tâm vị trí để tính khoảng cách",
+    ),
+    radius: Optional[float] = Query(
+        None,
+        description="Bán kính tìm kiếm (1 - 20 km)",
+    ),
+    sort: Optional[str] = Query(
+        "distance",
+        description="Tiêu chuẩn sắp xếp: distance (gần nhất), score (điểm cao nhất), newest (mới nhất)",
     ),
     limit: int = Query(
         50,
         ge=1,
         le=50,
-        description="Số lượng tin tối đa trả về (tối đa 50 tin theo SDD 7.2)",
+        description="Số lượng tin tối đa trả về",
     ),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Lấy các tin đăng đang bán (status = 'selling') trong khung nhìn bản đồ và/hoặc tìm kiếm theo từ khóa:
-      - Tìm ILIKE trên title và description, không phân biệt hoa thường (FR-05).
-      - Từ khóa q dài quá 100 ký tự trả HTTP 400 (UC-03 E1).
-      - Trả tối đa 50 tin gồm id, title, price, lat, lng, totalScore, rank (FR-03, FR-05).
-      - Chỉ tin status = 'selling' (BR-03).
-      - Tin pending/sold/hidden không bao giờ xuất hiện (TC-07).
-      - Tham số bbox sai định dạng trả HTTP 400.
+    Lấy các tin đăng đang bán (status = 'selling') kết hợp tìm kiếm và lọc:
+      - Hỗ trợ lọc theo từ khóa q trên tiêu đề và mô tả (tối đa 100 ký tự).
+      - Hỗ trợ lọc theo danh mục, khu vực quận/huyện, điểm tối thiểu.
+      - Hỗ trợ lọc theo bán kính từ 1 đến 20 km và tính khoảng cách (distance).
+      - Sắp xếp linh hoạt theo khoảng cách, điểm tình trạng hoặc mới nhất.
+      - Trả tối đa 50 tin mỗi lần gọi.
     """
-    return await listing_service.get_listings(db, bbox=bbox, q=q, limit=limit)
+    return await listing_service.get_listings(
+        db,
+        bbox=bbox,
+        q=q,
+        category_id=category_id,
+        min_score=min_score,
+        district=district,
+        lat=lat,
+        lng=lng,
+        radius=radius,
+        sort=sort,
+        limit=limit,
+    )
 
 
 @router.get(

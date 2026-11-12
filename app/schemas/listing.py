@@ -29,7 +29,10 @@ class ListingMapItem(BaseSchema):
     rank: str
     status: str
     category_id: Optional[int] = None
+    category_name: Optional[str] = None
+    thumbnail_url: Optional[str] = None
     address: Optional[str] = None
+    distance: Optional[float] = None
     created_at: Optional[datetime] = None
 
 

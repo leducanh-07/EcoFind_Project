@@ -31,6 +31,25 @@ class ListingRepository:
             )
         return stmt
 
+    @classmethod
+    def _apply_filters(
+        cls,
+        stmt,
+        q: Optional[str] = None,
+        category_id: Optional[int] = None,
+        min_score: Optional[float] = None,
+        district: Optional[str] = None,
+    ):
+        stmt = cls._apply_keyword_filter(stmt, q)
+        if category_id is not None:
+            stmt = stmt.where(Listing.category_id == category_id)
+        if min_score is not None:
+            stmt = stmt.where(Listing.total_score >= min_score)
+        if district:
+            pattern = f"%{cls._escape_like(district)}%"
+            stmt = stmt.where(Listing.address.ilike(pattern, escape="/"))
+        return stmt
+
     async def find_in_bounds(
         self,
         db: AsyncSession,
@@ -39,17 +58,23 @@ class ListingRepository:
         max_lng: float,
         max_lat: float,
         q: Optional[str] = None,
+        category_id: Optional[int] = None,
+        min_score: Optional[float] = None,
+        district: Optional[str] = None,
         limit: int = 50,
     ) -> List[Listing]:
         """
-        Lấy các tin đăng trong khung nhìn bản đồ (bbox), có thể kết hợp lọc từ khóa q.
+        Lấy các tin đăng trong khung nhìn bản đồ (bbox), có thể kết hợp lọc từ khóa và bộ lọc.
         Ràng buộc:
-          - Chỉ tin có status = 'selling' (BR-03, TC-07).
+          - Chỉ tin có status = 'selling'.
           - Giới hạn tối đa limit tin (mặc định 50).
-          - Tận dụng chỉ mục idx_listings_map (SDD 6.2).
         """
         stmt = (
             select(Listing)
+            .options(
+                selectinload(Listing.photos),
+                selectinload(Listing.category),
+            )
             .where(
                 Listing.status == "selling",
                 Listing.lat >= min_lat,
@@ -58,7 +83,9 @@ class ListingRepository:
                 Listing.lng <= max_lng,
             )
         )
-        stmt = self._apply_keyword_filter(stmt, q)
+        stmt = self._apply_filters(
+            stmt, q=q, category_id=category_id, min_score=min_score, district=district
+        )
         stmt = stmt.order_by(Listing.created_at.desc()).limit(limit)
         result = await db.execute(stmt)
         return list(result.scalars().all())
@@ -67,11 +94,23 @@ class ListingRepository:
         self,
         db: AsyncSession,
         q: Optional[str] = None,
+        category_id: Optional[int] = None,
+        min_score: Optional[float] = None,
+        district: Optional[str] = None,
         limit: int = 50,
     ) -> List[Listing]:
-        """Lấy danh sách tin đang bán không theo bbox, có hỗ trợ lọc theo từ khóa q (UC-03, FR-05)."""
-        stmt = select(Listing).where(Listing.status == "selling")
-        stmt = self._apply_keyword_filter(stmt, q)
+        """Lấy danh sách tin đang bán không theo bbox, có hỗ trợ lọc theo từ khóa và bộ lọc."""
+        stmt = (
+            select(Listing)
+            .options(
+                selectinload(Listing.photos),
+                selectinload(Listing.category),
+            )
+            .where(Listing.status == "selling")
+        )
+        stmt = self._apply_filters(
+            stmt, q=q, category_id=category_id, min_score=min_score, district=district
+        )
         stmt = stmt.order_by(Listing.created_at.desc()).limit(limit)
         result = await db.execute(stmt)
         return list(result.scalars().all())

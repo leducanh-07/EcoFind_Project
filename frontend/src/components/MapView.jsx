@@ -34,6 +34,8 @@ export function getRankBadgeColor(rank, score) {
   }
 }
 
+const EMPTY_FILTERS = {};
+
 export default function MapView({
   coords,
   loadingLocation,
@@ -41,13 +43,30 @@ export default function MapView({
   isFallback,
   onLocateMe,
   onClearError,
+  filters = EMPTY_FILTERS,
+  onListingsLoaded,
+  onFetchError,
+  selectedListingId,
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const userMarkerRef = useRef(null);
   const listingsLayerRef = useRef(null);
+  const markersMapRef = useRef({});
   const lastBboxRef = useRef(null);
+  const isFirstMountRef = useRef(true);
   const navigate = useNavigate();
+
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+  const coordsRef = useRef(coords);
+  coordsRef.current = coords;
+  const onListingsLoadedRef = useRef(onListingsLoaded);
+  onListingsLoadedRef.current = onListingsLoaded;
+  const onFetchErrorRef = useRef(onFetchError);
+  onFetchErrorRef.current = onFetchError;
+
+  const filterKey = JSON.stringify(filters || {});
 
   const [loadingListings, setLoadingListings] = useState(false);
   const [showFallbackBanner, setShowFallbackBanner] = useState(true);
@@ -162,7 +181,7 @@ export default function MapView({
     }
   }, [coords, isFallback]);
 
-  // Tải danh sách tin đăng theo khung nhìn bản đồ (bbox)
+  // Tải danh sách tin đăng theo khung nhìn bản đồ (bbox) và các tiêu chí lọc
   const loadListings = useCallback(async (force = false) => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
@@ -174,10 +193,13 @@ export default function MapView({
     const maxLng = Math.max(-180, Math.min(180, bounds.getEast()));
     const maxLat = Math.max(-90, Math.min(90, bounds.getNorth()));
 
-    // Chuẩn hóa key kiểm tra thay đổi khung nhìn (~1 mét)
-    const bboxKey = `${minLng.toFixed(5)},${minLat.toFixed(5)},${maxLng.toFixed(5)},${maxLat.toFixed(5)}`;
+    const currentFilters = filtersRef.current || {};
+    const currentCoords = coordsRef.current;
+    // Chuẩn hóa key kiểm tra thay đổi khung nhìn hoặc bộ lọc (~1 mét)
+    const currentFilterKey = JSON.stringify(currentFilters);
+    const bboxKey = `${minLng.toFixed(5)},${minLat.toFixed(5)},${maxLng.toFixed(5)},${maxLat.toFixed(5)}_${currentFilterKey}`;
 
-    // Tiêu chí chấp nhận: Không gọi lại khi khung nhìn không đổi
+    // Tiêu chí chấp nhận: Không gọi lại khi khung nhìn và bộ lọc không đổi
     if (!force && lastBboxRef.current === bboxKey) {
       return;
     }
@@ -188,7 +210,25 @@ export default function MapView({
     const startTime = performance.now();
     setLoadingListings(true);
     try {
-      const data = await getListingsMapApi({ bbox: bboxStr, limit: 50 });
+      const data = await getListingsMapApi({
+        bbox: bboxStr,
+        q: currentFilters.q || undefined,
+        categoryId: currentFilters.categoryId || undefined,
+        minScore: currentFilters.minScore || undefined,
+        district: currentFilters.district || undefined,
+        lat: currentCoords?.lat,
+        lng: currentCoords?.lng,
+        radius: currentFilters.radius || undefined,
+        sort: currentFilters.sort || 'distance',
+        limit: 50,
+      });
+
+      if (onListingsLoadedRef.current) {
+        onListingsLoadedRef.current(data || []);
+      }
+      if (onFetchErrorRef.current) {
+        onFetchErrorRef.current(null);
+      }
 
       const elapsed = performance.now() - startTime;
       if (typeof window !== 'undefined' && window.__FIRST_MARKER_LOADED__ === undefined) {
@@ -201,6 +241,7 @@ export default function MapView({
       // Vẽ markers lên bản đồ
       if (listingsLayerRef.current) {
         listingsLayerRef.current.clearLayers();
+        markersMapRef.current = {};
 
         (data || []).forEach((item) => {
           const colors = getRankBadgeColor(item.rank, item.totalScore);
@@ -219,6 +260,7 @@ export default function MapView({
           });
 
           const marker = L.marker([item.lat, item.lng], { icon: itemIcon });
+          markersMapRef.current[item.id] = marker;
 
           const formattedPrice =
             Number(item.price) === 0
@@ -253,12 +295,34 @@ export default function MapView({
           listingsLayerRef.current.addLayer(marker);
         });
       }
-    } catch {
-      // Bỏ qua lỗi map move
+    } catch (err) {
+      if (onFetchErrorRef.current) {
+        onFetchErrorRef.current(err.message || 'Lỗi kết nối khi tải danh sách tin đăng');
+      }
     } finally {
       setLoadingListings(false);
     }
   }, [navigate]);
+
+  // Di chuyển và mở popup khi chọn một tin đăng từ danh sách
+  useEffect(() => {
+    if (!selectedListingId || !mapInstanceRef.current) return;
+    const marker = markersMapRef.current[selectedListingId];
+    if (marker) {
+      const latlng = marker.getLatLng();
+      mapInstanceRef.current.flyTo(latlng, 16, { duration: 0.8 });
+      marker.openPopup();
+    }
+  }, [selectedListingId]);
+
+  // Khi filterKey thay đổi (ngoại trừ mount ban đầu), tải lại danh sách
+  useEffect(() => {
+    if (isFirstMountRef.current) {
+      isFirstMountRef.current = false;
+      return;
+    }
+    loadListings(true);
+  }, [filterKey, loadListings]);
 
   // Lắng nghe sự kiện kéo/zoom để tải lại tin (sự kiện moveend/zoomend có debounce 400ms trong khoảng 300–500ms)
   useEffect(() => {

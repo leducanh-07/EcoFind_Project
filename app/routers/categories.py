@@ -1,5 +1,5 @@
 """
-Categories Router (SDD 4, SDD 7.2, UC-03).
+Categories Router
 """
 
 from typing import List
