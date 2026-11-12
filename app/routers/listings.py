@@ -30,6 +30,10 @@ async def get_listings(
         None,
         description="Từ khóa tìm kiếm trên tiêu đề và mô tả (tối đa 100 ký tự)",
     ),
+    category: Optional[str] = Query(
+        None,
+        description="Lọc theo ID hoặc tên danh mục sản phẩm",
+    ),
     category_id: Optional[int] = Query(
         None,
         description="Lọc theo mã danh mục sản phẩm",
@@ -39,6 +43,12 @@ async def get_listings(
         ge=0.0,
         le=10.0,
         description="Lọc theo điểm tình trạng tối thiểu (0.0 - 10.0)",
+    ),
+    minScore: Optional[float] = Query(
+        None,
+        ge=0.0,
+        le=10.0,
+        include_in_schema=False,
     ),
     district: Optional[str] = Query(
         None,
@@ -75,17 +85,19 @@ async def get_listings(
     """
     Lấy các tin đăng đang bán (status = 'selling') kết hợp tìm kiếm và lọc:
       - Hỗ trợ lọc theo từ khóa q trên tiêu đề và mô tả (tối đa 100 ký tự).
-      - Hỗ trợ lọc theo danh mục, khu vực quận/huyện, điểm tối thiểu.
-      - Hỗ trợ lọc theo bán kính từ 1 đến 20 km và tính khoảng cách (distance).
+      - Hỗ trợ lọc theo danh mục (category / category_id), khu vực quận/huyện (district), điểm tối thiểu.
+      - Hỗ trợ lọc theo bán kính từ 1 đến 20 km (lọc thô lat/lng + Haversine) và tính khoảng cách (distance).
       - Sắp xếp linh hoạt theo khoảng cách, điểm tình trạng hoặc mới nhất.
       - Trả tối đa 50 tin mỗi lần gọi.
     """
+    effective_min_score = min_score if min_score is not None else minScore
     return await listing_service.get_listings(
         db,
         bbox=bbox,
         q=q,
+        category=category,
         category_id=category_id,
-        min_score=min_score,
+        min_score=effective_min_score,
         district=district,
         lat=lat,
         lng=lng,
