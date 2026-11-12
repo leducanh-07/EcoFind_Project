@@ -33,9 +33,46 @@ class ListingService:
     MAX_LISTINGS_LIMIT = 50
     MIN_RADIUS_KM = 1.0
     MAX_RADIUS_KM = 20.0
+    MIN_SCORE_BOUND = 0.0
+    MAX_SCORE_BOUND = 10.0
+    VALID_SORT_OPTIONS = ("distance", "score", "newest")
 
     def __init__(self, listing_repo: Optional[ListingRepository] = None):
         self.listing_repo = listing_repo or ListingRepository()
+
+    @classmethod
+    def validate_min_score(cls, min_score: Optional[float]) -> Optional[float]:
+        """
+        Kiểm tra điểm tình trạng tối thiểu minScore (FR-06, STT 23):
+          - Giá trị hợp lệ nằm trong [0.0, 10.0]; ngoài khoảng hoặc NaN/Inf trả HTTP 400.
+        """
+        if min_score is None:
+            return None
+        if not math.isfinite(min_score) or min_score < cls.MIN_SCORE_BOUND or min_score > cls.MAX_SCORE_BOUND:
+            raise BadRequestException(
+                message="Điểm tình trạng tối thiểu phải nằm trong khoảng từ 0 đến 10",
+                fields={"minScore": "Giá trị minScore hợp lệ từ 0.0 đến 10.0"},
+            )
+        return min_score
+
+    @classmethod
+    def validate_sort(cls, sort: Optional[str]) -> str:
+        """
+        Kiểm tra tham số sắp xếp sort (FR-06, UC-03 A1 A2, STT 23):
+          - Mặc định 'distance'. Hỗ trợ 'distance', 'score', 'newest'.
+          - Giá trị không hợp lệ trả HTTP 400.
+        """
+        if sort is None:
+            return "distance"
+        cleaned = sort.strip().lower()
+        if not cleaned:
+            return "distance"
+        if cleaned not in cls.VALID_SORT_OPTIONS:
+            raise BadRequestException(
+                message="Tham số sắp xếp sort không hợp lệ",
+                fields={"sort": "Chỉ hỗ trợ sắp xếp theo 'distance', 'score' hoặc 'newest'"},
+            )
+        return cleaned
 
     @classmethod
     def validate_keyword(cls, q: Optional[str]) -> Optional[str]:
@@ -284,6 +321,8 @@ class ListingService:
         resolved_cat_id, resolved_cat_name = self.validate_category(
             category=category, category_id=category_id
         )
+        validated_min_score = self.validate_min_score(min_score)
+        validated_sort = self.validate_sort(sort)
         cleaned_district = self.validate_district(district)
         ref_lat, ref_lng, radius_km = self.validate_location_and_radius(
             lat=lat,
@@ -305,12 +344,12 @@ class ListingService:
             q=keyword,
             category_id=resolved_cat_id,
             category_name=resolved_cat_name,
-            min_score=min_score,
+            min_score=validated_min_score,
             district_terms=district_terms,
             center_lat=ref_lat,
             center_lng=ref_lng,
             radius_km=radius_km,
-            sort=sort,
+            sort=validated_sort,
             limit=safe_limit,
         )
 
@@ -320,7 +359,7 @@ class ListingService:
                 continue
 
             total_score_val = float(item.total_score)
-            if min_score is not None and total_score_val < min_score:
+            if validated_min_score is not None and total_score_val < validated_min_score:
                 continue
 
             rank_label = ScoreCalculator.get_rank(total_score_val)
@@ -366,11 +405,11 @@ class ListingService:
                 )
             )
 
-        if sort == "distance" and ref_lat is not None and ref_lng is not None:
+        if validated_sort == "distance" and ref_lat is not None and ref_lng is not None:
             items_with_meta.sort(key=lambda pair: pair[0])
-        elif sort == "score":
-            items_with_meta.sort(key=lambda pair: pair[1].total_score, reverse=True)
-        elif sort == "newest":
+        elif validated_sort == "score":
+            items_with_meta.sort(key=lambda pair: (-pair[1].total_score, pair[0]))
+        elif validated_sort == "newest":
             items_with_meta.sort(
                 key=lambda pair: (
                     pair[1].created_at.replace(tzinfo=timezone.utc)

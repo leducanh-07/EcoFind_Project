@@ -169,7 +169,14 @@ class ListingRepository:
             stmt = stmt.where(dist_expr <= radius_km + 1e-9)
 
         if sort == "score":
-            stmt = stmt.order_by(Listing.total_score.desc(), Listing.created_at.desc())
+            if dist_expr is not None:
+                stmt = stmt.order_by(
+                    Listing.total_score.desc(),
+                    dist_expr.asc(),
+                    Listing.created_at.desc(),
+                )
+            else:
+                stmt = stmt.order_by(Listing.total_score.desc(), Listing.created_at.desc())
         elif sort == "distance" and dist_expr is not None:
             stmt = stmt.order_by(dist_expr.asc(), Listing.created_at.desc())
         else:
