@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import L from 'leaflet';
+import L from '../utils/leafletCluster';
 import { Locate, Loader2, AlertCircle, X, Plus, Minus } from 'lucide-react';
 import { getListingsMapApi } from '../api/listings';
 
@@ -245,12 +245,60 @@ export default function MapView({
         }
       }
 
-      // Vẽ markers lên bản đồ
-      if (listingsLayerRef.current) {
-        listingsLayerRef.current.clearLayers();
+      // Vẽ markers lên bản đồ (hỗ trợ gom cụm markercluster khi từ 30 tin trở lên - UC-02 A2, FR-03, TE9C73D)
+      if (mapInstanceRef.current) {
+        const map = mapInstanceRef.current;
+        const listingsData = data || [];
+        const shouldCluster = listingsData.length >= 30;
+
+        // Xóa layer cũ nếu có trên map
+        if (listingsLayerRef.current) {
+          if (typeof listingsLayerRef.current.clearLayers === 'function') {
+            listingsLayerRef.current.clearLayers();
+          }
+          if (map.hasLayer(listingsLayerRef.current)) {
+            map.removeLayer(listingsLayerRef.current);
+          }
+        }
         markersMapRef.current = {};
 
-        (data || []).forEach((item) => {
+        // Khởi tạo cluster group khi từ 30 tin trở lên (hoặc layerGroup thông thường khi dưới 30 tin)
+        if (shouldCluster && typeof L.markerClusterGroup === 'function') {
+          listingsLayerRef.current = L.markerClusterGroup({
+            maxClusterRadius: 50,
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false,
+            zoomToBoundsOnClick: true,
+            iconCreateFunction: (cluster) => {
+              const count = cluster.getChildCount();
+              let size = 36;
+              let bg = '#059669'; // emerald-600
+              if (count >= 100) {
+                size = 46;
+                bg = '#0f766e'; // teal-700
+              } else if (count >= 50) {
+                size = 42;
+                bg = '#047857'; // emerald-700
+              }
+              return L.divIcon({
+                html: `
+                  <div style="background-color: ${bg}; width: ${size}px; height: ${size}px;" 
+                       class="rounded-full text-white font-bold font-mono text-xs flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-emerald-400/40 cursor-pointer hover:scale-110 transition-transform"
+                       title="${count} tin đăng trong khu vực này">
+                    <span>${count}</span>
+                  </div>
+                `,
+                className: 'custom-cluster-marker',
+                iconSize: [size, size],
+                iconAnchor: [size / 2, size / 2],
+              });
+            },
+          }).addTo(map);
+        } else {
+          listingsLayerRef.current = L.layerGroup().addTo(map);
+        }
+
+        listingsData.forEach((item) => {
           const colors = getRankBadgeColor(item.rank, item.totalScore);
 
           const itemIcon = L.divIcon({
@@ -319,9 +367,15 @@ export default function MapView({
     if (!selectedListingId || !mapInstanceRef.current) return;
     const marker = markersMapRef.current[selectedListingId];
     if (marker) {
-      const latlng = marker.getLatLng();
-      mapInstanceRef.current.flyTo(latlng, 16, { duration: 0.8 });
-      marker.openPopup();
+      if (listingsLayerRef.current && typeof listingsLayerRef.current.zoomToShowLayer === 'function') {
+        listingsLayerRef.current.zoomToShowLayer(marker, () => {
+          marker.openPopup();
+        });
+      } else {
+        const latlng = marker.getLatLng();
+        mapInstanceRef.current.flyTo(latlng, 16, { duration: 0.8 });
+        marker.openPopup();
+      }
     }
   }, [selectedListingId]);
 
