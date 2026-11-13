@@ -1,5 +1,7 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.error_handlers import register_exception_handlers
 from app.routers.health import router as health_router
@@ -7,6 +9,7 @@ from app.routers.auth import router as auth_router
 from app.routers.categories import router as categories_router
 from app.routers.listings import router as listings_router
 from app.routers.geocode import router as geocode_router
+from app.routers.upload import router as upload_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -35,6 +38,11 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(categories_router, prefix="/api")
 app.include_router(listings_router, prefix="/api")
 app.include_router(geocode_router, prefix="/api")
+app.include_router(upload_router, prefix="/api")
+
+# Phục vụ tệp tĩnh cho thư mục tải ảnh (BR-04, NFR-SEC-04)
+os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 
 @app.get("/", tags=["Root"])

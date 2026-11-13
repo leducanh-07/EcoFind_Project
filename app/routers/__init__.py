@@ -4,6 +4,7 @@ from app.routers.auth import router as auth_router
 from app.routers.categories import router as categories_router
 from app.routers.listings import router as listings_router
 from app.routers.geocode import router as geocode_router
+from app.routers.upload import router as upload_router
 
 __all__ = [
     "health_router",
@@ -11,4 +12,5 @@ __all__ = [
     "categories_router",
     "listings_router",
     "geocode_router",
+    "upload_router",
 ]

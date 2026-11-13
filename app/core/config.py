@@ -26,8 +26,11 @@ try:
         JWT_ALGORITHM: str = "HS256"
         ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
-        # External Adapters
+        # External Adapters & Storage
         NOMINATIM_USER_AGENT: str = "EcoFindApp/1.0"
+        UPLOAD_DIR: str = "uploads"
+        MAX_IMAGE_SIZE_BYTES: int = 5 * 1024 * 1024  # 5 MB
+        MAX_IMAGE_COUNT: int = 5
 
         # CORS
         CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
@@ -74,8 +77,11 @@ except ImportError:
         JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
         ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
 
-        # External Adapters
+        # External Adapters & Storage
         NOMINATIM_USER_AGENT: str = os.getenv("NOMINATIM_USER_AGENT", "EcoFindApp/1.0")
+        UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "uploads")
+        MAX_IMAGE_SIZE_BYTES: int = int(os.getenv("MAX_IMAGE_SIZE_BYTES", str(5 * 1024 * 1024)))
+        MAX_IMAGE_COUNT: int = int(os.getenv("MAX_IMAGE_COUNT", "5"))
 
         # CORS
         CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
