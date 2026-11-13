@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import L from '../utils/leafletCluster';
-import { Locate, Loader2, AlertCircle, X, Plus, Minus } from 'lucide-react';
+import { Locate, Loader2, AlertCircle, X, Plus, Minus, RotateCw } from 'lucide-react';
 import { getListingsMapApi } from '../api/listings';
 
 // Bảng cấu hình màu sắc và ngưỡng điểm theo BR-02
@@ -73,6 +73,7 @@ export default function MapView({
   const filterKey = JSON.stringify(filters || {});
 
   const [loadingListings, setLoadingListings] = useState(false);
+  const [mapError, setMapError] = useState(null);
   const [showFallbackBanner, setShowFallbackBanner] = useState(true);
   const [showLegend, setShowLegend] = useState(true);
 
@@ -213,6 +214,7 @@ export default function MapView({
 
     const startTime = performance.now();
     setLoadingListings(true);
+    setMapError(null);
     if (onLoadingChangeRef.current) {
       onLoadingChangeRef.current(true);
     }
@@ -351,8 +353,10 @@ export default function MapView({
         });
       }
     } catch (err) {
+      const errorMsg = err.message || 'Không thể tải dữ liệu tin đăng trên bản đồ.';
+      setMapError(errorMsg);
       if (onFetchErrorRef.current) {
-        onFetchErrorRef.current(err.message || 'Lỗi kết nối khi tải danh sách tin đăng');
+        onFetchErrorRef.current(errorMsg);
       }
     } finally {
       setLoadingListings(false);
@@ -459,6 +463,45 @@ export default function MapView({
               if (onClearError) onClearError();
             }}
             className="text-amber-500 hover:text-amber-800 p-1 -mr-1 cursor-pointer"
+            title="Đóng thông báo"
+            aria-label="Đóng thông báo"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* Thông báo lỗi tải dữ liệu bản đồ & nút Thử lại (UC-02 E1, TE9C73E) */}
+      {mapError && (
+        <div
+          data-testid="map-error-banner"
+          className="absolute top-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-md z-30 bg-rose-50/95 backdrop-blur-sm border border-rose-200 text-rose-900 px-4 py-3 rounded-2xl shadow-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-4 duration-300"
+        >
+          <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+          <div className="flex-1 text-xs">
+            <p className="font-semibold text-rose-900">Không thể tải dữ liệu bản đồ</p>
+            <p className="mt-0.5 text-rose-800 leading-relaxed">
+              {mapError}
+            </p>
+            <div className="mt-2.5 flex items-center gap-2">
+              <button
+                type="button"
+                data-testid="map-retry-btn"
+                onClick={() => {
+                  setMapError(null);
+                  loadListings(true);
+                }}
+                className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-medium text-[11px] transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
+              >
+                <RotateCw size={12} />
+                <span>Thử lại</span>
+              </button>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMapError(null)}
+            className="text-rose-400 hover:text-rose-700 p-1 -mr-1 cursor-pointer"
             title="Đóng thông báo"
             aria-label="Đóng thông báo"
           >
