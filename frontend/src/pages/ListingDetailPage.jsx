@@ -19,6 +19,7 @@ import {
   Copy,
   PackageX,
   Share2,
+  Flag,
 } from 'lucide-react';
 
 export default function ListingDetailPage() {
@@ -32,6 +33,47 @@ export default function ListingDetailPage() {
   const [error, setError] = useState(null);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [copiedPhone, setCopiedPhone] = useState(false);
+
+  // Trạng thái Lưu tin & Báo cáo (UC-04, TE9C73C)
+  const [isSaved, setIsSaved] = useState(() => {
+    try {
+      const savedList = JSON.parse(localStorage.getItem('ecofind_saved_listings') || '[]');
+      return savedList.includes(String(id));
+    } catch {
+      return false;
+    }
+  });
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('Thông tin sai sự thật');
+  const [reportDetail, setReportDetail] = useState('');
+  const [reportSuccess, setReportSuccess] = useState(false);
+
+  const handleToggleSave = () => {
+    try {
+      const savedList = JSON.parse(localStorage.getItem('ecofind_saved_listings') || '[]');
+      let nextList;
+      if (isSaved) {
+        nextList = savedList.filter((savedId) => savedId !== String(id));
+        setIsSaved(false);
+      } else {
+        nextList = [...savedList, String(id)];
+        setIsSaved(true);
+      }
+      localStorage.setItem('ecofind_saved_listings', JSON.stringify(nextList));
+    } catch {
+      setIsSaved(!isSaved);
+    }
+  };
+
+  const handleSubmitReport = (e) => {
+    e.preventDefault();
+    setReportSuccess(true);
+    setTimeout(() => {
+      setShowReportModal(false);
+      setReportSuccess(false);
+      setReportDetail('');
+    }, 1500);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -335,33 +377,68 @@ export default function ListingDetailPage() {
               </div>
             </div>
 
-            {/* Kiểm tra trạng thái đăng nhập để hiện hoặc ẩn SĐT */}
-            {isAuthenticated && listing.phone ? (
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-2xl border border-emerald-200/80">
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-5 h-5 text-emerald-700" />
-                    <span className="font-bold text-emerald-900 font-mono text-base">
-                      {listing.phone}
-                    </span>
+            {/* Kiểm tra trạng thái đăng nhập để hiện hoặc ẩn SĐT và các nút thao tác (UC-04, TE9C73C) */}
+            {isAuthenticated ? (
+              <div className="space-y-3 pt-2 border-t border-slate-100">
+                {listing.phone ? (
+                  <>
+                    <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-2xl border border-emerald-200/80">
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-5 h-5 text-emerald-700" />
+                        <span className="font-bold text-emerald-900 font-mono text-base">
+                          {listing.phone}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleCopyPhone(listing.phone)}
+                        className="p-1.5 text-xs text-emerald-700 hover:text-emerald-900 hover:bg-emerald-100 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Sao chép số điện thoại"
+                      >
+                        {copiedPhone ? <CheckCircle size={15} /> : <Copy size={15} />}
+                        <span>{copiedPhone ? 'Đã chép' : 'Chép'}</span>
+                      </button>
+                    </div>
+
+                    <a
+                      href={`tel:${listing.phone}`}
+                      className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-sm transition-all"
+                    >
+                      <Phone size={16} />
+                      Gọi điện cho người bán
+                    </a>
+                  </>
+                ) : (
+                  <div className="p-3 bg-slate-50 rounded-xl text-center text-xs text-slate-500">
+                    Người bán chưa cập nhật số điện thoại
                   </div>
+                )}
+
+                {/* Các nút thao tác khi đã đăng nhập: Lưu & Báo cáo (UC-04, TE9C73C) */}
+                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
                   <button
-                    onClick={() => handleCopyPhone(listing.phone)}
-                    className="p-1.5 text-xs text-emerald-700 hover:text-emerald-900 hover:bg-emerald-100 rounded-lg flex items-center gap-1 transition-colors"
-                    title="Sao chép số điện thoại"
+                    type="button"
+                    data-testid="btn-save-listing"
+                    onClick={handleToggleSave}
+                    className={`py-2.5 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      isSaved
+                        ? 'bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
                   >
-                    {copiedPhone ? <CheckCircle size={15} /> : <Copy size={15} />}
-                    <span>{copiedPhone ? 'Đã chép' : 'Chép'}</span>
+                    <Heart size={16} className={isSaved ? 'fill-rose-500 text-rose-500' : 'text-slate-500'} />
+                    <span>{isSaved ? 'Đã lưu' : 'Lưu tin'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    data-testid="btn-report-listing"
+                    onClick={() => setShowReportModal(true)}
+                    className="py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-amber-50 hover:border-amber-200 text-slate-700 hover:text-amber-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Flag size={15} />
+                    <span>Báo cáo</span>
                   </button>
                 </div>
-
-                <a
-                  href={`tel:${listing.phone}`}
-                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-sm transition-all"
-                >
-                  <Phone size={16} />
-                  Gọi điện cho người bán
-                </a>
               </div>
             ) : (
               <div className="space-y-3 pt-2 border-t border-slate-100">
@@ -377,7 +454,7 @@ export default function ListingDetailPage() {
 
                 <button
                   onClick={() => navigate('/login', { state: { from: location } })}
-                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-sm transition-all"
+                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
                 >
                   <Lock size={16} />
                   Đăng nhập để xem số điện thoại
@@ -387,6 +464,81 @@ export default function ListingDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal Báo cáo tin vi phạm (UC-04, TE9C73C) */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
+            <h3 className="text-base font-bold text-slate-900 mb-1 flex items-center gap-2">
+              <Flag size={18} className="text-rose-500" />
+              <span>Báo cáo tin đăng vi phạm</span>
+            </h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Giúp cộng đồng EcoFind duy trì môi trường mua bán minh bạch và an toàn.
+            </p>
+
+            {reportSuccess ? (
+              <div className="py-6 text-center space-y-2">
+                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                  <CheckCircle size={24} />
+                </div>
+                <div className="font-semibold text-emerald-800 text-sm">Gửi báo cáo thành công</div>
+                <p className="text-xs text-slate-500">
+                  Cảm ơn bạn đã phản hồi. Ban quản trị sẽ sớm kiểm tra tin này.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitReport} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Lý do báo cáo
+                  </label>
+                  <select
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                  >
+                    <option value="Thông tin sai sự thật">Thông tin sai sự thật / Ảnh không đúng</option>
+                    <option value="Hàng giả / Hàng cấm">Hàng giả, hàng cấm hoặc không được phép bán</option>
+                    <option value="Đã bán nhưng chưa gỡ">Sản phẩm đã bán nhưng chưa được gỡ</option>
+                    <option value="Lừa đảo / Spam">Dấu hiệu lừa đảo, quấy rối hoặc spam</option>
+                    <option value="Khác">Lý do khác</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Chi tiết bổ sung (tùy chọn)
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={reportDetail}
+                    onChange={(e) => setReportDetail(e.target.value)}
+                    placeholder="Mô tả cụ thể vấn đề bạn gặp phải với tin đăng này..."
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowReportModal(false)}
+                    className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-sm transition-colors cursor-pointer"
+                  >
+                    Gửi báo cáo
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

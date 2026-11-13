@@ -190,4 +190,68 @@ describe('ListingDetailPage Component (UC-04, FR-07, BR-01, BR-05, TC-04, TE9C73
     const backBtn = screen.getByRole('link', { name: /Quay về bản đồ/i });
     expect(backBtn).toBeInTheDocument();
   });
+
+  test('8. TE9C73C: Đã đăng nhập: hiển thị đầy đủ SĐT, nút Lưu và nút Báo cáo', async () => {
+    localStorage.setItem('access_token', 'mock_token');
+    localStorage.setItem(
+      'auth_user',
+      JSON.stringify({ userId: 1, email: 'buyer@ecofind.vn', role: 'user' })
+    );
+
+    vi.spyOn(listingsApi, 'getListingDetailApi').mockResolvedValue({
+      ...mockListingData,
+      phone: '0912345678',
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('0912345678')).toBeInTheDocument();
+    });
+
+    // Kiểm tra nút Lưu tin và nút Báo cáo
+    const saveBtn = screen.getByTestId('btn-save-listing');
+    const reportBtn = screen.getByTestId('btn-report-listing');
+
+    expect(saveBtn).toBeInTheDocument();
+    expect(saveBtn).toHaveTextContent(/Lưu tin/i);
+    expect(reportBtn).toBeInTheDocument();
+    expect(reportBtn).toHaveTextContent(/Báo cáo/i);
+  });
+
+  test('9. TE9C73C: Bấm nút Lưu tin đổi trạng thái, bấm Báo cáo mở modal báo cáo', async () => {
+    localStorage.setItem('access_token', 'mock_token');
+    localStorage.setItem(
+      'auth_user',
+      JSON.stringify({ userId: 1, email: 'buyer@ecofind.vn', role: 'user' })
+    );
+
+    vi.spyOn(listingsApi, 'getListingDetailApi').mockResolvedValue({
+      ...mockListingData,
+      phone: '0912345678',
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('0912345678')).toBeInTheDocument();
+    });
+
+    const saveBtn = screen.getByTestId('btn-save-listing');
+    fireEvent.click(saveBtn);
+    expect(screen.getByText(/Đã lưu/i)).toBeInTheDocument();
+
+    const reportBtn = screen.getByTestId('btn-report-listing');
+    fireEvent.click(reportBtn);
+
+    expect(screen.getByText(/Báo cáo tin đăng vi phạm/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Gửi báo cáo/i })).toBeInTheDocument();
+
+    const submitReportBtn = screen.getByRole('button', { name: /Gửi báo cáo/i });
+    fireEvent.click(submitReportBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Gửi báo cáo thành công/i)).toBeInTheDocument();
+    });
+  });
 });
