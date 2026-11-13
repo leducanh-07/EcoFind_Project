@@ -6,6 +6,7 @@ from app.routers.health import router as health_router
 from app.routers.auth import router as auth_router
 from app.routers.categories import router as categories_router
 from app.routers.listings import router as listings_router
+from app.routers.geocode import router as geocode_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -33,6 +34,7 @@ app.include_router(health_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(categories_router, prefix="/api")
 app.include_router(listings_router, prefix="/api")
+app.include_router(geocode_router, prefix="/api")
 
 
 @app.get("/", tags=["Root"])
