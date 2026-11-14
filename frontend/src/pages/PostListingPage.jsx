@@ -113,7 +113,7 @@ export default function PostListingPage() {
     if (!title.trim()) {
       newErrors.title = 'Vui lòng nhập tiêu đề món đồ (E1).';
     } else if (title.trim().length > 100) {
-      newErrors.title = 'Tiêu đề không được vượt quá 100 ký tự.';
+      newErrors.title = 'Tiêu đề không được vượt quá 100 ký tự (E1).';
     }
 
     if (!categoryId) {
@@ -128,7 +128,7 @@ export default function PostListingPage() {
     }
 
     if (!description.trim()) {
-      newErrors.description = 'Vui lòng mô tả chi tiết món đồ.';
+      newErrors.description = 'Vui lòng mô tả chi tiết món đồ (E1).';
     }
 
     // Bắt buộc có ít nhất 1 ảnh (BR-04, UC-05)
@@ -344,7 +344,7 @@ export default function PostListingPage() {
           </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-8 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
+        <form noValidate onSubmit={handleSubmit} className="space-y-8 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
           {/* Banner lỗi tổng quan hoặc lỗi 400 từ server */}
           {globalError && (
             <div
@@ -453,7 +453,18 @@ export default function PostListingPage() {
                   <label htmlFor="price-input" className="block text-sm font-semibold text-slate-700">
                     Giá bán (VNĐ) <span className="text-red-500">*</span>
                   </label>
-                  <span className="text-xs text-emerald-600 font-medium">0đ = Cho tặng</span>
+                  <button
+                    type="button"
+                    data-testid="quick-free-btn"
+                    onClick={() => {
+                      setPrice('0');
+                      if (errors.price) setErrors((prev) => ({ ...prev, price: null }));
+                    }}
+                    className="text-xs px-2 py-0.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold border border-emerald-200 transition-colors cursor-pointer"
+                    title="Bấm để đặt giá cho tặng 0 đ"
+                  >
+                    Cho tặng (0 đ)
+                  </button>
                 </div>
                 <div className="relative">
                   <input
@@ -478,6 +489,14 @@ export default function PostListingPage() {
                     VNĐ
                   </span>
                 </div>
+                {/* Gợi ý định dạng giá */}
+                {price !== '' && !errors.price && (
+                  <p className="text-[11px] text-slate-500 mt-1" data-testid="price-formatted-hint">
+                    {Number(price) === 0
+                      ? '🎁 Món đồ sẽ được đăng dưới dạng Cho tặng (Miễn phí)'
+                      : `Giá hiển thị: ${Number(price).toLocaleString('vi-VN')} đ`}
+                  </p>
+                )}
                 {errors.price && (
                   <p className="text-xs text-red-600 mt-1 flex items-center gap-1" data-testid="error-price">
                     <AlertCircle size={13} /> {errors.price}
