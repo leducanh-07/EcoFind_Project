@@ -1,10 +1,10 @@
 /**
- * PostListingPage Component (UC-05, E5, FR-08, BR-04, BR-05, TC-05, TC-06).
+ * PostListingPage Component (UC-05, E5, FR-08, BR-04, BR-05, TC-05, TC-06, TE9C744, TE9C745).
  * Màn hình Đăng tin bán đồ cũ:
  *  - Thông tin cơ bản: Tiêu đề, Danh mục, Giá bán (0đ là Cho tặng), Mô tả.
  *  - Hình ảnh sản phẩm: 1–5 ảnh JPG/PNG, xem trước, đổi thứ tự, xóa (PhotoUploader).
  *  - Vị trí: Địa chỉ và tọa độ.
- *  - Chấm điểm tình trạng: 3 điểm thành phần và tính điểm tổng/hạng tự động.
+ *  - Chấm điểm tình trạng: 3 điểm thành phần (0-10) và tính điểm tổng/hạng tự động (ConditionScorer).
  */
 
 import React, { useState, useEffect } from 'react';
@@ -22,6 +22,11 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import PhotoUploader from '../components/PhotoUploader';
+import ConditionScorer, {
+  calculateTotalScore,
+  getConditionRank,
+  validateComponentScore,
+} from '../components/ConditionScorer';
 import { getCategoriesApi } from '../api/categories';
 
 export default function PostListingPage() {
@@ -36,9 +41,11 @@ export default function PostListingPage() {
   const [photos, setPhotos] = useState([]);
 
   // 3 Điểm tình trạng tự chấm (BR-01, 0 đến 10)
-  const [scoreAppearance, setScoreAppearance] = useState(8.0);
-  const [scoreFunction, setScoreFunction] = useState(8.0);
-  const [scoreAccessories, setScoreAccessories] = useState(8.0);
+  const [scores, setScores] = useState({
+    appearance: 8.0,
+    function: 8.0,
+    accessories: 8.0,
+  });
 
   // Categories list
   const [categories, setCategories] = useState([]);
@@ -68,24 +75,7 @@ export default function PostListingPage() {
     loadCategories();
   }, []);
 
-  // Tính điểm tổng và xếp hạng theo BR-01, BR-02
-  const calculateTotalScore = (app, fn, acc) => {
-    const total = 0.4 * app + 0.4 * fn + 0.2 * acc;
-    return Math.round(total * 10) / 10;
-  };
-
-  const getConditionRank = (total) => {
-    if (total >= 9.0) return { label: 'Mới', color: 'bg-emerald-500 text-white' };
-    if (total >= 7.0) return { label: 'Tốt', color: 'bg-blue-500 text-white' };
-    if (total >= 5.0) return { label: 'Khá', color: 'bg-amber-500 text-white' };
-    return { label: 'Cũ', color: 'bg-slate-500 text-white' };
-  };
-
-  const totalScore = calculateTotalScore(
-    Number(scoreAppearance) || 0,
-    Number(scoreFunction) || 0,
-    Number(scoreAccessories) || 0
-  );
+  const totalScore = calculateTotalScore(scores.appearance, scores.function, scores.accessories);
   const rank = getConditionRank(totalScore);
 
   // Client validation
@@ -124,6 +114,16 @@ export default function PostListingPage() {
       newErrors.address = 'Vui lòng nhập địa chỉ giao dịch (E1).';
     }
 
+    // Kiểm tra 3 điểm thành phần 0-10 (E3)
+    const appErr = validateComponentScore(scores.appearance, 'Điểm ngoại quan');
+    if (appErr) newErrors.appearance = appErr;
+
+    const funcErr = validateComponentScore(scores.function, 'Điểm chức năng');
+    if (funcErr) newErrors.function = funcErr;
+
+    const accErr = validateComponentScore(scores.accessories, 'Điểm phụ kiện');
+    if (accErr) newErrors.accessories = accErr;
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -137,7 +137,7 @@ export default function PostListingPage() {
       setSubmitSuccess({
         title,
         totalScore,
-        rank: rank.label,
+        rank: rank.rank,
         photoCount: photos.length,
       });
     } catch (err) {
@@ -186,6 +186,7 @@ export default function PostListingPage() {
                 setPrice('');
                 setDescription('');
                 setAddress('');
+                setScores({ appearance: 8.0, function: 8.0, accessories: 8.0 });
               }}
               className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors"
             >
@@ -391,69 +392,25 @@ export default function PostListingPage() {
             </div>
           </section>
 
-          {/* PHẦN 4: CHẤM ĐIỂM TÌNH TRẠNG (BR-01, BR-02) */}
+          {/* PHẦN 4: CHẤM ĐIỂM TÌNH TRẠNG (TE9C745, BR-01, BR-02, E3) */}
           <section className="space-y-4 pb-6 border-b border-slate-100">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <Sparkles size={18} className="text-emerald-600" /> Đánh giá tình trạng (Tự chấm 0–10)
-              </h2>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500">Điểm tổng kết:</span>
-                <span className="text-sm font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
-                  {totalScore.toFixed(1)} / 10
-                </span>
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${rank.color}`}>
-                  {rank.label}
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Ngoại quan (40%): {scoreAppearance}
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="10"
-                  step="0.5"
-                  value={scoreAppearance}
-                  onChange={(e) => setScoreAppearance(parseFloat(e.target.value))}
-                  className="w-full accent-emerald-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Chức năng (40%): {scoreFunction}
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="10"
-                  step="0.5"
-                  value={scoreFunction}
-                  onChange={(e) => setScoreFunction(parseFloat(e.target.value))}
-                  className="w-full accent-emerald-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Phụ kiện (20%): {scoreAccessories}
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="10"
-                  step="0.5"
-                  value={scoreAccessories}
-                  onChange={(e) => setScoreAccessories(parseFloat(e.target.value))}
-                  className="w-full accent-emerald-600"
-                />
-              </div>
-            </div>
+            <ConditionScorer
+              values={scores}
+              onChange={(newScores) => {
+                setScores(newScores);
+                setErrors((prev) => ({
+                  ...prev,
+                  appearance: null,
+                  function: null,
+                  accessories: null,
+                }));
+              }}
+              errors={{
+                appearance: errors.appearance,
+                function: errors.function,
+                accessories: errors.accessories,
+              }}
+            />
           </section>
 
           {/* NÚT GỬI DUYỆT TIN */}
