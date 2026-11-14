@@ -83,13 +83,25 @@ export async function fetchWithAuth(endpoint, options = {}) {
 
     if (!response.ok) {
       const errorObj = data?.error || {};
-      const message =
+      let fields = errorObj.fields || data?.fields || null;
+      let message =
         errorObj.message ||
-        data?.detail ||
+        (typeof data?.detail === 'string' ? data.detail : null) ||
         `Request failed with status ${response.status}`;
-      const code = errorObj.code || response.status;
-      const fields = errorObj.fields || null;
 
+      if (Array.isArray(data?.detail)) {
+        if (!fields) fields = {};
+        data.detail.forEach((errItem) => {
+          const loc = errItem.loc || [];
+          const fieldName = loc.length > 0 ? String(loc[loc.length - 1]) : 'general';
+          if (!fields[fieldName]) {
+            fields[fieldName] = errItem.msg;
+          }
+        });
+        message = data.detail.map((d) => d.msg).join(', ');
+      }
+
+      const code = errorObj.code || response.status;
       throw new ApiError(message, response.status, code, fields);
     }
 

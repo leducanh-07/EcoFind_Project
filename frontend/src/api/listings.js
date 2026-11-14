@@ -54,3 +54,15 @@ export async function uploadPhotosApi(files) {
     body: formData,
   });
 }
+
+/**
+ * Tạo mới tin đăng bán đồ cũ (STT 31, 36, TE9C746, UC-05, FR-08, FR-09).
+ * Gửi form multipart/form-data chứa thông tin tin đăng, ảnh và 3 điểm tình trạng.
+ */
+export async function createListingApi(formData) {
+  return await fetchWithAuth('/api/listings', {
+    method: 'POST',
+    body: formData,
+  });
+}
+

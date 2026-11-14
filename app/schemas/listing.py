@@ -62,3 +62,17 @@ class ListingDetailResponse(BaseSchema):
     status: str
     photos: List[PhotoItem] = []
     created_at: Optional[datetime] = None
+
+
+class ListingCreateResponse(BaseSchema):
+    """
+    Schema phản hồi khi đăng tin mới thành công (STT 31, 36, UC-05, FR-08, FR-09).
+    Trả 201 kèm id, status ('pending'), totalScore, rank, message.
+    """
+    id: int
+    status: str = "pending"
+    total_score: float
+    totalScore: Optional[float] = None
+    rank: str
+    message: str = "Đã gửi, chờ duyệt"
+

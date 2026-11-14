@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.category import Category
 from app.models.listing import Listing
+from app.models.listing_photo import ListingPhoto
 
 
 class ListingRepository:
@@ -250,3 +251,58 @@ class ListingRepository:
         )
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def create(
+        self,
+        db: AsyncSession,
+        *,
+        seller_id: int,
+        category_id: int,
+        title: str,
+        description: str,
+        price: float,
+        address: str,
+        lat: float,
+        lng: float,
+        score_appearance: float,
+        score_function: float,
+        score_accessories: float,
+        total_score: float,
+        status: str = "pending",
+        photos_data: Optional[List[dict]] = None,
+    ) -> Listing:
+        """
+        Tạo mới tin đăng và lưu ảnh trong cùng một transaction (STT 31, UC-05, FR-08, FR-09).
+        Mặc định status = 'pending' để Admin kiểm duyệt (chưa hiển thị trên bản đồ theo FR-09).
+        """
+        listing = Listing(
+            seller_id=seller_id,
+            category_id=category_id,
+            title=title,
+            description=description,
+            price=price,
+            address=address,
+            lat=lat,
+            lng=lng,
+            score_appearance=score_appearance,
+            score_function=score_function,
+            score_accessories=score_accessories,
+            total_score=total_score,
+            status=status,
+        )
+        db.add(listing)
+        await db.flush()
+
+        if photos_data:
+            for idx, p in enumerate(photos_data):
+                photo = ListingPhoto(
+                    listing_id=listing.listing_id,
+                    url=p["url"],
+                    sort_order=p.get("sort_order", idx),
+                )
+                db.add(photo)
+
+        await db.commit()
+        await db.refresh(listing)
+        return listing
+

@@ -16,8 +16,15 @@ from app.core.districts import (
 )
 from app.core.geo import bounding_box_for_radius, haversine_km
 from app.models.user import User
+from fastapi import UploadFile
+from app.adapters.image_storage_adapter import (
+    process_and_save_upload_files,
+    default_image_storage_adapter,
+    validate_image_file,
+)
+from app.repositories.category_repository import CategoryRepository
 from app.repositories.listing_repository import ListingRepository
-from app.schemas.listing import ListingMapItem, ListingDetailResponse, PhotoItem
+from app.schemas.listing import ListingMapItem, ListingDetailResponse, PhotoItem, ListingCreateResponse
 from app.services.score_calculator import ScoreCalculator
 from app.core.exceptions import BadRequestException, NotFoundException
 
@@ -483,3 +490,135 @@ class ListingService:
             photos=photos,
             created_at=listing.created_at,
         )
+
+    async def create_listing(
+        self,
+        db: AsyncSession,
+        *,
+        seller: User,
+        title: str,
+        category_id: Optional[int],
+        price: Optional[float],
+        description: str,
+        address: str,
+        lat: Optional[float],
+        lng: Optional[float],
+        score_appearance: Optional[float],
+        score_function: Optional[float],
+        score_accessories: Optional[float],
+        photos: List[UploadFile],
+    ) -> ListingCreateResponse:
+        """
+        Tạo tin đăng bán đồ cũ mới (STT 31, 36, TE9C746, UC-05, FR-08, FR-09):
+          - Nhận multipart: title, category_id, price, description, lat, lng, address, 1-5 ảnh, 3 điểm thành phần.
+          - Kiểm tra các trường bắt buộc, giá 0-1.000.000.000, điểm 0-10, ảnh 1-5 tệp.
+          - Lỗi 400 kèm fields để client đánh dấu đúng trường.
+          - Server tính lại điểm tổng bằng ScoreCalculator và bỏ qua giá trị client (TC-05).
+          - Lưu status = 'pending'.
+          - Trả 201 kèm id, status, totalScore, rank, message = 'Đã gửi, chờ duyệt'.
+        """
+        fields: Dict[str, str] = {}
+
+        # 1. Kiểm tra Tiêu đề
+        clean_title = (title or "").strip()
+        if not clean_title:
+            fields["title"] = "Tiêu đề không được để trống (E1)"
+        elif len(clean_title) > 100:
+            fields["title"] = "Tiêu đề không được vượt quá 100 ký tự"
+
+        # 2. Kiểm tra Danh mục
+        if category_id is None:
+            fields["categoryId"] = "Vui lòng chọn danh mục (E1)"
+        else:
+            cat_repo = CategoryRepository()
+            cat = await cat_repo.find_by_id(db, category_id)
+            if not cat:
+                fields["categoryId"] = f"Danh mục #{category_id} không tồn tại"
+
+        # 3. Kiểm tra Giá bán (BR-05, E4)
+        if price is None:
+            fields["price"] = "Giá không được để trống (E1)"
+        else:
+            try:
+                num_price = float(price)
+                if num_price < 0 or num_price > 1_000_000_000:
+                    fields["price"] = "Giá bán phải từ 0 đến 1.000.000.000 đ (BR-05, E4)"
+            except (ValueError, TypeError):
+                fields["price"] = "Giá bán không hợp lệ"
+
+        # 4. Kiểm tra Mô tả
+        clean_desc = (description or "").strip()
+        if not clean_desc:
+            fields["description"] = "Mô tả chi tiết không được để trống (E1)"
+
+        # 5. Kiểm tra Địa chỉ và Tọa độ
+        clean_address = (address or "").strip()
+        if not clean_address:
+            fields["address"] = "Địa chỉ giao dịch không được để trống (E1)"
+
+        effective_lat = float(lat) if lat is not None else 10.7769
+        effective_lng = float(lng) if lng is not None else 106.7009
+
+        # 6. Kiểm tra 3 điểm thành phần (0.0 - 10.0, E3)
+        for name, val in [
+            ("appearance", score_appearance),
+            ("function", score_function),
+            ("accessories", score_accessories),
+        ]:
+            if val is None:
+                fields[name] = f"Điểm {name} không được để trống (E1)"
+            else:
+                try:
+                    num_val = float(val)
+                    if num_val < 0.0 or num_val > 10.0:
+                        fields[name] = f"Điểm {name} phải từ 0 đến 10 (E3)"
+                except (ValueError, TypeError):
+                    fields[name] = f"Điểm {name} không hợp lệ"
+
+        # 7. Kiểm tra ảnh tải lên (1-5 ảnh, BR-04)
+        if not photos or len(photos) == 0:
+            fields["photos"] = "Vui lòng tải lên ít nhất 1 ảnh sản phẩm (BR-04)"
+        elif len(photos) > 5:
+            fields["photos"] = "Mỗi tin chỉ được tải tối đa 5 ảnh (BR-04)"
+
+        # Nếu có lỗi trường nào thì ném 400 kèm fields
+        if fields:
+            raise BadRequestException(message="Dữ liệu đăng tin không hợp lệ", fields=fields)
+
+        # 8. Kiểm tra và lưu từng file ảnh qua adapter
+        saved_urls = await process_and_save_upload_files(photos)
+        photos_data = [{"url": u, "sort_order": idx} for idx, u in enumerate(saved_urls)]
+
+        # 9. Server tính lại điểm tổng bằng ScoreCalculator và bỏ qua giá trị client (TC-05)
+        total_score, rank_label = ScoreCalculator.calculate(
+            score_appearance, score_function, score_accessories
+        )
+
+        # 10. Lưu tin và ảnh trong cùng 1 transaction, status = 'pending' (chưa hiện bản đồ FR-09)
+        listing = await self.listing_repo.create(
+            db,
+            seller_id=seller.user_id,
+            category_id=category_id,
+            title=clean_title,
+            description=clean_desc,
+            price=price,
+            address=clean_address,
+            lat=effective_lat,
+            lng=effective_lng,
+            score_appearance=score_appearance,
+            score_function=score_function,
+            score_accessories=score_accessories,
+            total_score=total_score,
+            status="pending",
+            photos_data=photos_data,
+        )
+
+        return ListingCreateResponse(
+            id=listing.listing_id,
+            status=listing.status,
+            total_score=total_score,
+            totalScore=total_score,
+            rank=rank_label,
+            message="Đã gửi, chờ duyệt",
+        )
+

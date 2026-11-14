@@ -1,13 +1,16 @@
 /**
- * PostListingPage Component (UC-05, E5, FR-08, BR-04, BR-05, TC-05, TC-06, TE9C744, TE9C745).
+ * PostListingPage Component (UC-05, E5, FR-08, FR-09, BR-01, BR-02, BR-04, BR-05, TC-05, TC-06, TE9C744, TE9C745, TE9C746).
  * Màn hình Đăng tin bán đồ cũ:
  *  - Thông tin cơ bản: Tiêu đề, Danh mục, Giá bán (0đ là Cho tặng), Mô tả.
  *  - Hình ảnh sản phẩm: 1–5 ảnh JPG/PNG, xem trước, đổi thứ tự, xóa (PhotoUploader).
- *  - Vị trí: Địa chỉ và tọa độ.
+ *  - Vị trí: Địa chỉ và tọa độ (lat, lng).
  *  - Chấm điểm tình trạng: 3 điểm thành phần (0-10) và tính điểm tổng/hạng tự động (ConditionScorer).
+ *  - Gửi duyệt & phản hồi kết quả: Gửi multipart/form-data, trạng thái đang gửi, chặn bấm 2 lần,
+ *    đánh dấu lỗi 400 theo fields, thông báo 'Đã gửi, chờ duyệt' và chuyển sang Tin của tôi,
+ *    tin chưa hiện trên bản đồ (FR-09).
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   PlusCircle,
@@ -20,6 +23,9 @@ import {
   AlertCircle,
   HelpCircle,
   ArrowRight,
+  Loader2,
+  Clock,
+  EyeOff,
 } from 'lucide-react';
 import PhotoUploader from '../components/PhotoUploader';
 import ConditionScorer, {
@@ -28,6 +34,7 @@ import ConditionScorer, {
   validateComponentScore,
 } from '../components/ConditionScorer';
 import { getCategoriesApi } from '../api/categories';
+import { createListingApi } from '../api/listings';
 
 export default function PostListingPage() {
   const navigate = useNavigate();
@@ -38,6 +45,8 @@ export default function PostListingPage() {
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
+  const [lat, setLat] = useState(10.7769);
+  const [lng, setLng] = useState(106.7009);
   const [photos, setPhotos] = useState([]);
 
   // 3 Điểm tình trạng tự chấm (BR-01, 0 đến 10)
@@ -53,8 +62,12 @@ export default function PostListingPage() {
 
   // Errors and submission state
   const [errors, setErrors] = useState({});
+  const [globalError, setGlobalError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(null);
+
+  // Ref to prevent double submission
+  const isSubmittingRef = useRef(false);
 
   useEffect(() => {
     async function loadCategories() {
@@ -74,6 +87,21 @@ export default function PostListingPage() {
     }
     loadCategories();
   }, []);
+
+  // Tự động chuyển hướng sang "Tin của tôi" khi đăng tin thành công sau 2.5s
+  useEffect(() => {
+    if (submitSuccess) {
+      const timer = setTimeout(() => {
+        navigate('/my-listings', {
+          state: {
+            flashMessage: 'Đã gửi, chờ duyệt',
+            newListing: submitSuccess,
+          },
+        });
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [submitSuccess, navigate]);
 
   const totalScore = calculateTotalScore(scores.appearance, scores.function, scores.accessories);
   const rank = getConditionRank(totalScore);
@@ -128,21 +156,99 @@ export default function PostListingPage() {
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Xử lý nộp form đăng tin (TE9C746, UC-05, FR-08, FR-09)
+   * - Gửi multipart/form-data
+   * - Trạng thái đang gửi (loading) và chặn bấm 2 lần
+   * - Xử lý lỗi 400: đánh dấu đúng trường theo fields
+   * - Thành công: thông báo 'Đã gửi, chờ duyệt' và chuyển sang Tin của tôi
+   */
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+    if (e && e.preventDefault) e.preventDefault();
 
+    // Chặn bấm 2 lần (Double submission prevention)
+    if (submitting || isSubmittingRef.current) {
+      return;
+    }
+
+    setGlobalError(null);
+
+    // Kiểm tra tính hợp lệ dữ liệu phía client trước
+    if (!validateForm()) {
+      return;
+    }
+
+    isSubmittingRef.current = true;
     setSubmitting(true);
+
     try {
+      // Đóng gói multipart/form-data
+      const formData = new FormData();
+      formData.append('title', title.trim());
+      formData.append('categoryId', String(categoryId));
+      formData.append('category_id', String(categoryId));
+      formData.append('price', String(price));
+      formData.append('description', description.trim());
+      formData.append('address', address.trim());
+      formData.append('lat', String(lat || 10.7769));
+      formData.append('lng', String(lng || 106.7009));
+      formData.append('score_appearance', String(scores.appearance));
+      formData.append('scoreAppearance', String(scores.appearance));
+      formData.append('score_function', String(scores.function));
+      formData.append('scoreFunction', String(scores.function));
+      formData.append('score_accessories', String(scores.accessories));
+      formData.append('scoreAccessories', String(scores.accessories));
+
+      // Đính kèm các tệp ảnh thực tế
+      photos.forEach((photo) => {
+        if (photo.file) {
+          formData.append('photos', photo.file);
+        }
+      });
+
+      // Gửi API tạo tin
+      const res = await createListingApi(formData);
+
+      // Thành công: thông báo 'Đã gửi, chờ duyệt'
       setSubmitSuccess({
-        title,
-        totalScore,
-        rank: rank.rank,
+        id: res?.id || 'new',
+        title: title.trim(),
+        price: Number(price),
+        address: address.trim(),
+        totalScore: res?.total_score ?? res?.totalScore ?? totalScore,
+        rank: res?.rank ?? rank.rank,
         photoCount: photos.length,
+        status: res?.status || 'pending',
+        message: 'Đã gửi, chờ duyệt',
       });
     } catch (err) {
-      setErrors({ form: err.message || 'Có lỗi xảy ra khi gửi tin đăng' });
+      console.error('Lỗi khi gửi duyệt tin đăng:', err);
+
+      // Xử lý lỗi 400: đánh dấu đúng trường theo fields từ backend
+      const serverFields = err.fields || err.data?.fields || {};
+      const fieldErrors = {};
+
+      if (serverFields && typeof serverFields === 'object') {
+        Object.entries(serverFields).forEach(([fieldKey, msg]) => {
+          let normKey = fieldKey;
+          if (fieldKey === 'category_id' || fieldKey === 'categoryId') normKey = 'categoryId';
+          else if (fieldKey === 'score_appearance' || fieldKey === 'scoreAppearance') normKey = 'appearance';
+          else if (fieldKey === 'score_function' || fieldKey === 'scoreFunction') normKey = 'function';
+          else if (fieldKey === 'score_accessories' || fieldKey === 'scoreAccessories') normKey = 'accessories';
+          else if (fieldKey === 'photos' || fieldKey === 'files') normKey = 'photos';
+          else if (fieldKey === 'lat' || fieldKey === 'lng') normKey = 'address';
+          fieldErrors[normKey] = msg;
+        });
+      }
+
+      if (Object.keys(fieldErrors).length > 0) {
+        setErrors((prev) => ({ ...prev, ...fieldErrors }));
+        setGlobalError('Thông tin đăng tin chưa hợp lệ. Vui lòng kiểm tra lại các trường được đánh dấu đỏ.');
+      } else {
+        setGlobalError(err.message || 'Có lỗi xảy ra khi gửi tin đăng (HTTP 400).');
+      }
     } finally {
+      isSubmittingRef.current = false;
       setSubmitting(false);
     }
   };
@@ -162,21 +268,62 @@ export default function PostListingPage() {
         </div>
       </div>
 
+      {/* Thông báo thành công: Đã gửi, chờ duyệt (TE9C746, FR-09) */}
       {submitSuccess ? (
-        <div className="bg-white p-8 rounded-2xl border border-emerald-200 shadow-sm text-center space-y-4">
-          <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center">
+        <div
+          data-testid="submit-success-card"
+          className="bg-white p-8 rounded-3xl border border-emerald-200 shadow-sm text-center space-y-5 animate-in fade-in"
+        >
+          <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center shadow-sm">
             <CheckCircle2 size={36} />
           </div>
-          <h2 className="text-xl font-bold text-slate-800">Gửi tin đăng thành công!</h2>
-          <p className="text-sm text-slate-600 max-w-md mx-auto">
-            Tin đăng "{submitSuccess.title}" với {submitSuccess.photoCount} ảnh đã được tiếp nhận và chuyển sang trạng thái <strong>Chờ duyệt (Pending)</strong>.
-          </p>
+
+          <div className="space-y-1">
+            <h2 className="text-2xl font-bold text-emerald-800" data-testid="success-status-text">
+              Đã gửi, chờ duyệt
+            </h2>
+            <p className="text-sm font-semibold text-emerald-700">
+              Gửi tin đăng thành công!
+            </p>
+            <p className="text-sm text-slate-600 max-w-md mx-auto">
+              Tin đăng <strong>"{submitSuccess.title}"</strong> ({submitSuccess.photoCount} ảnh) đã được tiếp nhận và chuyển sang trạng thái <strong>Chờ duyệt (Pending)</strong>.
+            </p>
+          </div>
+
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-xl text-sm font-semibold text-slate-700">
-            <span>Điểm đánh giá: {submitSuccess.totalScore}/10</span>
+            <span>Điểm đánh giá: {Number(submitSuccess.totalScore).toFixed(1)}/10</span>
             <span className="text-slate-300">•</span>
             <span>Hạng: {submitSuccess.rank}</span>
           </div>
-          <div className="pt-4 flex justify-center gap-3">
+
+          {/* Banner quy tắc FR-09 */}
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 max-w-lg mx-auto text-left flex items-start gap-3">
+            <EyeOff className="text-amber-600 mt-0.5 shrink-0" size={18} />
+            <div className="text-xs text-slate-600 leading-relaxed">
+              <strong className="text-slate-800">Quy tắc hiển thị (FR-09):</strong> Tin chưa hiện trên bản đồ công khai cho đến khi được Ban quản trị phê duyệt. Bạn có thể theo dõi tiến độ duyệt tin trong mục <strong>Tin của tôi</strong>.
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-400 italic">
+            Tự động chuyển sang trang Tin của tôi sau vài giây...
+          </p>
+
+          <div className="pt-2 flex flex-col sm:flex-row justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                navigate('/my-listings', {
+                  state: {
+                    flashMessage: 'Đã gửi, chờ duyệt',
+                    newListing: submitSuccess,
+                  },
+                });
+              }}
+              data-testid="go-to-my-listings-btn"
+              className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors shadow-md shadow-emerald-600/20"
+            >
+              Chuyển sang Tin của tôi <ArrowRight size={18} />
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -187,22 +334,32 @@ export default function PostListingPage() {
                 setDescription('');
                 setAddress('');
                 setScores({ appearance: 8.0, function: 8.0, accessories: 8.0 });
+                setErrors({});
+                setGlobalError(null);
               }}
-              className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors"
+              className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors"
             >
-              Đăng tin khác
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="px-5 py-2.5 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors shadow-sm"
-            >
-              Về trang chủ bản đồ
+              Đăng thêm tin khác
             </button>
           </div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-8 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
+          {/* Banner lỗi tổng quan hoặc lỗi 400 từ server */}
+          {globalError && (
+            <div
+              role="alert"
+              data-testid="global-error-banner"
+              className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3 text-red-800 text-sm shadow-sm"
+            >
+              <AlertCircle size={20} className="text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-red-900">Không thể gửi duyệt tin đăng (Lỗi 400)</p>
+                <p className="text-xs text-red-700 mt-0.5">{globalError}</p>
+              </div>
+            </div>
+          )}
+
           {/* PHẦN 1: HÌNH ẢNH SẢN PHẨM (TE9C744, BR-04) */}
           <section className="space-y-3 pb-6 border-b border-slate-100">
             <PhotoUploader
@@ -241,22 +398,23 @@ export default function PostListingPage() {
                 maxLength={100}
                 className={`w-full px-4 py-2.5 rounded-xl border text-sm transition-colors focus:outline-none focus:ring-2 ${
                   errors.title
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-200 bg-red-50/20'
+                    ? 'border-red-400 focus:border-red-500 focus:ring-red-200 bg-red-50/20'
                     : 'border-slate-300 focus:border-emerald-500 focus:ring-emerald-200'
                 }`}
               />
               {errors.title && (
-                <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                <p className="text-xs text-red-600 mt-1 flex items-center gap-1" data-testid="error-title">
                   <AlertCircle size={13} /> {errors.title}
                 </p>
               )}
             </div>
 
-            {/* Danh mục & Giá bán */}
+            {/* Danh mục và Giá bán */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Danh mục */}
               <div>
                 <label htmlFor="category-select" className="block text-sm font-semibold text-slate-700 mb-1">
-                  Danh mục hàng hóa <span className="text-red-500">*</span>
+                  Danh mục hàng hóa / sản phẩm <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="category-select"
@@ -265,41 +423,37 @@ export default function PostListingPage() {
                     setCategoryId(e.target.value);
                     if (errors.categoryId) setErrors((prev) => ({ ...prev, categoryId: null }));
                   }}
+                  disabled={loadingCategories}
                   className={`w-full px-4 py-2.5 rounded-xl border text-sm transition-colors focus:outline-none focus:ring-2 bg-white ${
                     errors.categoryId
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
+                      ? 'border-red-400 focus:border-red-500 focus:ring-red-200 bg-red-50/20'
                       : 'border-slate-300 focus:border-emerald-500 focus:ring-emerald-200'
                   }`}
                 >
-                  <option value="">-- Chọn danh mục --</option>
-                  {categories.map((c) => (
-                    <option key={c.categoryId || c.id} value={c.categoryId || c.id}>
-                      {c.name}
-                    </option>
-                  ))}
+                  <option value="">-- Chọn danh mục phù hợp --</option>
+                  {categories.map((cat) => {
+                    const catVal = cat.id || cat.category_id || cat.categoryId;
+                    return (
+                      <option key={catVal} value={catVal}>
+                        {cat.name}
+                      </option>
+                    );
+                  })}
                 </select>
                 {errors.categoryId && (
-                  <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                  <p className="text-xs text-red-600 mt-1 flex items-center gap-1" data-testid="error-categoryId">
                     <AlertCircle size={13} /> {errors.categoryId}
                   </p>
                 )}
               </div>
 
+              {/* Giá bán (BR-05) */}
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label htmlFor="price-input" className="block text-sm font-semibold text-slate-700">
                     Giá bán (VNĐ) <span className="text-red-500">*</span>
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPrice('0');
-                      if (errors.price) setErrors((prev) => ({ ...prev, price: null }));
-                    }}
-                    className="text-xs text-emerald-600 hover:text-emerald-700 font-medium hover:underline"
-                  >
-                    Cho tặng (0đ)
-                  </button>
+                  <span className="text-xs text-emerald-600 font-medium">0đ = Cho tặng</span>
                 </div>
                 <div className="relative">
                   <input
@@ -313,19 +467,19 @@ export default function PostListingPage() {
                       setPrice(e.target.value);
                       if (errors.price) setErrors((prev) => ({ ...prev, price: null }));
                     }}
-                    placeholder="0 (cho tặng) hoặc nhập số tiền"
+                    placeholder="VD: 250000 (nhập 0 nếu cho tặng)"
                     className={`w-full pl-4 pr-12 py-2.5 rounded-xl border text-sm transition-colors focus:outline-none focus:ring-2 ${
                       errors.price
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-200 bg-red-50/20'
+                        ? 'border-red-400 focus:border-red-500 focus:ring-red-200 bg-red-50/20'
                         : 'border-slate-300 focus:border-emerald-500 focus:ring-emerald-200'
                     }`}
                   />
                   <span className="absolute right-3.5 top-2.5 text-xs font-semibold text-slate-400">
-                    đ
+                    VNĐ
                   </span>
                 </div>
                 {errors.price && (
-                  <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                  <p className="text-xs text-red-600 mt-1 flex items-center gap-1" data-testid="error-price">
                     <AlertCircle size={13} /> {errors.price}
                   </p>
                 )}
@@ -345,29 +499,30 @@ export default function PostListingPage() {
                   setDescription(e.target.value);
                   if (errors.description) setErrors((prev) => ({ ...prev, description: null }));
                 }}
-                placeholder="Mô tả nguồn gốc, hiện trạng sử dụng, kích thước, lý do nhượng lại..."
-                className={`w-full px-4 py-2.5 rounded-xl border text-sm transition-colors focus:outline-none focus:ring-2 ${
+                placeholder="Mô tả kỹ tình trạng sản phẩm, kích thước, xuất xứ, thời gian đã sử dụng và lý do sang nhượng..."
+                className={`w-full px-4 py-2.5 rounded-xl border text-sm transition-colors focus:outline-none focus:ring-2 resize-none ${
                   errors.description
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
+                    ? 'border-red-400 focus:border-red-500 focus:ring-red-200 bg-red-50/20'
                     : 'border-slate-300 focus:border-emerald-500 focus:ring-emerald-200'
                 }`}
               />
               {errors.description && (
-                <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                <p className="text-xs text-red-600 mt-1 flex items-center gap-1" data-testid="error-description">
                   <AlertCircle size={13} /> {errors.description}
                 </p>
               )}
             </div>
           </section>
 
-          {/* PHẦN 3: ĐỊA CHỈ & VỊ TRÍ */}
+          {/* PHẦN 3: VỊ TRÍ GIAO DỊCH (STT 33) */}
           <section className="space-y-4 pb-6 border-b border-slate-100">
             <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-              <MapPin size={18} className="text-emerald-600" /> Địa điểm giao dịch
+              <MapPin size={18} className="text-emerald-600" /> Vị trí giao dịch
             </h2>
+
             <div>
               <label htmlFor="address-input" className="block text-sm font-semibold text-slate-700 mb-1">
-                Địa chỉ (số nhà, tên đường, phường/xã, quận/huyện) <span className="text-red-500">*</span>
+                Địa chỉ lấy hàng / giao dịch <span className="text-red-500">*</span>
               </label>
               <input
                 id="address-input"
@@ -380,12 +535,12 @@ export default function PostListingPage() {
                 placeholder="VD: 123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
                 className={`w-full px-4 py-2.5 rounded-xl border text-sm transition-colors focus:outline-none focus:ring-2 ${
                   errors.address
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-200'
+                    ? 'border-red-400 focus:border-red-500 focus:ring-red-200 bg-red-50/20'
                     : 'border-slate-300 focus:border-emerald-500 focus:ring-emerald-200'
                 }`}
               />
               {errors.address && (
-                <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                <p className="text-xs text-red-600 mt-1 flex items-center gap-1" data-testid="error-address">
                   <AlertCircle size={13} /> {errors.address}
                 </p>
               )}
@@ -413,23 +568,34 @@ export default function PostListingPage() {
             />
           </section>
 
-          {/* NÚT GỬI DUYỆT TIN */}
+          {/* NÚT GỬI DUYỆT TIN (TE9C746) */}
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors"
+              disabled={submitting}
+              className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors disabled:opacity-50"
             >
               Hủy bỏ
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-all shadow-md shadow-emerald-600/20 disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-all shadow-md shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
               data-testid="submit-listing-btn"
+              aria-busy={submitting}
             >
-              {submitting ? 'Đang gửi tin...' : 'Gửi duyệt tin đăng'}
-              <ArrowRight size={18} />
+              {submitting ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" data-testid="submitting-spinner" />
+                  <span>Đang gửi...</span>
+                </>
+              ) : (
+                <>
+                  <span>Gửi duyệt</span>
+                  <ArrowRight size={18} />
+                </>
+              )}
             </button>
           </div>
         </form>
