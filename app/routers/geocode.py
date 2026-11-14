@@ -1,7 +1,7 @@
 """
-Geocoding Router (SDD 7.2, UC-05, FR-08, NFR-MNT-01, UC-05 A1).
+Geocoding Router.
 Endpoint: GET /api/geocode?address=...
-Requires authenticated user (dependency STT 11).
+Requires authenticated user.
 """
 
 from fastapi import APIRouter, Depends, Query, status

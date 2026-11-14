@@ -28,6 +28,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import PhotoUploader from '../components/PhotoUploader';
+import LocationPickerMap from '../components/LocationPickerMap';
 import ConditionScorer, {
   calculateTotalScore,
   getConditionRank,
@@ -140,6 +141,8 @@ export default function PostListingPage() {
 
     if (!address.trim()) {
       newErrors.address = 'Vui lòng nhập địa chỉ giao dịch (E1).';
+    } else if (lat === null || lng === null || isNaN(Number(lat)) || isNaN(Number(lng))) {
+      newErrors.address = 'Vui lòng chọn vị trí trên bản đồ (UC-05).';
     }
 
     // Kiểm tra 3 điểm thành phần 0-10 (E3)
@@ -533,37 +536,27 @@ export default function PostListingPage() {
             </div>
           </section>
 
-          {/* PHẦN 3: VỊ TRÍ GIAO DỊCH (STT 33) */}
+          {/* PHẦN 3: VỊ TRÍ GIAO DỊCH (TE9C743, UC-05, FR-08, UC-05 A1) */}
           <section className="space-y-4 pb-6 border-b border-slate-100">
             <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
               <MapPin size={18} className="text-emerald-600" /> Vị trí giao dịch
             </h2>
 
-            <div>
-              <label htmlFor="address-input" className="block text-sm font-semibold text-slate-700 mb-1">
-                Địa chỉ lấy hàng / giao dịch <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="address-input"
-                type="text"
-                value={address}
-                onChange={(e) => {
-                  setAddress(e.target.value);
-                  if (errors.address) setErrors((prev) => ({ ...prev, address: null }));
-                }}
-                placeholder="VD: 123 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh"
-                className={`w-full px-4 py-2.5 rounded-xl border text-sm transition-colors focus:outline-none focus:ring-2 ${
-                  errors.address
-                    ? 'border-red-400 focus:border-red-500 focus:ring-red-200 bg-red-50/20'
-                    : 'border-slate-300 focus:border-emerald-500 focus:ring-emerald-200'
-                }`}
-              />
-              {errors.address && (
-                <p className="text-xs text-red-600 mt-1 flex items-center gap-1" data-testid="error-address">
-                  <AlertCircle size={13} /> {errors.address}
-                </p>
-              )}
-            </div>
+            <LocationPickerMap
+              address={address}
+              onAddressChange={(newAddress) => {
+                setAddress(newAddress);
+                if (errors.address) setErrors((prev) => ({ ...prev, address: null }));
+              }}
+              lat={lat}
+              lng={lng}
+              onLocationChange={({ lat: newLat, lng: newLng }) => {
+                setLat(newLat);
+                setLng(newLng);
+                if (errors.address) setErrors((prev) => ({ ...prev, address: null }));
+              }}
+              error={errors.address}
+            />
           </section>
 
           {/* PHẦN 4: CHẤM ĐIỂM TÌNH TRẠNG (TE9C745, BR-01, BR-02, E3) */}
