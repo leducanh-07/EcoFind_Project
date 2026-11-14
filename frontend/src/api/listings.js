@@ -43,3 +43,14 @@ export const getMapListings = async (bbox) => {
 export async function getListingDetailApi(id) {
   return await fetchWithAuth(`/api/listings/${id}`, { method: 'GET' });
 }
+
+export async function uploadPhotosApi(files) {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+  return await fetchWithAuth('/api/upload/images', {
+    method: 'POST',
+    body: formData,
+  });
+}
