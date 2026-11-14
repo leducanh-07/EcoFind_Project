@@ -111,7 +111,7 @@ async def get_listings(
     "",
     response_model=ListingCreateResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Đăng tin bán đồ cũ kèm ảnh và điểm tự chấm (STT 31, 36, UC-05, FR-08, FR-09)",
+    summary="Đăng tin bán đồ cũ kèm ảnh và điểm tự chấm",
 )
 async def create_listing(
     title: Optional[str] = Form(None),
@@ -133,11 +133,11 @@ async def create_listing(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Đăng tin bán đồ cũ (STT 31, 36, TE9C746, UC-05, FR-08, FR-09):
+    Đăng tin bán đồ cũ:
       - Nhận multipart/form-data: title, categoryId, price, description, lat, lng, address, 1-5 ảnh, 3 điểm thành phần.
       - Chặn trường bắt buộc, giá 0-1.000.000.000, điểm 0-10.
-      - Server tính lại điểm tổng bằng ScoreCalculator và bỏ qua giá trị client (TC-05).
-      - Lưu status = 'pending' (chưa hiện trên bản đồ theo FR-09).
+      - Server tính lại điểm tổng bằng ScoreCalculator và bỏ qua giá trị client.
+      - Lưu status = 'pending' (chưa hiện trên bản đồ).
       - Trả 201 kèm id, status, totalScore, rank, message = 'Đã gửi, chờ duyệt'.
     """
     effective_category_id = category_id if category_id is not None else categoryId
@@ -174,9 +174,9 @@ async def get_listing_detail(
     current_user: Optional[User] = Depends(get_optional_user),
 ):
     """
-    Xem chi tiết tin đăng theo ID (TE9C735, UC-04, FR-07):
+    Xem chi tiết tin đăng theo ID:
       - Trả về ảnh (theo sort_order), giá, mô tả, địa chỉ, người bán, 3 điểm thành phần, điểm tổng, hạng.
-      - Trường phone chỉ xuất hiện khi có token xác thực hợp lệ (TC-04).
+      - Trường phone chỉ xuất hiện khi có token xác thực hợp lệ.
       - Tin đã bán, đã ẩn, không tồn tại trả 404 'Tin không còn hiển thị'.
     """
     return await listing_service.get_listing_detail(db, listing_id=id, current_user=current_user)

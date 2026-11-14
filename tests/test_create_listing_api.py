@@ -206,3 +206,185 @@ def test_fr09_pending_listings_not_shown_on_map(mock_find_filtered):
     response = client.get("/api/listings?bbox=106.6,10.7,106.8,10.8")
     assert response.status_code == 200
     assert response.json() == []
+
+
+@patch("app.services.listing_service.CategoryRepository.find_by_id")
+@patch("app.repositories.listing_repository.ListingRepository.create")
+@patch("app.services.listing_service.process_and_save_upload_files")
+def test_post_listing_tc05_server_recalculates_score_ignoring_client_total(
+    mock_save_photos,
+    mock_create_listing,
+    mock_find_cat,
+    auth_headers,
+):
+    """
+    Tiêu chuẩn TC-05 (TE9C741): Client gửi 3 điểm 9, 8, 7 kèm totalScore giả mạo 10.0,
+    Server tính lại điểm tổng chính xác = 8.2 và xếp hạng 'Tốt', bỏ qua giá trị client.
+    """
+    mock_cat = Category(category_id=1, name="Đồ gia dụng")
+    mock_find_cat.return_value = mock_cat
+    mock_save_photos.return_value = ["/uploads/photos/photo1.jpg"]
+
+    mock_listing = Listing(
+        listing_id=102,
+        seller_id=1,
+        category_id=1,
+        title="Tủ sách gỗ tự nhiên",
+        description="Tủ sách 4 ngăn",
+        price=500000,
+        address="789 Điện Biên Phủ, Bình Thạnh",
+        lat=10.8000,
+        lng=106.7100,
+        score_appearance=9.0,
+        score_function=8.0,
+        score_accessories=7.0,
+        total_score=8.2,
+        status="pending",
+    )
+    mock_create_listing.return_value = mock_listing
+
+    img = create_dummy_image()
+
+    response = client.post(
+        "/api/listings",
+        headers=auth_headers,
+        data={
+            "title": "Tủ sách gỗ tự nhiên",
+            "categoryId": 1,
+            "price": 500000,
+            "description": "Tủ sách 4 ngăn",
+            "address": "789 Điện Biên Phủ, Bình Thạnh",
+            "lat": 10.8000,
+            "lng": 106.7100,
+            "scoreAppearance": 9.0,
+            "scoreFunction": 8.0,
+            "scoreAccessories": 7.0,
+            "totalScore": 10.0,  # Giá trị giả mạo từ client
+        },
+        files=[img],
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["totalScore"] == 8.2  # Server tính lại
+    assert data["rank"] == "Tốt"
+    # Kiểm tra create được gọi với total_score = 8.2
+    assert mock_create_listing.call_args[1]["total_score"] == 8.2
+
+
+@patch("app.services.listing_service.CategoryRepository.find_by_id")
+@patch("app.repositories.listing_repository.ListingRepository.create")
+@patch("app.services.listing_service.process_and_save_upload_files")
+def test_post_listing_price_boundaries_zero_and_one_billion(
+    mock_save_photos,
+    mock_create_listing,
+    mock_find_cat,
+    auth_headers,
+):
+    """
+    Tiêu chuẩn BR-05 (TE9C741):
+      - price = 0 (Cho tặng): hợp lệ (201)
+      - price = 1_000_000_000 (1 tỷ): hợp lệ (201)
+      - price = 1_000_000_001: lỗi 400
+    """
+    mock_cat = Category(category_id=1, name="Đồ gia dụng")
+    mock_find_cat.return_value = mock_cat
+    mock_save_photos.return_value = ["/uploads/photos/photo1.jpg"]
+
+    # 1. Price = 0 (Cho tặng)
+    mock_listing_free = Listing(
+        listing_id=103,
+        seller_id=1,
+        category_id=1,
+        title="Tặng giáo trình cũ",
+        description="Cho bạn nào cần",
+        price=0,
+        address="Quận 1",
+        lat=10.77,
+        lng=106.70,
+        score_appearance=8.0,
+        score_function=8.0,
+        score_accessories=8.0,
+        total_score=8.0,
+        status="pending",
+    )
+    mock_create_listing.return_value = mock_listing_free
+
+    img = create_dummy_image()
+    res_free = client.post(
+        "/api/listings",
+        headers=auth_headers,
+        data={
+            "title": "Tặng giáo trình cũ",
+            "categoryId": 1,
+            "price": 0,
+            "description": "Cho bạn nào cần",
+            "address": "Quận 1",
+            "scoreAppearance": 8.0,
+            "scoreFunction": 8.0,
+            "scoreAccessories": 8.0,
+        },
+        files=[img],
+    )
+    assert res_free.status_code == 201
+
+    # 2. Price = 1 tỷ
+    img2 = create_dummy_image()
+    res_billion = client.post(
+        "/api/listings",
+        headers=auth_headers,
+        data={
+            "title": "Đồng hồ cổ giá trị cao",
+            "categoryId": 1,
+            "price": 1000000000,
+            "description": "Đồ sưu tầm",
+            "address": "Quận 1",
+            "scoreAppearance": 9.0,
+            "scoreFunction": 9.0,
+            "scoreAccessories": 9.0,
+        },
+        files=[img2],
+    )
+    assert res_billion.status_code == 201
+
+    # 3. Price = 1 tỷ + 1 -> 400
+    img3 = create_dummy_image()
+    res_over = client.post(
+        "/api/listings",
+        headers=auth_headers,
+        data={
+            "title": "Món đồ siêu đắt",
+            "categoryId": 1,
+            "price": 1000000001,
+            "description": "Giá quá 1 tỷ",
+            "address": "Quận 1",
+            "scoreAppearance": 9.0,
+            "scoreFunction": 9.0,
+            "scoreAccessories": 9.0,
+        },
+        files=[img3],
+    )
+    assert res_over.status_code == 400
+    assert "price" in res_over.json()["error"]["fields"]
+
+
+def test_post_listing_requires_photos(auth_headers):
+    """Không gửi kèm ảnh trả về lỗi 400 (bắt buộc từ 1 đến 5 ảnh theo BR-04)."""
+    response = client.post(
+        "/api/listings",
+        headers=auth_headers,
+        data={
+            "title": "Bàn học thanh lý",
+            "categoryId": 1,
+            "price": 200000,
+            "description": "Bàn học",
+            "address": "Quận 1",
+            "scoreAppearance": 8.0,
+            "scoreFunction": 8.0,
+            "scoreAccessories": 8.0,
+        },
+        files=[],
+    )
+    assert response.status_code == 400
+    assert "photos" in response.json()["error"]["fields"]
+
