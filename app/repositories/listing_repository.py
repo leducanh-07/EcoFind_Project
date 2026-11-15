@@ -252,6 +252,32 @@ class ListingRepository:
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def find_for_admin(
+        self,
+        db: AsyncSession,
+        status: Optional[str] = "pending",
+        sort: str = "asc",
+    ) -> List[Listing]:
+        """Lấy danh sách tin phục vụ kiểm duyệt của Admin, sắp xếp theo created_at."""
+        stmt = (
+            select(Listing)
+            .options(
+                selectinload(Listing.photos),
+                selectinload(Listing.category),
+                selectinload(Listing.seller),
+            )
+        )
+        if status:
+            stmt = stmt.where(Listing.status == status)
+
+        if sort and sort.lower() == "desc":
+            stmt = stmt.order_by(Listing.created_at.desc())
+        else:
+            stmt = stmt.order_by(Listing.created_at.asc())
+
+        result = await db.execute(stmt)
+        return list(result.scalars().all())
+
     async def create(
         self,
         db: AsyncSession,
