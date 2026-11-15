@@ -112,7 +112,7 @@ describe('TE9C74A: Giao diện Admin – danh sách chờ duyệt & chi tiết t
     );
 
     // Tiêu đề trang
-    expect(screen.getByTestId('admin-page-title')).toHaveTextContent(/Kiểm duyệt tin đăng/i);
+    expect(screen.getByTestId('admin-page-title')).toHaveTextContent(/Bảng điều khiển Quản trị viên/i);
 
     // Đợi tải xong
     await waitFor(() => {

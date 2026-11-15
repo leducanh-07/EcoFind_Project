@@ -92,10 +92,10 @@ export default function AdminPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-800" data-testid="admin-page-title">
-              Kiểm duyệt tin đăng (Admin)
+              Bảng điều khiển Quản trị viên (Admin)
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Hàng đợi kiểm tra thông tin, 3 điểm thành phần và duyệt tin (FR-13, FR-14)
+              Kiểm duyệt tin đăng: hàng đợi kiểm tra thông tin, 3 điểm thành phần và duyệt tin (FR-13, FR-14)
             </p>
           </div>
         </div>
