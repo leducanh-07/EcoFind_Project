@@ -7,5 +7,6 @@ from app.models.category import Category
 from app.models.listing import Listing
 from app.models.listing_photo import ListingPhoto
 from app.models.favorite import Favorite
+from app.models.report import Report
 
-__all__ = ["User", "Category", "Listing", "ListingPhoto", "Favorite"]
+__all__ = ["User", "Category", "Listing", "ListingPhoto", "Favorite", "Report"]

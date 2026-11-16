@@ -48,6 +48,7 @@ const STATUS_TABS = [
 export default function MyListingsPage() {
   const location = useLocation();
   const flashMessage = location.state?.flashMessage;
+  const newListing = location.state?.newListing;
 
   const [activeTab, setActiveTab] = useState('all');
   const [listings, setListings] = useState([]);
@@ -253,21 +254,68 @@ export default function MyListingsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      {/* Flash message từ màn hình đăng tin */}
+      {/* Banner thông báo thành công: Đã gửi, chờ duyệt (TE9C746, FR-09) */}
       {flashMessage && (
         <div
           role="status"
           data-testid="flash-success-banner"
-          className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl shadow-sm flex items-start gap-3 transition-all"
+          className="mb-6 p-5 bg-emerald-50 border border-emerald-200 rounded-2xl shadow-sm flex items-start gap-4 transition-all"
         >
-          <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-            <CheckCircle2 size={20} />
+          <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+            <CheckCircle2 size={24} />
           </div>
           <div className="flex-1">
-            <h2 className="text-sm font-bold text-emerald-900">{flashMessage}</h2>
-            <p className="text-xs text-emerald-800 mt-0.5">
-              Tin đăng của bạn đã được gửi thành công và đang chờ quản trị viên duyệt trước khi hiển thị trên bản đồ.
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-emerald-900">{flashMessage}</h2>
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                <Clock size={12} /> Chờ duyệt
+              </span>
+            </div>
+            <p className="text-sm text-emerald-800 mt-1">
+              Tin đăng của bạn đã được gửi thành công đến hệ thống và đang chờ quản trị viên phê duyệt.
             </p>
+            <div className="mt-2.5 flex items-center gap-2 text-xs font-medium text-emerald-700 bg-white/70 px-3 py-1.5 rounded-lg border border-emerald-200/60 inline-flex">
+              <EyeOff size={14} className="text-amber-600" />
+              <span>
+                <strong>Quy tắc FR-09:</strong> Tin chưa hiện trên bản đồ cho đến khi được duyệt.
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Card tin đăng vừa nộp (pending) nếu có từ điều hướng đăng tin */}
+      {newListing && (
+        <div
+          data-testid="pending-listing-card"
+          className="mb-6 p-4 sm:p-5 rounded-2xl border border-amber-200 bg-amber-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+        >
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                <Clock size={11} /> Chờ duyệt (Pending)
+              </span>
+              <span className="text-xs text-slate-500">Mã tin: #{newListing.id || 'Mới'}</span>
+            </div>
+            <h3 className="text-base font-bold text-slate-800">{newListing.title || 'Món đồ vừa đăng'}</h3>
+            <div className="flex items-center gap-3 text-xs text-slate-500">
+              {newListing.price !== undefined && (
+                <span className="font-semibold text-emerald-700">
+                  {Number(newListing.price) === 0
+                    ? 'Cho tặng miễn phí'
+                    : `${Number(newListing.price).toLocaleString('vi-VN')} đ`}
+                </span>
+              )}
+              {newListing.address && (
+                <span className="flex items-center gap-1">
+                  <MapPin size={12} /> {newListing.address}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-100/60 px-3 py-1.5 rounded-xl border border-amber-200">
+            <EyeOff size={13} />
+            <span>Chưa hiện trên bản đồ (FR-09)</span>
           </div>
         </div>
       )}

@@ -53,3 +53,31 @@ export async function rejectListingApi(id, { reason }) {
     body: JSON.stringify({ reason }),
   });
 }
+
+/**
+ * Lấy danh sách báo cáo vi phạm trong hàng đợi (TE9C755, UC-09, FR-15)
+ * @param {Object} options
+ * @param {string} [options.status='new']
+ */
+export async function getAdminReportsApi({ status = 'new' } = {}) {
+  const params = new URLSearchParams();
+  if (status) params.append('status', status);
+  const query = params.toString();
+  return await fetchWithAuth(`/api/admin/reports${query ? `?${query}` : ''}`, {
+    method: 'GET',
+  });
+}
+
+/**
+ * Xử lý báo cáo vi phạm: action = 'hide' hoặc 'dismiss' (TE9C755, UC-09, FR-15)
+ * @param {number|string} id - Report ID
+ * @param {Object} payload
+ * @param {string} payload.action - 'hide' | 'dismiss'
+ */
+export async function resolveAdminReportApi(id, { action }) {
+  return await fetchWithAuth(`/api/admin/reports/${id}/resolve`, {
+    method: 'POST',
+    body: JSON.stringify({ action }),
+  });
+}
+

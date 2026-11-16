@@ -12,7 +12,13 @@ from app.schemas.admin import (
     ModerationActionResponse,
     RejectListingRequest,
 )
+from app.schemas.report import (
+    ReportAdminItem,
+    ReportResolveRequest,
+    ReportResolveResponse,
+)
 from app.services.moderation_service import ModerationService
+from app.services.report_service import report_service
 
 router = APIRouter(prefix="/admin", tags=["Admin Moderation"])
 moderation_service = ModerationService()
@@ -122,3 +128,55 @@ async def reject_listing(
         admin_id=current_admin.user_id,
         reason=reason,
     )
+
+
+@router.get(
+    "/reports",
+    response_model=List[ReportAdminItem],
+    status_code=status.HTTP_200_OK,
+    summary="Lấy danh sách báo cáo vi phạm trong hàng đợi",
+)
+async def get_admin_reports_queue(
+    status_filter: Optional[str] = Query(
+        "new",
+        alias="status",
+        description="Lọc theo trạng thái báo cáo (mặc định: new)",
+    ),
+    current_admin: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Xem danh sách báo cáo vi phạm trong hàng đợi xử lý:
+      - Yêu cầu quyền quản trị viên (Admin).
+      - Mặc định lọc các báo cáo ở trạng thái mới (new).
+    """
+    return await report_service.get_reports_queue(
+        db, status=status_filter or "new"
+    )
+
+
+@router.post(
+    "/reports/{report_id}/resolve",
+    response_model=ReportResolveResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Xử lý báo cáo vi phạm (ẩn tin hoặc bỏ qua)",
+)
+async def resolve_admin_report(
+    report_id: int,
+    request: ReportResolveRequest,
+    current_admin: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Quản trị viên xử lý báo cáo vi phạm:
+      - action = 'hide': ẩn tin đăng vi phạm và đánh dấu đã xử lý.
+      - action = 'dismiss': bỏ qua báo cáo và đánh dấu đã xử lý.
+      - Báo cáo đã xử lý trả về mã lỗi 409.
+    """
+    return await report_service.resolve_report(
+        db,
+        report_id=report_id,
+        admin=current_admin,
+        action=request.action,
+    )
+

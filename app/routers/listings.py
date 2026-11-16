@@ -17,7 +17,9 @@ from app.schemas.listing import (
     ListingStatusUpdateRequest,
 )
 from app.schemas.favorite import FavoriteStatusResponse
+from app.schemas.report import ReportCreateRequest, ReportCreateResponse
 from app.services.favorite_service import favorite_service
+from app.services.report_service import report_service
 from app.services.listing_service import ListingService
 
 router = APIRouter(prefix="/listings", tags=["Listings"])
@@ -305,5 +307,35 @@ async def check_favorite_status(
     if not current_user:
         return FavoriteStatusResponse(listing_id=id, is_favorite=False)
     return await favorite_service.is_favorite(db, user_id=current_user.user_id, listing_id=id)
+
+
+@router.post(
+    "/{id}/reports",
+    response_model=ReportCreateResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Báo cáo tin đăng vi phạm",
+)
+async def report_listing(
+    id: int,
+    payload: ReportCreateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Người dùng báo cáo tin đăng vi phạm:
+      - Yêu cầu đăng nhập.
+      - reason thuộc: wrong_score, scam, prohibited, other.
+      - note tối đa 200 ký tự.
+      - Báo cáo tin của chính mình nhận lỗi 403.
+      - Báo cáo lần 2 nhận lỗi 409.
+    """
+    return await report_service.create_report(
+        db,
+        listing_id=id,
+        reporter=current_user,
+        reason=payload.reason,
+        note=payload.note,
+    )
+
 
 

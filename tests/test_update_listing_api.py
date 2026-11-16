@@ -31,6 +31,14 @@ from app.models.user import User
 client = TestClient(app)
 
 
+@pytest.fixture(autouse=True)
+def clean_overrides():
+    orig = user_repo.find_by_id
+    yield
+    user_repo.find_by_id = orig
+    app.dependency_overrides.clear()
+
+
 @pytest.fixture
 def seller_user():
     return User(
