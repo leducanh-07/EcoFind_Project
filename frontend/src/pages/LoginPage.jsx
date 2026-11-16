@@ -9,8 +9,8 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // URL ban đầu người dùng định truy cập (nếu bị ProtectedRoute redirect)
-  const from = location.state?.from?.pathname || '/';
+  // URL ban đầu người dùng định truy cập (nếu bị ProtectedRoute redirect hoặc từ nút Lưu tin)
+  const from = location.state?.from?.pathname || location.state?.from || '/';
 
   const [formData, setFormData] = useState({
     email: '',

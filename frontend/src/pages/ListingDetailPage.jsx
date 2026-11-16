@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getListingDetailApi } from '../api/listings';
+import { addFavoriteApi, removeFavoriteApi, checkFavoriteStatusApi } from '../api/favorites';
 import { getRankBadgeColor } from '../components/MapView';
 import {
   ArrowLeft,
@@ -34,7 +35,7 @@ export default function ListingDetailPage() {
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [copiedPhone, setCopiedPhone] = useState(false);
 
-  // Trạng thái Lưu tin & Báo cáo (UC-04, TE9C73C)
+  // Trạng thái Lưu tin & Báo cáo (UC-04, TE9C73C, TE9C752)
   const [isSaved, setIsSaved] = useState(() => {
     try {
       const savedList = JSON.parse(localStorage.getItem('ecofind_saved_listings') || '[]');
@@ -43,25 +44,51 @@ export default function ListingDetailPage() {
       return false;
     }
   });
+
+  useEffect(() => {
+    async function loadFavoriteStatus() {
+      if (!isAuthenticated || !id) return;
+      try {
+        const res = await checkFavoriteStatusApi(id);
+        if (res && typeof res.isFavorite === 'boolean') {
+          setIsSaved(res.isFavorite);
+        }
+      } catch {
+        // Fallback gracefully
+      }
+    }
+    loadFavoriteStatus();
+  }, [id, isAuthenticated]);
+
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('Thông tin sai sự thật');
   const [reportDetail, setReportDetail] = useState('');
   const [reportSuccess, setReportSuccess] = useState(false);
 
-  const handleToggleSave = () => {
+  const handleToggleSave = async () => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: location.pathname } });
+      return;
+    }
+
+    const nextSaved = !isSaved;
+    setIsSaved(nextSaved);
+
     try {
       const savedList = JSON.parse(localStorage.getItem('ecofind_saved_listings') || '[]');
-      let nextList;
-      if (isSaved) {
-        nextList = savedList.filter((savedId) => savedId !== String(id));
-        setIsSaved(false);
-      } else {
-        nextList = [...savedList, String(id)];
-        setIsSaved(true);
-      }
+      const nextList = nextSaved
+        ? [...savedList, String(id)]
+        : savedList.filter((savedId) => savedId !== String(id));
       localStorage.setItem('ecofind_saved_listings', JSON.stringify(nextList));
+
+      if (nextSaved) {
+        await addFavoriteApi(id);
+      } else {
+        await removeFavoriteApi(id);
+      }
     } catch {
-      setIsSaved(!isSaved);
+      // rollback if failed
+      setIsSaved(!nextSaved);
     }
   };
 
@@ -458,6 +485,16 @@ export default function ListingDetailPage() {
                 >
                   <Lock size={16} />
                   Đăng nhập để xem số điện thoại
+                </button>
+
+                <button
+                  type="button"
+                  data-testid="btn-save-guest"
+                  onClick={() => navigate('/login', { state: { from: location.pathname } })}
+                  className="w-full py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Heart size={15} className="text-slate-500" />
+                  <span>Lưu tin (Yêu cầu đăng nhập)</span>
                 </button>
               </div>
             )}
