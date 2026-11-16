@@ -12,6 +12,7 @@ from app.routers.geocode import router as geocode_router
 from app.routers.upload import router as upload_router
 from app.routers.admin import router as admin_router
 from app.routers.me import router as me_router
+from app.routers.favorites import router as favorites_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -43,6 +44,7 @@ app.include_router(geocode_router, prefix="/api")
 app.include_router(upload_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 app.include_router(me_router, prefix="/api")
+app.include_router(favorites_router, prefix="/api")
 
 # Phục vụ tệp tĩnh cho thư mục tải ảnh (BR-04, NFR-SEC-04)
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)

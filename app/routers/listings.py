@@ -16,6 +16,8 @@ from app.schemas.listing import (
     ListingUpdateRequest,
     ListingStatusUpdateRequest,
 )
+from app.schemas.favorite import FavoriteStatusResponse
+from app.services.favorite_service import favorite_service
 from app.services.listing_service import ListingService
 
 router = APIRouter(prefix="/listings", tags=["Listings"])
@@ -241,4 +243,67 @@ async def update_listing_status(
         current_user=current_user,
         new_status=payload.status,
     )
+
+
+@router.put(
+    "/{id}/favorite",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Lưu tin đăng vào danh sách yêu thích",
+)
+@router.post(
+    "/{id}/favorite",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Lưu tin đăng vào danh sách yêu thích",
+)
+async def add_favorite(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Lưu tin đăng vào danh sách yêu thích của người dùng:
+      - Yêu cầu đăng nhập.
+      - Gọi lặp lại không tạo thêm bản ghi (idempotent, trả 204).
+      - Tin không tồn tại trả lỗi 404.
+    """
+    await favorite_service.add_favorite(db, user_id=current_user.user_id, listing_id=id)
+
+
+@router.delete(
+    "/{id}/favorite",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Bỏ lưu tin đăng khỏi danh sách yêu thích",
+)
+async def remove_favorite(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Bỏ lưu tin đăng khỏi danh sách yêu thích của người dùng:
+      - Yêu cầu đăng nhập.
+      - Trả 204 No Content.
+    """
+    await favorite_service.remove_favorite(db, user_id=current_user.user_id, listing_id=id)
+
+
+@router.get(
+    "/{id}/favorite",
+    response_model=FavoriteStatusResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Kiểm tra trạng thái yêu thích của tin đăng",
+)
+async def check_favorite_status(
+    id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user),
+):
+    """
+    Kiểm tra xem người dùng hiện tại đã lưu tin đăng này hay chưa.
+    Nếu chưa đăng nhập thì trả về isFavorite = false.
+    """
+    if not current_user:
+        return FavoriteStatusResponse(listing_id=id, is_favorite=False)
+    return await favorite_service.is_favorite(db, user_id=current_user.user_id, listing_id=id)
+
 

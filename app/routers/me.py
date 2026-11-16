@@ -11,7 +11,9 @@ from app.core.dependencies import get_current_user
 from app.core.exceptions import BadRequestException
 from app.models.user import User
 from app.schemas.listing import MyListingItem
+from app.schemas.favorite import FavoriteItemResponse
 from app.services.listing_service import ListingService
+from app.services.favorite_service import favorite_service
 
 router = APIRouter(prefix="/me", tags=["My Listings"])
 listing_service = ListingService()
@@ -58,3 +60,22 @@ async def get_my_listings(
         seller_id=current_user.user_id,
         status=clean_status,
     )
+
+
+@router.get(
+    "/favorites",
+    response_model=List[FavoriteItemResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Xem danh sách tin đã lưu yêu thích của người dùng",
+)
+async def get_my_favorites(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Lấy danh sách các tin đăng mà người dùng đã lưu:
+      - Tin đã bán hoặc bị ẩn gắn nhãn 'Không còn bán'.
+      - Sắp xếp theo thứ tự lưu mới nhất.
+    """
+    return await favorite_service.get_user_favorites(db, user_id=current_user.user_id)
+
