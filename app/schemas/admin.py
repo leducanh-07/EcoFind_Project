@@ -105,7 +105,18 @@ class ApproveListingRequest(BaseSchema):
 
 class RejectListingRequest(BaseSchema):
     """Yêu cầu từ chối tin đăng kèm lý do bắt buộc."""
-    reason: str = Field(..., min_length=1, description="Lý do từ chối tin đăng")
+    reason: Optional[str] = Field(None, description="Lý do từ chối tin đăng")
+    reject_reason: Optional[str] = Field(None, description="Alias cho lý do từ chối")
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_reason(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "reject_reason" in data and not data.get("reason"):
+                data["reason"] = data["reject_reason"]
+            elif "rejectReason" in data and not data.get("reason"):
+                data["reason"] = data["rejectReason"]
+        return data
 
 
 class ModerationActionResponse(BaseSchema):

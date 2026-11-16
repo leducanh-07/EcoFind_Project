@@ -105,7 +105,7 @@ async def approve_listing(
 )
 async def reject_listing(
     listing_id: int,
-    request: RejectListingRequest,
+    request: Optional[RejectListingRequest] = None,
     current_admin: User = Depends(require_role("admin")),
     db: AsyncSession = Depends(get_db),
 ):
@@ -115,9 +115,10 @@ async def reject_listing(
       - Cập nhật trạng thái tin thành bị từ chối (rejected).
       - Trả về mã lỗi 409 nếu tin đăng đã được xử lý trước đó.
     """
+    reason = (request.reason or request.reject_reason) if request else ""
     return await moderation_service.reject_listing(
         db,
         listing_id=listing_id,
         admin_id=current_admin.user_id,
-        reason=request.reason,
+        reason=reason,
     )
