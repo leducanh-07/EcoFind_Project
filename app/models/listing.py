@@ -42,6 +42,15 @@ class Listing(Base):
     reviewed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
+    @property
+    def review_note(self):
+        """Ghi chú kiểm duyệt / hạ điểm (dùng chung cột reject_reason theo SDD/SRS)."""
+        return self.reject_reason
+
+    @review_note.setter
+    def review_note(self, value):
+        self.reject_reason = value
+
     # Relationships
     seller = relationship("User", foreign_keys=[seller_id])
     reviewer = relationship("User", foreign_keys=[reviewed_by])

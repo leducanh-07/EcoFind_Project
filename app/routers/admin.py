@@ -87,7 +87,7 @@ async def approve_listing(
       - Trả về mã lỗi 409 nếu tin đăng đã được xử lý trước đó.
     """
     adjustments = request.adjustments if request else None
-    note = request.note if request else None
+    note = (request.note or request.review_note) if request else None
     return await moderation_service.approve_listing(
         db,
         listing_id=listing_id,

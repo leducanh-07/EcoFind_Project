@@ -150,28 +150,44 @@ class ModerationService:
                 message=f"Tin đăng đã được xử lý (trạng thái hiện tại: {listing.status})"
             )
 
-        # Kiểm tra quy tắc hạ điểm: chỉ được hạ điểm (điểm mới <= điểm cũ)
+        # Kiểm tra quy tắc hạ điểm: chỉ được hạ điểm (điểm mới <= điểm cũ, BR-01, UC-09 A2)
         if adjustments:
+            if isinstance(adjustments, dict):
+                adj_app = adjustments.get("score_appearance") or adjustments.get("scoreAppearance") or adjustments.get("appearance")
+                adj_func = adjustments.get("score_function") or adjustments.get("scoreFunction") or adjustments.get("function")
+                adj_acc = adjustments.get("score_accessories") or adjustments.get("scoreAccessories") or adjustments.get("accessories")
+            else:
+                adj_app = adjustments.score_appearance
+                adj_func = adjustments.score_function
+                adj_acc = adjustments.score_accessories
+
             cur_app = float(listing.score_appearance)
             cur_func = float(listing.score_function)
             cur_acc = float(listing.score_accessories)
 
-            new_app = adjustments.score_appearance if adjustments.score_appearance is not None else cur_app
-            new_func = adjustments.score_function if adjustments.score_function is not None else cur_func
-            new_acc = adjustments.score_accessories if adjustments.score_accessories is not None else cur_acc
+            # Kiểm tra khoảng điểm hợp lệ 0-10 (E3)
+            for score_label, val in [("ngoại quan", adj_app), ("chức năng", adj_func), ("phụ kiện", adj_acc)]:
+                if val is not None and (val < 0.0 or val > 10.0):
+                    raise BadRequestException(
+                        message=f"Điểm {score_label} phải nằm trong khoảng từ 0.0 đến 10.0. Nhận được: {val}"
+                    )
 
-            if adjustments.score_appearance is not None and adjustments.score_appearance > cur_app:
+            if adj_app is not None and adj_app > cur_app:
                 raise BadRequestException(
-                    message=f"Chỉ được phép hạ điểm. Điểm ngoại quan mới ({adjustments.score_appearance}) không được cao hơn ban đầu ({cur_app})"
+                    message=f"Chỉ được phép hạ điểm. Điểm ngoại quan mới ({adj_app}) không được cao hơn ban đầu ({cur_app})"
                 )
-            if adjustments.score_function is not None and adjustments.score_function > cur_func:
+            if adj_func is not None and adj_func > cur_func:
                 raise BadRequestException(
-                    message=f"Chỉ được phép hạ điểm. Điểm chức năng mới ({adjustments.score_function}) không được cao hơn ban đầu ({cur_func})"
+                    message=f"Chỉ được phép hạ điểm. Điểm chức năng mới ({adj_func}) không được cao hơn ban đầu ({cur_func})"
                 )
-            if adjustments.score_accessories is not None and adjustments.score_accessories > cur_acc:
+            if adj_acc is not None and adj_acc > cur_acc:
                 raise BadRequestException(
-                    message=f"Chỉ được phép hạ điểm. Điểm phụ kiện mới ({adjustments.score_accessories}) không được cao hơn ban đầu ({cur_acc})"
+                    message=f"Chỉ được phép hạ điểm. Điểm phụ kiện mới ({adj_acc}) không được cao hơn ban đầu ({cur_acc})"
                 )
+
+            new_app = adj_app if adj_app is not None else cur_app
+            new_func = adj_func if adj_func is not None else cur_func
+            new_acc = adj_acc if adj_acc is not None else cur_acc
 
             # Tính lại điểm tổng và phân hạng qua ScoreCalculator
             recalculated_total = ScoreCalculator.calculate_total(new_app, new_func, new_acc)
@@ -184,8 +200,8 @@ class ModerationService:
         listing.status = "selling"
         listing.reviewed_by = admin_id
         listing.reviewed_at = datetime.now(timezone.utc)
-        if note:
-            listing.reject_reason = note
+        if note and note.strip():
+            listing.reject_reason = note.strip()
 
         await db.commit()
         await db.refresh(listing)
@@ -199,8 +215,11 @@ class ModerationService:
             total_score=total_score_fl,
             rank=rank_str,
             message="Duyệt tin thành công, tin đã được hiển thị trên bản đồ",
+            reviewed_by=listing.reviewed_by,
             reviewed_at=listing.reviewed_at,
             reject_reason=listing.reject_reason,
+            review_note=listing.reject_reason,
+            note=listing.reject_reason,
         )
 
     async def reject_listing(
@@ -246,6 +265,9 @@ class ModerationService:
             total_score=total_score_fl,
             rank=rank_str,
             message="Đã từ chối tin đăng",
+            reviewed_by=listing.reviewed_by,
             reviewed_at=listing.reviewed_at,
             reject_reason=listing.reject_reason,
+            review_note=listing.reject_reason,
+            note=listing.reject_reason,
         )

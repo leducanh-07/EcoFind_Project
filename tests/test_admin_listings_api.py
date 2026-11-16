@@ -94,6 +94,18 @@ def mock_pending_listing(mock_seller, mock_category):
     return listing
 
 
+@pytest.fixture(autouse=True)
+def override_db_dependency():
+    mock_db = AsyncMock()
+
+    async def _get_db():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = _get_db
+    yield mock_db
+    app.dependency_overrides.pop(get_db, None)
+
+
 def test_get_admin_listings_unauthorized():
     """Chưa đăng nhập truy cập hàng đợi admin nhận HTTP 401."""
     res = client.get("/api/admin/listings")
