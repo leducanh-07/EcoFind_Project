@@ -8,7 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, get_optional_user
 from app.models.user import User
-from app.schemas.listing import ListingMapItem, ListingDetailResponse, ListingCreateResponse
+from app.schemas.listing import (
+    ListingMapItem,
+    ListingDetailResponse,
+    ListingCreateResponse,
+    MyListingItem,
+    ListingUpdateRequest,
+    ListingStatusUpdateRequest,
+)
 from app.services.listing_service import ListingService
 
 router = APIRouter(prefix="/listings", tags=["Listings"])
@@ -180,3 +187,58 @@ async def get_listing_detail(
       - Tin đã bán, đã ẩn, không tồn tại trả 404 'Tin không còn hiển thị'.
     """
     return await listing_service.get_listing_detail(db, listing_id=id, current_user=current_user)
+
+
+@router.put(
+    "/{id}",
+    response_model=MyListingItem,
+    status_code=status.HTTP_200_OK,
+    summary="Chỉnh sửa thông tin tin đăng của chính mình",
+)
+async def update_listing(
+    id: int,
+    payload: ListingUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Sửa thông tin tin đăng:
+      - Chỉ chủ tin mới có quyền sửa, người khác nhận lỗi 403.
+      - Sửa điểm thành phần hoặc danh sách ảnh: chuyển status về pending và tính lại điểm tổng.
+      - Sửa giá hoặc mô tả: giữ nguyên trạng thái hiện tại.
+      - Tin bị từ chối khi sửa và gửi lại sẽ chuyển về pending.
+    """
+    return await listing_service.update_listing(
+        db,
+        listing_id=id,
+        current_user=current_user,
+        payload=payload,
+    )
+
+
+@router.patch(
+    "/{id}/status",
+    response_model=MyListingItem,
+    status_code=status.HTTP_200_OK,
+    summary="Thay đổi trạng thái tin đăng",
+)
+async def update_listing_status(
+    id: int,
+    payload: ListingStatusUpdateRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Đổi trạng thái tin đăng:
+      - Nhận các trạng thái: hidden, selling hoặc sold.
+      - Tin chờ duyệt đánh dấu đã bán trả về lỗi 409.
+      - Tin do Admin ẩn vi phạm không thể tự mở lại (trả về lỗi 403).
+      - Chỉ chủ tin mới có quyền thực hiện.
+    """
+    return await listing_service.update_listing_status(
+        db,
+        listing_id=id,
+        current_user=current_user,
+        new_status=payload.status,
+    )
+

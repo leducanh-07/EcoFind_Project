@@ -1,6 +1,5 @@
 """
 Router for User Account and Personal Listings (/api/me)
-UC-06, FR-10, TE9C74C.
 """
 
 from typing import List, Optional
@@ -24,7 +23,7 @@ VALID_STATUSES = {"pending", "selling", "rejected", "sold", "hidden"}
     "/listings",
     response_model=List[MyListingItem],
     status_code=status.HTTP_200_OK,
-    summary="Xem tất cả tin của chính người dùng theo từng trạng thái (UC-06, FR-10)",
+    summary="Xem tất cả tin của chính người dùng theo từng trạng thái",
 )
 async def get_my_listings(
     status_filter: Optional[str] = Query(
@@ -36,7 +35,7 @@ async def get_my_listings(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Là Người bán, tôi muốn xem tất cả tin của mình theo từng trạng thái (UC-06, FR-10, TE9C74C):
+    Lấy danh sách tin của người bán theo từng trạng thái:
       - Chỉ trả về tin của chính người dùng đăng nhập (seller_id = current_user.user_id).
       - Tận dụng chỉ mục idx_listings_seller trên cột seller_id.
       - Trả về kèm reject_reason nếu tin bị từ chối và cờ hidden_by_admin.

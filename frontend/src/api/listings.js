@@ -80,4 +80,35 @@ export async function getMyListingsApi({ status } = {}) {
   });
 }
 
+/**
+ * Chỉnh sửa tin đăng của chính mình (TE9C74D, UC-06, FR-10)
+ * @param {number|string} id - Listing ID
+ * @param {Object} data - Các trường cần cập nhật
+ */
+export async function updateListingApi(id, data) {
+  return await fetchWithAuth(`/api/listings/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Cập nhật trạng thái tin đăng: hidden, selling, sold (TE9C74D, UC-06, SDD 4.2)
+ * @param {number|string} id - Listing ID
+ * @param {string} status - hidden, selling, sold
+ */
+export async function updateListingStatusApi(id, status) {
+  return await fetchWithAuth(`/api/listings/${id}/status`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ status }),
+  });
+}
+
+
 

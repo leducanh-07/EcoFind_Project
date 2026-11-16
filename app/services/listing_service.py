@@ -16,6 +16,7 @@ from app.core.districts import (
 )
 from app.core.geo import bounding_box_for_radius, haversine_km
 from app.models.user import User
+from app.models.listing_photo import ListingPhoto
 from fastapi import UploadFile
 from app.adapters.image_storage_adapter import (
     process_and_save_upload_files,
@@ -30,9 +31,16 @@ from app.schemas.listing import (
     PhotoItem,
     ListingCreateResponse,
     MyListingItem,
+    ListingUpdateRequest,
+    ListingStatusUpdateRequest,
 )
 from app.services.score_calculator import ScoreCalculator
-from app.core.exceptions import BadRequestException, NotFoundException
+from app.core.exceptions import (
+    BadRequestException,
+    NotFoundException,
+    ForbiddenException,
+    ConflictException,
+)
 
 DISTRICT_COORDINATES: Dict[str, Tuple[float, float]] = {
     info.name: (info.lat, info.lng) for info in HCMC_DISTRICTS
@@ -628,6 +636,41 @@ class ListingService:
             message="Đã gửi, chờ duyệt",
         )
 
+    def _to_my_listing_item(self, l) -> MyListingItem:
+        photos = [
+            PhotoItem(id=p.photo_id or 0, url=p.url, sort_order=p.sort_order or 0)
+            for p in (l.photos or [])
+        ]
+        thumbnail_url = photos[0].url if photos else None
+        total_fl = float(l.total_score)
+        rank_str = ScoreCalculator.get_rank(total_fl)
+
+        return MyListingItem(
+            id=l.listing_id,
+            title=l.title,
+            description=l.description,
+            price=float(l.price),
+            address=l.address,
+            lat=float(l.lat),
+            lng=float(l.lng),
+            category_id=l.category_id,
+            category_name=l.category.name if l.category else None,
+            score_appearance=float(l.score_appearance),
+            score_function=float(l.score_function),
+            score_accessories=float(l.score_accessories),
+            total_score=total_fl,
+            rank=rank_str,
+            status=l.status,
+            reject_reason=l.reject_reason,
+            review_note=l.reject_reason,
+            hidden_by_admin=bool(l.hidden_by_admin),
+            thumbnail_url=thumbnail_url,
+            photos=photos,
+            created_at=l.created_at,
+            reviewed_by=l.reviewed_by,
+            reviewed_at=l.reviewed_at,
+        )
+
     async def get_my_listings(
         self,
         db: AsyncSession,
@@ -641,43 +684,226 @@ class ListingService:
         Bao gồm cờ hidden_by_admin và reject_reason nếu tin bị từ chối.
         """
         listings = await self.listing_repo.find_by_seller(db, seller_id=seller_id, status=status)
+        return [self._to_my_listing_item(l) for l in listings]
 
-        results = []
-        for l in listings:
-            photos = [
-                PhotoItem(id=p.photo_id, url=p.url, sort_order=p.sort_order)
-                for p in (l.photos or [])
-            ]
-            thumbnail_url = photos[0].url if photos else None
-            total_fl = float(l.total_score)
-            rank_str = ScoreCalculator.get_rank(total_fl)
+    async def update_listing(
+        self,
+        db: AsyncSession,
+        *,
+        listing_id: int,
+        current_user: User,
+        payload: ListingUpdateRequest,
+    ) -> MyListingItem:
+        """
+        Sửa thông tin tin đăng của chính mình (UC-06, FR-10, TE9C74D, TC-08).
+        Quy tắc nghiệp vụ:
+          - Chỉ chủ tin mới có quyền sửa, người khác nhận lỗi 403 (TC-08).
+          - Sửa điểm thành phần hoặc danh sách ảnh: chuyển status về pending và tính lại điểm tổng (BR-03, TC-07).
+          - Sửa giá hoặc mô tả: giữ nguyên trạng thái hiện tại (A2).
+          - Tin rejected sửa xong gửi lại thì về pending.
+          - Áp dụng kiểm tra BR-04 (1-5 ảnh), BR-05 (giá 0 - 1.000.000.000 đ, điểm 0-10).
+        """
+        listing = await self.listing_repo.find_by_id_with_relations(db, listing_id)
+        if not listing:
+            raise NotFoundException(message="Tin đăng không tồn tại", code=404)
 
-            results.append(
-                MyListingItem(
-                    id=l.listing_id,
-                    title=l.title,
-                    description=l.description,
-                    price=float(l.price),
-                    address=l.address,
-                    lat=float(l.lat),
-                    lng=float(l.lng),
-                    category_id=l.category_id,
-                    category_name=l.category.name if l.category else None,
-                    score_appearance=float(l.score_appearance),
-                    score_function=float(l.score_function),
-                    score_accessories=float(l.score_accessories),
-                    total_score=total_fl,
-                    rank=rank_str,
-                    status=l.status,
-                    reject_reason=l.reject_reason,
-                    review_note=l.reject_reason,
-                    hidden_by_admin=bool(l.hidden_by_admin),
-                    thumbnail_url=thumbnail_url,
-                    photos=photos,
-                    created_at=l.created_at,
-                    reviewed_by=l.reviewed_by,
-                    reviewed_at=l.reviewed_at,
-                )
+        if listing.seller_id != current_user.user_id:
+            raise ForbiddenException(
+                message="Bạn không có quyền chỉnh sửa tin đăng này",
+                code=403,
             )
-        return results
+
+        fields: Dict[str, str] = {}
+
+        # 1. Kiểm tra Tiêu đề nếu được cung cấp
+        if payload.title is not None:
+            clean_title = payload.title.strip()
+            if not clean_title:
+                fields["title"] = "Tiêu đề không được để trống"
+            elif len(clean_title) > 100:
+                fields["title"] = "Tiêu đề không được vượt quá 100 ký tự"
+
+        # 2. Kiểm tra Danh mục nếu được cung cấp
+        category_obj = None
+        if payload.category_id is not None:
+            category_repo = CategoryRepository()
+            category_obj = await category_repo.find_by_id(db, payload.category_id)
+            if not category_obj:
+                fields["categoryId"] = "Danh mục không tồn tại"
+
+        # 3. Kiểm tra Giá bán nếu được cung cấp (BR-05: 0 <= price <= 1.000.000.000)
+        if payload.price is not None:
+            if payload.price < 0 or payload.price > 1_000_000_000:
+                fields["price"] = "Giá bán phải từ 0 đến 1.000.000.000 đ (BR-05)"
+
+        # 4. Kiểm tra Mô tả nếu được cung cấp
+        if payload.description is not None:
+            clean_desc = payload.description.strip()
+            if not clean_desc:
+                fields["description"] = "Mô tả không được để trống"
+
+        # 5. Kiểm tra Tọa độ nếu được cung cấp
+        if payload.lat is not None and (payload.lat < -90.0 or payload.lat > 90.0):
+            fields["lat"] = "Vĩ độ không hợp lệ"
+        if payload.lng is not None and (payload.lng < -180.0 or payload.lng > 180.0):
+            fields["lng"] = "Kinh độ không hợp lệ"
+
+        # 6. Kiểm tra Điểm thành phần nếu được cung cấp (0.0 - 10.0)
+        for s_key, s_val, s_name in [
+            ("scoreAppearance", payload.score_appearance, "Điểm ngoại quan"),
+            ("scoreFunction", payload.score_function, "Điểm chức năng"),
+            ("scoreAccessories", payload.score_accessories, "Điểm phụ kiện"),
+        ]:
+            if s_val is not None:
+                if not math.isfinite(s_val) or s_val < 0.0 or s_val > 10.0:
+                    fields[s_key] = f"{s_name} phải nằm trong khoảng từ 0 đến 10"
+
+        # 7. Kiểm tra Danh sách ảnh nếu được cung cấp (1 đến 5 ảnh - BR-04)
+        if payload.photos is not None:
+            if len(payload.photos) < 1 or len(payload.photos) > 5:
+                fields["photos"] = "Tin đăng phải có từ 1 đến 5 hình ảnh (BR-04)"
+
+        if fields:
+            raise BadRequestException(
+                message="Dữ liệu chỉnh sửa không hợp lệ",
+                fields=fields,
+            )
+
+        # Phát hiện thay đổi điểm hoặc ảnh
+        old_app = float(listing.score_appearance)
+        old_func = float(listing.score_function)
+        old_acc = float(listing.score_accessories)
+
+        new_app = float(payload.score_appearance) if payload.score_appearance is not None else old_app
+        new_func = float(payload.score_function) if payload.score_function is not None else old_func
+        new_acc = float(payload.score_accessories) if payload.score_accessories is not None else old_acc
+
+        scores_changed = (
+            (payload.score_appearance is not None and new_app != old_app) or
+            (payload.score_function is not None and new_func != old_func) or
+            (payload.score_accessories is not None and new_acc != old_acc)
+        )
+
+        photos_changed = False
+        if payload.photos is not None:
+            current_photos = [p.url for p in sorted(listing.photos, key=lambda p: p.sort_order)]
+            if payload.photos != current_photos:
+                photos_changed = True
+
+        was_rejected = (listing.status == "rejected")
+
+        # Cập nhật thông tin cơ bản
+        if payload.title is not None:
+            listing.title = payload.title.strip()
+        if payload.description is not None:
+            listing.description = payload.description.strip()
+        if payload.price is not None:
+            listing.price = payload.price
+        if payload.address is not None:
+            listing.address = payload.address.strip()
+        if payload.lat is not None:
+            listing.lat = payload.lat
+        if payload.lng is not None:
+            listing.lng = payload.lng
+        if payload.category_id is not None:
+            listing.category_id = payload.category_id
+            if category_obj:
+                listing.category = category_obj
+
+        # Sửa điểm -> tính lại điểm tổng và phân hạng bằng ScoreCalculator
+        if scores_changed:
+            listing.score_appearance = new_app
+            listing.score_function = new_func
+            listing.score_accessories = new_acc
+            total_score, _ = ScoreCalculator.calculate(new_app, new_func, new_acc)
+            listing.total_score = total_score
+
+        # Sửa ảnh -> cập nhật danh sách ảnh
+        if photos_changed and payload.photos is not None:
+            listing.photos.clear()
+            for idx, photo_url in enumerate(payload.photos):
+                listing.photos.append(ListingPhoto(url=photo_url, sort_order=idx))
+
+        # Quy tắc: Nếu sửa điểm, sửa ảnh hoặc tin trước đó bị từ chối -> reset về pending để duyệt lại
+        if scores_changed or photos_changed or was_rejected:
+            listing.status = "pending"
+            listing.reject_reason = None
+            listing.reviewed_by = None
+            listing.reviewed_at = None
+
+        await db.commit()
+        await db.refresh(listing)
+        return self._to_my_listing_item(listing)
+
+    async def update_listing_status(
+        self,
+        db: AsyncSession,
+        *,
+        listing_id: int,
+        current_user: User,
+        new_status: str,
+    ) -> MyListingItem:
+        """
+        Thay đổi trạng thái tin đăng của chính mình (UC-06, SDD 4.2).
+        Hỗ trợ: hidden, selling, sold.
+        Chặn:
+          - Tin pending đánh dấu sold -> trả lỗi 409 (E1).
+          - Tin pending mở selling -> trả lỗi 403 (cần admin duyệt).
+          - Tin do admin ẩn vi phạm (hidden_by_admin) mở lại selling -> trả lỗi 403 (E3).
+          - Tin rejected đổi sang selling/sold khi chưa sửa -> trả lỗi 409.
+          - Tin sold chuyển sang trạng thái khác -> trả lỗi 409.
+          - Người khác không phải chủ tin -> trả lỗi 403.
+        """
+        listing = await self.listing_repo.find_by_id_with_relations(db, listing_id)
+        if not listing:
+            raise NotFoundException(message="Tin đăng không tồn tại", code=404)
+
+        if listing.seller_id != current_user.user_id:
+            raise ForbiddenException(
+                message="Bạn không có quyền thay đổi trạng thái tin đăng này",
+                code=403,
+            )
+
+        clean_status = (new_status or "").strip().lower()
+        if clean_status not in {"hidden", "selling", "sold"}:
+            raise BadRequestException(
+                message=f"Trạng thái '{new_status}' không hợp lệ. Chỉ chấp nhận: hidden, selling, sold",
+                fields={"status": "Chỉ chấp nhận: hidden, selling, sold"},
+            )
+
+        # SDD 4.2: Bảng chuyển trạng thái tin đăng
+        if listing.status == "pending" and clean_status == "sold":
+            raise ConflictException(
+                message="Tin chờ duyệt không được phép đánh dấu đã bán",
+                code=409,
+            )
+
+        if listing.status == "pending" and clean_status == "selling":
+            raise ForbiddenException(
+                message="Tin chờ duyệt cần được Admin kiểm duyệt trước khi mở bán",
+                code=403,
+            )
+
+        if listing.hidden_by_admin and clean_status == "selling":
+            raise ForbiddenException(
+                message="Tin do Admin ẩn vi phạm không thể tự mở lại",
+                code=403,
+            )
+
+        if listing.status == "rejected" and clean_status in {"selling", "sold"}:
+            raise ConflictException(
+                message="Tin bị từ chối cần được chỉnh sửa và gửi duyệt lại trước khi chuyển trạng thái",
+                code=409,
+            )
+
+        if listing.status == "sold" and clean_status != "sold":
+            raise ConflictException(
+                message="Tin đã bán không thể chuyển về trạng thái khác",
+                code=409,
+            )
+
+        listing.status = clean_status
+        await db.commit()
+        await db.refresh(listing)
+        return self._to_my_listing_item(listing)
 

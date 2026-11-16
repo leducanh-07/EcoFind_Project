@@ -107,3 +107,24 @@ class MyListingItem(BaseSchema):
     reviewed_at: Optional[datetime] = None
 
 
+class ListingUpdateRequest(BaseSchema):
+    """Schema cập nhật tin đăng của người bán."""
+    title: Optional[str] = None
+    category_id: Optional[int] = None
+    price: Optional[float] = None
+    description: Optional[str] = None
+    address: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    score_appearance: Optional[float] = None
+    score_function: Optional[float] = None
+    score_accessories: Optional[float] = None
+    photos: Optional[List[str]] = None
+
+
+class ListingStatusUpdateRequest(BaseSchema):
+    """Schema cập nhật trạng thái tin đăng (ẩn, hiện lại, đã bán)."""
+    status: str
+
+
+
