@@ -93,6 +93,8 @@ CREATE TABLE IF NOT EXISTS listings (
     CONSTRAINT chk_listings_status CHECK (status IN ('pending', 'selling', 'rejected', 'sold', 'hidden'))
 );
 
+CREATE INDEX IF NOT EXISTS idx_listings_seller ON listings (seller_id);
+
 -- -----------------------------------------------------------------------------
 -- 4. LISTING_PHOTOS: Item photo URLs (1 to 5 photos per listing)
 -- Traceability: SDD 6.1, BR-04, SRS 3.4

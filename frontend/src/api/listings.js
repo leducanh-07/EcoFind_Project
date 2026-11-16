@@ -66,3 +66,18 @@ export async function createListingApi(formData) {
   });
 }
 
+/**
+ * Lấy danh sách tin đăng của chính người dùng theo trạng thái (TE9C74C, UC-06, FR-10)
+ * @param {Object} options
+ * @param {string} [options.status] - pending, selling, rejected, sold, hidden
+ */
+export async function getMyListingsApi({ status } = {}) {
+  const params = new URLSearchParams();
+  if (status) params.append('status', status);
+  const query = params.toString();
+  return await fetchWithAuth(`/api/me/listings${query ? `?${query}` : ''}`, {
+    method: 'GET',
+  });
+}
+
+

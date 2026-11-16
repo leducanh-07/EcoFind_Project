@@ -187,6 +187,37 @@ class ListingRepository:
         result = await db.execute(stmt)
         return list(result.scalars().all())
 
+    async def find_by_seller(
+        self,
+        db: AsyncSession,
+        seller_id: int,
+        status: Optional[str] = None,
+        sort: str = "desc",
+    ) -> List[Listing]:
+        """
+        Lấy danh sách tin đăng của chính người dùng (UC-06, FR-10, TE9C74C).
+        Tận dụng chỉ mục idx_listings_seller trên cột seller_id.
+        Hỗ trợ lọc theo trạng thái: pending, selling, rejected, sold, hidden.
+        """
+        stmt = (
+            select(Listing)
+            .options(
+                selectinload(Listing.photos),
+                selectinload(Listing.category),
+            )
+            .where(Listing.seller_id == seller_id)
+        )
+        if status:
+            stmt = stmt.where(Listing.status == status)
+
+        if sort and sort.lower() == "asc":
+            stmt = stmt.order_by(Listing.created_at.asc())
+        else:
+            stmt = stmt.order_by(Listing.created_at.desc())
+
+        result = await db.execute(stmt)
+        return list(result.scalars().all())
+
     async def find_in_bounds(
         self,
         db: AsyncSession,

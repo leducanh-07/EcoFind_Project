@@ -24,7 +24,13 @@ from app.adapters.image_storage_adapter import (
 )
 from app.repositories.category_repository import CategoryRepository
 from app.repositories.listing_repository import ListingRepository
-from app.schemas.listing import ListingMapItem, ListingDetailResponse, PhotoItem, ListingCreateResponse
+from app.schemas.listing import (
+    ListingMapItem,
+    ListingDetailResponse,
+    PhotoItem,
+    ListingCreateResponse,
+    MyListingItem,
+)
 from app.services.score_calculator import ScoreCalculator
 from app.core.exceptions import BadRequestException, NotFoundException
 
@@ -621,4 +627,57 @@ class ListingService:
             rank=rank_label,
             message="Đã gửi, chờ duyệt",
         )
+
+    async def get_my_listings(
+        self,
+        db: AsyncSession,
+        seller_id: int,
+        status: Optional[str] = None,
+    ) -> List[MyListingItem]:
+        """
+        Lấy danh sách tin đăng của chính người dùng (UC-06, FR-10, TE9C74C).
+        Tận dụng chỉ mục idx_listings_seller trên cột seller_id.
+        Hỗ trợ lọc theo trạng thái: pending, selling, rejected, sold, hidden.
+        Bao gồm cờ hidden_by_admin và reject_reason nếu tin bị từ chối.
+        """
+        listings = await self.listing_repo.find_by_seller(db, seller_id=seller_id, status=status)
+
+        results = []
+        for l in listings:
+            photos = [
+                PhotoItem(id=p.photo_id, url=p.url, sort_order=p.sort_order)
+                for p in (l.photos or [])
+            ]
+            thumbnail_url = photos[0].url if photos else None
+            total_fl = float(l.total_score)
+            rank_str = ScoreCalculator.get_rank(total_fl)
+
+            results.append(
+                MyListingItem(
+                    id=l.listing_id,
+                    title=l.title,
+                    description=l.description,
+                    price=float(l.price),
+                    address=l.address,
+                    lat=float(l.lat),
+                    lng=float(l.lng),
+                    category_id=l.category_id,
+                    category_name=l.category.name if l.category else None,
+                    score_appearance=float(l.score_appearance),
+                    score_function=float(l.score_function),
+                    score_accessories=float(l.score_accessories),
+                    total_score=total_fl,
+                    rank=rank_str,
+                    status=l.status,
+                    reject_reason=l.reject_reason,
+                    review_note=l.reject_reason,
+                    hidden_by_admin=bool(l.hidden_by_admin),
+                    thumbnail_url=thumbnail_url,
+                    photos=photos,
+                    created_at=l.created_at,
+                    reviewed_by=l.reviewed_by,
+                    reviewed_at=l.reviewed_at,
+                )
+            )
+        return results
 

@@ -76,3 +76,34 @@ class ListingCreateResponse(BaseSchema):
     rank: str
     message: str = "Đã gửi, chờ duyệt"
 
+
+class MyListingItem(BaseSchema):
+    """
+    Schema danh sách tin đăng của chính người dùng (UC-06, FR-10, TE9C74C).
+    Bao gồm thông tin tin đăng, phân hạng, reject_reason nếu bị từ chối và cờ hidden_by_admin.
+    """
+    id: int
+    title: str
+    description: Optional[str] = None
+    price: float
+    address: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    category_id: Optional[int] = None
+    category_name: Optional[str] = None
+    score_appearance: Optional[float] = None
+    score_function: Optional[float] = None
+    score_accessories: Optional[float] = None
+    total_score: float
+    rank: str
+    status: str
+    reject_reason: Optional[str] = None
+    review_note: Optional[str] = None
+    hidden_by_admin: bool = False
+    thumbnail_url: Optional[str] = None
+    photos: List[PhotoItem] = []
+    created_at: Optional[datetime] = None
+    reviewed_by: Optional[int] = None
+    reviewed_at: Optional[datetime] = None
+
+

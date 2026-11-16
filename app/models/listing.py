@@ -14,6 +14,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     CheckConstraint,
+    Index,
 )
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -69,5 +70,6 @@ class Listing(Base):
         CheckConstraint("score_accessories >= 0.0 AND score_accessories <= 10.0", name="chk_listings_score_accessories"),
         CheckConstraint("total_score >= 0.0 AND total_score <= 10.0", name="chk_listings_total_score"),
         CheckConstraint("status IN ('pending', 'selling', 'rejected', 'sold', 'hidden')", name="chk_listings_status"),
+        Index("idx_listings_seller", "seller_id"),
     )
 
