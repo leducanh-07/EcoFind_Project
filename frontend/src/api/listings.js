@@ -96,8 +96,8 @@ export async function updateListingApi(id, data) {
 }
 
 /**
- * Cập nhật trạng thái tin đăng: hidden, selling, sold (TE9C74D, UC-06, SDD 4.2)
- * @param {number|string} id - Listing ID
+ * Cập nhật trạng thái tin đăng: ẩn, hiện lại hoặc đánh dấu đã bán (TE9C74E, UC-06, FR-10, SDD 4.2)
+ * @param {number|string} id - Mã tin đăng
  * @param {string} status - hidden, selling, sold
  */
 export async function updateListingStatusApi(id, status) {
@@ -109,6 +109,4 @@ export async function updateListingStatusApi(id, status) {
     body: JSON.stringify({ status }),
   });
 }
-
-
 

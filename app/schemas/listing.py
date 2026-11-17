@@ -123,8 +123,23 @@ class ListingUpdateRequest(BaseSchema):
 
 
 class ListingStatusUpdateRequest(BaseSchema):
-    """Schema cập nhật trạng thái tin đăng (ẩn, hiện lại, đã bán)."""
+    """Schema cập nhật trạng thái tin đăng (ẩn, hiện lại, đã bán) (UC-06, FR-10, TE9C74E)."""
     status: str
 
 
+UpdateListingStatusRequest = ListingStatusUpdateRequest
+
+
+class UpdateListingStatusResponse(BaseSchema):
+    """
+    Schema phản hồi sau khi cập nhật trạng thái tin đăng thành công (UC-06, FR-10, TE9C74E).
+    """
+    id: int
+    status: str
+    message: str = "Cập nhật trạng thái thành công"
+    hidden_by_admin: bool = False
+    total_score: float
+    rank: str
+    title: Optional[str] = None
+    price: Optional[float] = None
 
