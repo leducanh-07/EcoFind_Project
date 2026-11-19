@@ -202,6 +202,9 @@ describe('ListingDetailPage Component (UC-04, FR-07, BR-01, BR-05, TC-04, TE9C73
       ...mockListingData,
       phone: '0912345678',
     });
+    vi.spyOn(listingsApi, 'reportListingApi').mockResolvedValue({
+      message: 'Gửi báo cáo thành công',
+    });
 
     renderComponent();
 
@@ -229,6 +232,9 @@ describe('ListingDetailPage Component (UC-04, FR-07, BR-01, BR-05, TC-04, TE9C73
     vi.spyOn(listingsApi, 'getListingDetailApi').mockResolvedValue({
       ...mockListingData,
       phone: '0912345678',
+    });
+    vi.spyOn(listingsApi, 'reportListingApi').mockResolvedValue({
+      message: 'Gửi báo cáo thành công',
     });
 
     renderComponent();

@@ -110,3 +110,21 @@ export async function updateListingStatusApi(id, status) {
   });
 }
 
+/**
+ * Gửi báo cáo tin đăng vi phạm (TE9C753, TE9C754, UC-08, FR-12, TC-09)
+ * @param {number|string} id - Mã tin đăng
+ * @param {Object} data
+ * @param {string} data.reason - wrong_score, scam, prohibited, other
+ * @param {string} [data.note] - Ghi chú tối đa 200 ký tự
+ */
+export async function reportListingApi(id, { reason, note } = {}) {
+  return await fetchWithAuth(`/api/listings/${id}/reports`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reason, note: note || null }),
+  });
+}
+
+
