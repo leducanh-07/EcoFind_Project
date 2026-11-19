@@ -28,6 +28,12 @@ client = TestClient(app)
 @pytest.fixture(autouse=True)
 def clean_overrides():
     orig = user_repo.find_by_id
+    mock_db = AsyncMock()
+
+    async def override_get_db():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = override_get_db
     yield
     user_repo.find_by_id = orig
     app.dependency_overrides.clear()

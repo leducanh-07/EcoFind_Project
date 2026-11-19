@@ -49,6 +49,8 @@ htmlcov/
 
 # Logs & temporary uploads
 *.log
+*.db
+*.sqlite3
 uploads/
 tmp/
 
