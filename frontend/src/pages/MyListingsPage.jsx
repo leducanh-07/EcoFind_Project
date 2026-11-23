@@ -42,6 +42,7 @@ import {
 import { getCategoriesApi } from '../api/categories';
 import ConditionScorer, { calculateTotalScore, getConditionRank } from '../components/ConditionScorer';
 import PhotoUploader from '../components/PhotoUploader';
+import { handleImageError } from '../utils/imageFallback';
 
 const STATUS_TABS = [
   { key: 'all', label: 'Tất cả' },
@@ -530,6 +531,7 @@ export default function MyListingsPage() {
                           src={photoUrl}
                           alt={item.title}
                           className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border border-slate-100 shrink-0 bg-slate-50"
+                          onError={handleImageError}
                         />
                       ) : (
                         <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 shrink-0 border border-slate-200/60">

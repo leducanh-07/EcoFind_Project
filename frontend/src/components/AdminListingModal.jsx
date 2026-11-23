@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { calculateTotalScore, getConditionRank } from './ConditionScorer';
 import { approveListingApi, rejectListingApi, getAdminListingDetailApi } from '../api/admin';
+import { handleImageError } from '../utils/imageFallback';
 
 export default function AdminListingModal({
   listingId,
@@ -303,6 +304,7 @@ export default function AdminListingModal({
                       alt={listing.title}
                       data-testid="modal-main-photo"
                       className="w-full h-full object-cover"
+                      onError={handleImageError}
                     />
                     <div className="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-full bg-slate-900/70 text-white text-[11px] backdrop-blur-sm">
                       {photos.length > 0 ? `${activePhotoIdx + 1}/${photos.length} ảnh` : 'Chưa có ảnh'}
@@ -320,7 +322,7 @@ export default function AdminListingModal({
                             activePhotoIdx === idx ? 'border-emerald-600 shadow-sm scale-95' : 'border-transparent opacity-70 hover:opacity-100'
                           }`}
                         >
-                          <img src={p.url} alt="" className="w-full h-full object-cover" />
+                          <img src={p.url} alt="" className="w-full h-full object-cover" onError={handleImageError} />
                         </button>
                       ))}
                     </div>

@@ -703,6 +703,350 @@ DEMO_LISTINGS = [
             "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&auto=format&fit=crop",
         ],
     },
+
+    # ------------------ BỔ SUNG ĐA DẠNG DANH MỤC & ĐỊA BÀN TP.HCM (DEMO EXPANDED) ------------------
+    # --- SÁCH & VĂN PHÒNG PHẨM (CATEGORY 3) ---
+    {
+        "seller": "seller2",
+        "category_id": 3,
+        "title": "Trọn bộ tiểu thuyết Harry Potter 7 tập bản bìa cứng",
+        "description": "Bộ truyện kinh điển tuổi thơ bản dịch Lý Lan, bìa cứng in nhũ vàng sang trọng. Sách được bọc nylon cẩn thận, giấy thơm không ố vàng hay rách trang.",
+        "price": 850000,
+        "address": "45 Lê Văn Việt, Phường Hiệp Phú, TP. Thủ Đức, TP. Hồ Chí Minh",
+        "lat": 10.8490, "lng": 106.7720,
+        "score_app": 9.5, "score_fn": 10.0, "score_acc": 9.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 3,
+        "title": "Giáo trình Cấu trúc dữ liệu & Giải thuật Python",
+        "description": "Sách gối đầu giường cho sinh viên CNTT. Bìa có nếp gấp nhẹ ở góc, bên trong có highlight vài trang quan trọng, còn lại nguyên vẹn không rách.",
+        "price": 95000,
+        "address": "Làng Đại Học Quốc Gia, Phường Linh Trung, TP. Thủ Đức, TP. Hồ Chí Minh",
+        "lat": 10.8700, "lng": 106.7780,
+        "score_app": 7.5, "score_fn": 9.0, "score_acc": 8.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1532012164546-f432f2e3edd4?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 3,
+        "title": "Bút máy cao cấp Parker Sonnet ngòi F mạ vàng",
+        "description": "Bút ký tên doanh nhân cao cấp, thân thép sơn mài đen bóng, ngòi mạ vàng 18K viết êm trơn tru. Tặng kèm converter bơm mực và hộp nhung sang trọng.",
+        "price": 1200000,
+        "address": "65 Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+        "lat": 10.7745, "lng": 106.7015,
+        "score_app": 9.0, "score_fn": 9.5, "score_acc": 9.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1585336261026-410c598000ad?w=800&auto=format&fit=crop",
+        ],
+    },
+
+    # --- QUẦN ÁO & THỜI TRANG (CATEGORY 4) ---
+    {
+        "seller": "seller1",
+        "category_id": 4,
+        "title": "Giày thể thao Nike Air Jordan 1 Low Panda size 42",
+        "description": "Đôi giày sneaker phối màu đen trắng kinh điển, phối đồ cực đẹp. Mới mang 2-3 lần đi dạo phố, đế còn gai nguyên, da không gãy mũi. Kèm hộp gốc.",
+        "price": 1950000,
+        "address": "360 Hai Bà Trưng, Phường Tân Định, Quận 1, TP. Hồ Chí Minh",
+        "lat": 10.7905, "lng": 106.6908,
+        "score_app": 9.0, "score_fn": 9.5, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=800&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 4,
+        "title": "Balo Fjallraven Kanken Classic chống nước màu Navy",
+        "description": "Balo Thụy Điển vải Vinylon F bền bỉ siêu nhẹ chống thấm nước. Thích hợp đi học hoặc đi làm chứa vừa laptop 13 inch. Dây đeo chắc chắn.",
+        "price": 650000,
+        "address": "180 Cao Thắng, Phường 11, Quận 10, TP. Hồ Chí Minh",
+        "lat": 10.7710, "lng": 106.6740,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 4,
+        "title": "Đồng hồ thể thao Casio G-Shock GA-2100 CasiOak",
+        "description": "Dòng CasiOak vỏ bát giác mỏng nhẹ, kính khoáng cường lực chống va đập và chống nước 200m. Mặt kính không trầy xước, pin dùng 3 năm.",
+        "price": 1350000,
+        "address": "520 Cộng Hòa, Phường 13, Quận Tân Bình, TP. Hồ Chí Minh",
+        "lat": 10.8015, "lng": 106.6430,
+        "score_app": 8.5, "score_fn": 9.5, "score_acc": 8.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=800&auto=format&fit=crop",
+        ],
+    },
+
+    # --- ĐỒ GIA DỤNG (CATEGORY 5) ---
+    {
+        "seller": "seller2",
+        "category_id": 5,
+        "title": "Máy pha cà phê Delonghi Dedica EC685 màu bạc",
+        "description": "Máy pha espresso gia đình chuẩn áp suất 15 bar, vòi đánh sữa tạo bọt mịn làm cappuccino cực ngon. Thân máy inox sáng bóng, hoạt động êm ái.",
+        "price": 2800000,
+        "address": "25 Nguyễn Hữu Thọ, Phường Tân Hưng, Quận 7, TP. Hồ Chí Minh",
+        "lat": 10.7410, "lng": 106.7020,
+        "score_app": 9.0, "score_fn": 9.5, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1517668808822-9ebb02ae2a0e?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 5,
+        "title": "Nồi lẩu điện đa năng Lock&Lock 3L chống dính",
+        "description": "Nồi lẩu điện gia đình 3 lít, công suất 1300W sôi nhanh, lớp chống dính Teflon bền tốt không bong tróc. Dùng ăn lẩu hoặc nấu canh, chiên xào rất tiện.",
+        "price": 320000,
+        "address": "145 Nguyễn Văn Cừ, Phường 2, Quận 5, TP. Hồ Chí Minh",
+        "lat": 10.7590, "lng": 106.6830,
+        "score_app": 8.0, "score_fn": 8.5, "score_acc": 8.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 5,
+        "title": "Quạt tháp Xiaomi Smart Tower Fan thế hệ mới",
+        "description": "Quạt tháp không cánh thiết kế thanh lịch sang trọng, gió êm tự nhiên không ồn, điều khiển qua app Mi Home hoặc giọng nói. Tiết kiệm điện tối đa.",
+        "price": 890000,
+        "address": "78 Hoàng Diệu 2, Phường Linh Chiểu, TP. Thủ Đức, TP. Hồ Chí Minh",
+        "lat": 10.8550, "lng": 106.7650,
+        "score_app": 9.0, "score_fn": 9.0, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1616401784845-180882ba9ba8?w=800&auto=format&fit=crop",
+        ],
+    },
+
+    # --- THỂ THAO & DÃ NGOẠI (CATEGORY 6) ---
+    {
+        "seller": "seller1",
+        "category_id": 6,
+        "title": "Vợt Pickleball Selkirk Vanguard Power Air Invikta",
+        "description": "Dòng vợt pickleball cao cấp mặt sợi carbon tăng xoáy và lực đánh, viền khí động học không cản gió. Mới đánh 4 trận, cán quấn overgrip mới tinh.",
+        "price": 2400000,
+        "address": "40 Xuân Thủy, Phường Thảo Điền, TP. Thủ Đức, TP. Hồ Chí Minh",
+        "lat": 10.8030, "lng": 106.7321,
+        "score_app": 9.5, "score_fn": 9.5, "score_acc": 9.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 6,
+        "title": "Xe đạp thể thao Fornix địa hình bánh 26 inch",
+        "description": "Khung sườn thép carbon chịu lực tốt, bộ chuyển động Shimano 21 tốc độ mượt mà, phanh đĩa cơ an toàn trước sau. Xe bảo dưỡng định kỳ đạp nhẹ tênh.",
+        "price": 1600000,
+        "address": "112 Tên Lửa, Phường Bình Trị Đông B, Quận Bình Tân, TP. Hồ Chí Minh",
+        "lat": 10.7654, "lng": 106.6047,
+        "score_app": 7.5, "score_fn": 8.5, "score_acc": 7.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 6,
+        "title": "Thảm tập Yoga Lululemon 5mm bám dính cao",
+        "description": "Thảm cao su tự nhiên cao cấp Lululemon, độ dày 5mm êm khớp gối, bề mặt vân nhám chống trơn trượt tối đa kể cả khi ra mồ hôi nhiều. Kèm dây đeo.",
+        "price": 750000,
+        "address": "220 Nguyễn Thị Thập, Phường Tân Quy, Quận 7, TP. Hồ Chí Minh",
+        "lat": 10.7380, "lng": 106.7110,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800&auto=format&fit=crop",
+        ],
+    },
+
+    # --- MẸ & BÉ (CATEGORY 7) ---
+    {
+        "seller": "seller2",
+        "category_id": 7,
+        "title": "Xe đẩy cho bé Joie Pact Flex gấp gọn siêu nhẹ",
+        "description": "Xe đẩy du lịch gấp gọn bằng một tay cực êm, có quai đeo vai tiện lợi, mái che chống tia UV50+. Bánh xe giảm xóc lò xo êm ái, đầy đủ túi đựng và áo mưa.",
+        "price": 1850000,
+        "address": "90 Quang Trung, Phường 10, Quận Gò Vấp, TP. Hồ Chí Minh",
+        "lat": 10.8387, "lng": 106.6653,
+        "score_app": 9.0, "score_fn": 9.5, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1591088398332-8a7791972843?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 7,
+        "title": "Ghế ăn dặm cho bé Aprica điều chỉnh 3 độ cao",
+        "description": "Ghế ăn dặm nhựa nguyên sinh an toàn, khay ăn tháo rời vệ sinh dễ dàng. Đệm da êm ái chống thấm nước, đai an toàn 5 điểm vững chãi.",
+        "price": 480000,
+        "address": "235 Lũy Bán Bích, Phường Hiệp Tân, Quận Tân Phú, TP. Hồ Chí Minh",
+        "lat": 10.7903, "lng": 106.6280,
+        "score_app": 8.0, "score_fn": 8.5, "score_acc": 8.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 7,
+        "title": "Máy hâm sữa và tiệt trùng bình sữa Fatz Baby Mono 6",
+        "description": "Máy tiệt trùng hơi nước và sấy khô tự động, chứa được cùng lúc 4 bình sữa cổ rộng. Bảng điều khiển cảm ứng LED, hoạt động hoàn hảo.",
+        "price": 350000,
+        "address": "68 Tạ Quang Bửu, Phường 4, Quận 8, TP. Hồ Chí Minh",
+        "lat": 10.7412, "lng": 106.6780,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1584824486509-112e4181ff6b?w=800&auto=format&fit=crop",
+        ],
+    },
+
+    # --- ĐỒ ĐIỆN TỬ BỔ SUNG (CATEGORY 2) ---
+    {
+        "seller": "seller1",
+        "category_id": 2,
+        "title": "Máy đọc sách Kindle Paperwhite 5 16GB màn hình 6.8 inch",
+        "description": "Màn hình Eink 300 ppi chống lóa, đèn nền vàng chỉnh ấm dịu mắt đọc đêm, cổng sạc Type-C tiện lợi. Pin dùng 8-10 tuần một lần sạc.",
+        "price": 2650000,
+        "address": "15 Nguyễn Đình Chiểu, Phường Đa Kao, Quận 1, TP. Hồ Chí Minh",
+        "lat": 10.7875, "lng": 106.6990,
+        "score_app": 9.5, "score_fn": 9.5, "score_acc": 9.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 2,
+        "title": "Loa Bluetooth di động Marshall Emberton II chống nước",
+        "description": "Loa chính hãng ASH âm thanh đa hướng True Stereophonic 360 độ, chống nước chống bụi chuẩn IP67. Pin trên 30 giờ chơi nhạc liên tục. Kèm cáp zin.",
+        "price": 2450000,
+        "address": "320 Ba Tháng Hai, Phường 12, Quận 10, TP. Hồ Chí Minh",
+        "lat": 10.7712, "lng": 106.6660,
+        "score_app": 9.0, "score_fn": 9.5, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 2,
+        "title": "Máy tính bảng iPad Gen 9 64GB Wifi màu Xám không gian",
+        "description": "Máy zin 100% nguyên bản chưa từng sửa chữa, màn hình Retina 10.2 inch sáng đẹp, pin còn 92%. Thích hợp cho học sinh học trực tuyến và xem phim.",
+        "price": 4900000,
+        "address": "400 Hậu Giang, Phường 12, Quận 6, TP. Hồ Chí Minh",
+        "lat": 10.7481, "lng": 106.6352,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800&auto=format&fit=crop",
+        ],
+    },
+
+    # --- TIN CHỜ DUYỆT BỔ SUNG (PENDING - DEMO ADMIN DUYỆT TIN) ---
+    {
+        "seller": "seller2",
+        "category_id": 5,
+        "title": "Nồi chiên không dầu Cosori 5.5L điện tử cao cấp",
+        "description": "Nồi chiên không dầu công suất 1700W giòn rụm không cần dầu mỡ, giỏ chiên chống dính tháo rời vệ sinh dễ. Ngoại hình mới 95%. Tin đang đợi Admin duyệt.",
+        "price": 1250000,
+        "address": "15 Tô Ký, Phường Tân Chánh Hiệp, Quận 12, TP. Hồ Chí Minh",
+        "lat": 10.8672, "lng": 106.6413,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.5,
+        "status": "pending",
+        "photos": [
+            "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 2,
+        "title": "Máy chơi game Sony PlayStation 4 Slim 500GB kèm 2 tay cầm",
+        "description": "Máy PS4 Slim phiên bản 500GB hoạt động mát mẻ êm ái, kèm 2 tay DualShock 4 không trôi cần và đĩa game FIFA 23 bản quyền. Đang gửi duyệt.",
+        "price": 3100000,
+        "address": "184 Lạc Long Quân, Phường 3, Quận 11, TP. Hồ Chí Minh",
+        "lat": 10.7645, "lng": 106.6508,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.5,
+        "status": "pending",
+        "photos": [
+            "https://images.unsplash.com/photo-1507457379470-08b800bebc67?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 6,
+        "title": "Đàn Ukulele Concert gỗ Mahogany âm thanh ấm vang",
+        "description": "Đàn Ukulele size concert 23 inch dây Aquila Ý chính hãng, âm vang trong trẻo. Tặng kèm bao da 3 lớp và capo phím. Chờ Admin kiểm duyệt.",
+        "price": 390000,
+        "address": "88 Hoàng Văn Thụ, Phường 9, Quận Phú Nhuận, TP. Hồ Chí Minh",
+        "lat": 10.8010, "lng": 106.6750,
+        "score_app": 9.0, "score_fn": 9.0, "score_acc": 9.0,
+        "status": "pending",
+        "photos": [
+            "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&auto=format&fit=crop",
+        ],
+    },
+
+    # --- TIN BỊ TỪ CHỐI BỔ SUNG (REJECTED - DEMO SỬA & GỬI LẠI) ---
+    {
+        "seller": "seller1",
+        "category_id": 2,
+        "title": "Đồng hồ thông minh Apple Watch Series 5 thép đen 44mm",
+        "description": "Bản thép đen cao cấp, pin còn 85%. Bị Admin từ chối do điểm ngoại quan tự chấm quá cao so với ảnh chụp có vết xước sâu ở viền.",
+        "price": 2700000,
+        "address": "50 Lê Duẩn, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+        "lat": 10.7812, "lng": 106.6985,
+        "score_app": 9.0, "score_fn": 8.5, "score_acc": 8.0,
+        "status": "rejected",
+        "reject_reason": "Điểm ngoại quan tự chấm 9.0 chưa phù hợp với vết xước sâu ở viền thép trong ảnh thứ 2. Vui lòng chấm lại thang 7.0 và gửi duyệt lại.",
+        "photos": [
+            "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=800&auto=format&fit=crop",
+        ],
+    },
+
+    # --- TIN ĐÃ BÁN BỔ SUNG (SOLD) ---
+    {
+        "seller": "seller2",
+        "category_id": 5,
+        "title": "Bàn ủi hơi nước đứng Philips cầm tay cao cấp",
+        "description": "Đã bán thành công cho anh Nam ở Quận 3 sau 1 ngày đăng tin trên bản đồ EcoFind.",
+        "price": 450000,
+        "address": "120 Võ Thị Sáu, Phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh",
+        "lat": 10.7843, "lng": 106.6844,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.5,
+        "status": "sold",
+        "photos": [
+            "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&auto=format&fit=crop",
+        ],
+    },
 ]
 
 
@@ -779,8 +1123,8 @@ def seed_demo(clean: bool = True):
             else:
                 res = conn.execute(
                     text("""
-                        INSERT INTO users (full_name, email, phone, password_hash, role)
-                        VALUES (:full_name, :email, :phone, :p_hash, :role)
+                        INSERT INTO users (full_name, email, phone, password_hash, role, failed_attempts)
+                        VALUES (:full_name, :email, :phone, :p_hash, :role, 0)
                         RETURNING user_id
                     """),
                     {
@@ -862,48 +1206,40 @@ def seed_demo(clean: bool = True):
         print(f"  ✓ Đã chèn thành công {len(inserted_listing_ids)} tin đăng kèm ảnh CDN Unsplash.")
 
         # 4. Tạo báo cáo vi phạm mẫu (Reports) cho Admin demo
-        print("\n[4/5] Đang tạo 2 báo cáo vi phạm mẫu để demo Admin...")
+        print("\n[4/5] Đang tạo 4 báo cáo vi phạm mẫu (đủ 4 lý do) để demo Admin...")
         buyer_id = user_ids["buyer@ecofind.vn"]
 
-        # Chọn 2 tin đang bán để tạo báo cáo vi phạm
+        # Chọn các tin đang bán để tạo báo cáo vi phạm
         selling_listings = [lid for (lid, item) in inserted_listing_ids if item["status"] == "selling"]
-        if len(selling_listings) >= 2:
-            rep_lid_1 = selling_listings[0]
-            rep_lid_2 = selling_listings[1]
+        if len(selling_listings) >= 4:
+            reports_data = [
+                (selling_listings[0], "wrong_score", "Người bán tự chấm điểm 9.5 nhưng mô tả có vết xước sâu, nghi ngờ khai khống điểm số."),
+                (selling_listings[1], "scam", "Nghi ngờ người bán dùng số điện thoại ảo và không cho xem hàng trực tiếp tại địa chỉ ghim."),
+                (selling_listings[2], "prohibited", "Tin đăng nghi vấn bán hàng cấm hoặc hàng nhái không đúng xuất xứ quy định."),
+                (selling_listings[3], "other", "Số điện thoại liên lạc không nhấc máy, địa chỉ ghim không khớp với thực tế."),
+            ]
 
-            conn.execute(
-                text("""
-                    INSERT INTO reports (listing_id, reporter_id, reason, note, status, created_at)
-                    VALUES (:lid, :reporter_id, 'wrong_score', :note, 'new', :created_at)
-                    ON CONFLICT (reporter_id, listing_id) DO NOTHING
-                """),
-                {
-                    "lid": rep_lid_1,
-                    "reporter_id": buyer_id,
-                    "note": "Người bán tự chấm điểm 9.5 nhưng mô tả có vết xước sâu, nghi ngờ khai khống điểm số.",
-                    "created_at": now - timedelta(hours=1),
-                }
-            )
-
-            conn.execute(
-                text("""
-                    INSERT INTO reports (listing_id, reporter_id, reason, note, status, created_at)
-                    VALUES (:lid, :reporter_id, 'scam', :note, 'new', :created_at)
-                    ON CONFLICT (reporter_id, listing_id) DO NOTHING
-                """),
-                {
-                    "lid": rep_lid_2,
-                    "reporter_id": buyer_id,
-                    "note": "Nghi ngờ người bán dùng số điện thoại ảo và không cho xem hàng trực tiếp tại địa chỉ ghim.",
-                    "created_at": now - timedelta(hours=3),
-                }
-            )
-            print(f"  ✓ Đã tạo 2 báo cáo vi phạm (Tin #{rep_lid_1} và Tin #{rep_lid_2}) cho tài khoản Admin kiểm tra.")
+            for r_lid, r_reason, r_note in reports_data:
+                conn.execute(
+                    text("""
+                        INSERT INTO reports (listing_id, reporter_id, reason, note, status, created_at)
+                        VALUES (:lid, :reporter_id, :reason, :note, 'new', :created_at)
+                        ON CONFLICT (reporter_id, listing_id) DO NOTHING
+                    """),
+                    {
+                        "lid": r_lid,
+                        "reporter_id": buyer_id,
+                        "reason": r_reason,
+                        "note": r_note,
+                        "created_at": now - timedelta(hours=2),
+                    }
+                )
+            print(f"  ✓ Đã tạo 4 báo cáo vi phạm đủ 4 lý do (wrong_score, scam, prohibited, other) cho Admin kiểm tra.")
 
         # 5. Tạo tin Yêu thích mẫu (Favorites) cho tài khoản người mua
-        print("\n[5/5] Đang lưu 3 tin yêu thích mẫu cho tài khoản buyer@ecofind.vn...")
-        if len(selling_listings) >= 4:
-            for fav_lid in selling_listings[2:5]:
+        print("\n[5/5] Đang lưu 4 tin yêu thích mẫu cho tài khoản buyer@ecofind.vn...")
+        if len(selling_listings) >= 8:
+            for fav_lid in selling_listings[4:8]:
                 conn.execute(
                     text("""
                         INSERT INTO favorites (user_id, listing_id, created_at)
@@ -916,7 +1252,7 @@ def seed_demo(clean: bool = True):
                         "created_at": now - timedelta(minutes=30),
                     }
                 )
-            print("  ✓ Đã tạo 3 tin yêu thích sẵn sàng khi đăng nhập tài khoản người mua.")
+            print("  ✓ Đã tạo 4 tin yêu thích sẵn sàng khi đăng nhập tài khoản người mua.")
 
     print("\n==================================================================")
     print("             🎉 NẠP BỘ DỮ LIỆU DEMO THÀNH CÔNG!                   ")

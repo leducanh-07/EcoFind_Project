@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getListingDetailApi, reportListingApi } from '../api/listings';
 import { addFavoriteApi, removeFavoriteApi, checkFavoriteStatusApi } from '../api/favorites';
 import { getRankBadgeColor } from '../components/MapView';
+import { handleImageError } from '../utils/imageFallback';
 import {
   ArrowLeft,
   MapPin,
@@ -246,6 +247,7 @@ export default function ListingDetailPage() {
                 src={currentPhoto}
                 alt={listing.title}
                 className="w-full h-full object-contain sm:object-cover"
+                onError={handleImageError}
               />
             ) : (
               <div className="flex flex-col items-center justify-center text-slate-400">
@@ -299,7 +301,7 @@ export default function ListingDetailPage() {
                       : 'border-transparent opacity-70 hover:opacity-100'
                   }`}
                 >
-                  <img src={p.url} alt="" className="w-full h-full object-cover" />
+                  <img src={p.url} alt="" className="w-full h-full object-cover" onError={handleImageError} />
                 </button>
               ))}
             </div>

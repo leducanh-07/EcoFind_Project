@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginApi } from '../api/auth';
-import { Mail, Lock, Eye, EyeOff, AlertCircle, Clock, ArrowRight, MapPin } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, Clock, ArrowRight, Compass } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -87,8 +87,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 sm:p-8">
         {/* Brand Header */}
         <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
-            <MapPin size={28} className="stroke-[2.5]" />
+          <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-emerald-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm">
+            <Compass size={28} className="stroke-[2.2]" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Đăng nhập tài khoản</h1>
           <p className="text-sm text-slate-500 mt-1">

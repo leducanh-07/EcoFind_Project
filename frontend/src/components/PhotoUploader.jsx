@@ -21,6 +21,7 @@ import {
   X,
   FileImage,
 } from 'lucide-react';
+import { handleImageError } from '../utils/imageFallback';
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png'];
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png'];
@@ -337,6 +338,7 @@ export default function PhotoUploader({
                       src={photo.previewUrl}
                       alt={photo.name || `Ảnh ${index + 1}`}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                      onError={handleImageError}
                     />
 
                     {/* Order / Cover Badge */}

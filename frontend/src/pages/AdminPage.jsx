@@ -24,6 +24,7 @@ import {
   resolveAdminReportApi,
 } from '../api/admin';
 import AdminListingModal from '../components/AdminListingModal';
+import { handleImageError } from '../utils/imageFallback';
 
 const REASON_LABELS = {
   wrong_score: { label: 'Sai điểm tình trạng', color: 'bg-amber-50 text-amber-800 border-amber-200' },
@@ -408,7 +409,7 @@ export default function AdminPage() {
                         <td className="py-4 px-5 max-w-xs">
                           <div className="flex items-center gap-3">
                             <div className="w-13 h-13 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
-                              <img src={thumb} alt="" className="w-full h-full object-cover" />
+                              <img src={thumb} alt="" className="w-full h-full object-cover" onError={handleImageError} />
                             </div>
                             <div className="min-w-0">
                               <p className="font-bold text-slate-800 text-xs sm:text-sm line-clamp-1 group-hover:text-teal-700 transition-colors">
@@ -591,6 +592,7 @@ export default function AdminPage() {
                             src={thumb}
                             alt=""
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            onError={handleImageError}
                           />
                         </div>
                       </td>
