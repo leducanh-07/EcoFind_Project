@@ -50,6 +50,13 @@ DEMO_USERS = [
         "role": "admin",
     },
     {
+        "email": "seller@ecofind.vn",
+        "full_name": "Nguyễn Văn Người Bán (Mặc Định)",
+        "phone": "0901234568",
+        "password": "Seller@123",
+        "role": "user",
+    },
+    {
         "email": "seller1@ecofind.vn",
         "full_name": "Nguyễn Văn Hùng (Chuyên Đồ Công Nghệ)",
         "phone": "0901234567",
