@@ -18,12 +18,20 @@ from app.core.security import (
     create_access_token,
     decode_access_token,
 )
-from app.core.dependencies import (
-    get_current_user,
-    get_optional_user,
-    require_role,
-    check_listing_owner,
-)
+
+
+def __getattr__(name: str):
+    if name in (
+        "get_current_user",
+        "get_optional_user",
+        "require_role",
+        "check_listing_owner",
+        "dependencies",
+    ):
+        from app.core import dependencies
+        return getattr(dependencies, name) if name != "dependencies" else dependencies
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
 
 __all__ = [
     "settings",

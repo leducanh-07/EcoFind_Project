@@ -15,6 +15,8 @@ from app.schemas.listing import (
     MyListingItem,
     ListingUpdateRequest,
     ListingStatusUpdateRequest,
+    UpdateListingStatusRequest,
+    UpdateListingStatusResponse,
 )
 from app.schemas.favorite import FavoriteStatusResponse
 from app.schemas.report import ReportCreateRequest, ReportCreateResponse
@@ -222,9 +224,9 @@ async def update_listing(
 
 @router.patch(
     "/{id}/status",
-    response_model=MyListingItem,
+    response_model=UpdateListingStatusResponse,
     status_code=status.HTTP_200_OK,
-    summary="Thay đổi trạng thái tin đăng",
+    summary="Cập nhật trạng thái tin đăng: ẩn, hiện lại hoặc đánh dấu đã bán (UC-06, FR-10, TE9C74E)",
 )
 async def update_listing_status(
     id: int,
@@ -233,17 +235,17 @@ async def update_listing_status(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Đổi trạng thái tin đăng:
-      - Nhận các trạng thái: hidden, selling hoặc sold.
-      - Tin chờ duyệt đánh dấu đã bán trả về lỗi 409.
-      - Tin do Admin ẩn vi phạm không thể tự mở lại (trả về lỗi 403).
-      - Chỉ chủ tin mới có quyền thực hiện.
+    Là Người bán, tôi muốn ẩn tin, hiện lại hoặc đánh dấu đã bán khi cần (UC-06, FR-10, TE9C74E):
+      - Nhận hidden, selling hoặc sold theo bảng chuyển trạng thái SDD 4.2.
+      - Tin pending đánh dấu sold trả 409 Conflict (E1).
+      - Tin do Admin ẩn (hidden_by_admin) hiện lại trả 403 Forbidden (E3).
+      - Chỉ chủ tin hoặc Admin được phép thao tác.
     """
-    return await listing_service.update_listing_status(
+    return await listing_service.set_status(
         db,
         listing_id=id,
-        current_user=current_user,
         new_status=payload.status,
+        current_user=current_user,
     )
 
 
@@ -336,6 +338,3 @@ async def report_listing(
         reason=payload.reason,
         note=payload.note,
     )
-
-
-

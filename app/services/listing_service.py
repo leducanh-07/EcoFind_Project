@@ -33,14 +33,17 @@ from app.schemas.listing import (
     MyListingItem,
     ListingUpdateRequest,
     ListingStatusUpdateRequest,
+    UpdateListingStatusResponse,
 )
+from app.models.user import User
 from app.services.score_calculator import ScoreCalculator
 from app.core.exceptions import (
     BadRequestException,
     NotFoundException,
-    ForbiddenException,
     ConflictException,
+    ForbiddenException,
 )
+from app.core.dependencies import check_listing_owner
 
 DISTRICT_COORDINATES: Dict[str, Tuple[float, float]] = {
     info.name: (info.lat, info.lng) for info in HCMC_DISTRICTS
@@ -835,75 +838,108 @@ class ListingService:
         await db.refresh(listing)
         return self._to_my_listing_item(listing)
 
-    async def update_listing_status(
+    async def set_status(
         self,
         db: AsyncSession,
-        *,
         listing_id: int,
-        current_user: User,
         new_status: str,
-    ) -> MyListingItem:
+        current_user: User,
+    ) -> UpdateListingStatusResponse:
         """
-        Thay đổi trạng thái tin đăng của chính mình (UC-06, SDD 4.2).
-        Hỗ trợ: hidden, selling, sold.
-        Chặn:
-          - Tin pending đánh dấu sold -> trả lỗi 409 (E1).
-          - Tin pending mở selling -> trả lỗi 403 (cần admin duyệt).
-          - Tin do admin ẩn vi phạm (hidden_by_admin) mở lại selling -> trả lỗi 403 (E3).
-          - Tin rejected đổi sang selling/sold khi chưa sửa -> trả lỗi 409.
-          - Tin sold chuyển sang trạng thái khác -> trả lỗi 409.
-          - Người khác không phải chủ tin -> trả lỗi 403.
+        Cập nhật trạng thái tin đăng (UC-06, FR-10, TE9C74E, SDD 4.2):
+          - Bắt buộc kiểm tra quyền sở hữu: chỉ chủ tin hoặc Admin mới được phép thao tác.
+          - Chỉ nhận các trạng thái: hidden, selling, sold.
+          - Chuyển sang sold: tin đang pending trả lỗi 409 Conflict (E1).
+          - Chuyển sang selling: tin do Admin ẩn (hidden_by_admin = True) trả lỗi 403 Forbidden (E3).
+          - Tin pending hoặc rejected cố chuyển sang selling trả 409 Conflict (E2).
         """
-        listing = await self.listing_repo.find_by_id_with_relations(db, listing_id)
-        if not listing:
-            raise NotFoundException(message="Tin đăng không tồn tại", code=404)
-
-        if listing.seller_id != current_user.user_id:
-            raise ForbiddenException(
-                message="Bạn không có quyền thay đổi trạng thái tin đăng này",
-                code=403,
-            )
-
         clean_status = (new_status or "").strip().lower()
-        if clean_status not in {"hidden", "selling", "sold"}:
+        if clean_status not in ["hidden", "selling", "sold"]:
             raise BadRequestException(
                 message=f"Trạng thái '{new_status}' không hợp lệ. Chỉ chấp nhận: hidden, selling, sold",
                 fields={"status": "Chỉ chấp nhận: hidden, selling, sold"},
             )
 
-        # SDD 4.2: Bảng chuyển trạng thái tin đăng
-        if listing.status == "pending" and clean_status == "sold":
-            raise ConflictException(
-                message="Tin chờ duyệt không được phép đánh dấu đã bán",
-                code=409,
-            )
+        listing = await self.listing_repo.find_by_id_with_relations(db, listing_id)
+        if not listing:
+            listing = await self.listing_repo.find_by_id(db, listing_id)
+        if not listing:
+            raise NotFoundException(message=f"Không tìm thấy tin đăng với ID {listing_id}", code=404)
 
-        if listing.status == "pending" and clean_status == "selling":
-            raise ForbiddenException(
-                message="Tin chờ duyệt cần được Admin kiểm duyệt trước khi mở bán",
-                code=403,
-            )
+        # Kiểm tra quyền sở hữu tin đăng: chỉ chủ tin hoặc Admin (NFR-SEC-03, TC-08)
+        check_listing_owner(current_user, listing)
 
-        if listing.hidden_by_admin and clean_status == "selling":
-            raise ForbiddenException(
-                message="Tin do Admin ẩn vi phạm không thể tự mở lại",
-                code=403,
-            )
+        # 1. Chuyển sang 'sold' (Đánh dấu đã bán)
+        if clean_status == "sold":
+            if listing.status == "pending":
+                raise ConflictException(
+                    message="Tin đang chờ duyệt không được phép đánh dấu đã bán (E1)",
+                    code=409,
+                )
+            if listing.status == "rejected":
+                raise ConflictException(
+                    message="Tin đăng bị từ chối không thể đánh dấu đã bán",
+                    code=409,
+                )
 
-        if listing.status == "rejected" and clean_status in {"selling", "sold"}:
-            raise ConflictException(
-                message="Tin bị từ chối cần được chỉnh sửa và gửi duyệt lại trước khi chuyển trạng thái",
-                code=409,
-            )
+        # 2. Chuyển sang 'selling' (Hiện lại tin)
+        elif clean_status == "selling":
+            # E3: Tin do Admin ẩn (hidden_by_admin = True) người bán không thể tự hiện lại
+            if listing.hidden_by_admin and current_user.role != "admin":
+                raise ForbiddenException(
+                    message="Tin do Admin ẩn do vi phạm (Quản trị viên ẩn), bạn không thể tự hiện lại (E3)",
+                    code=403,
+                )
+            if listing.status == "pending":
+                raise ConflictException(
+                    message="Tin đang chờ duyệt cần được Quản trị viên phê duyệt trước khi hiển thị (E2)",
+                    code=409,
+                )
+            if listing.status == "rejected":
+                raise ConflictException(
+                    message="Tin đăng đã bị từ chối, vui lòng chỉnh sửa và gửi duyệt lại",
+                    code=409,
+                )
 
+        # 3. Chuyển sang 'hidden' (Ẩn tin)
+        elif clean_status == "hidden":
+            if listing.status == "rejected":
+                raise ConflictException(
+                    message="Tin đăng đã bị từ chối không thể chuyển sang đã ẩn",
+                    code=409,
+                )
+
+        # Tin đã bán không chuyển sang trạng thái khác
         if listing.status == "sold" and clean_status != "sold":
             raise ConflictException(
                 message="Tin đã bán không thể chuyển về trạng thái khác",
                 code=409,
             )
 
+        # Cập nhật trạng thái
         listing.status = clean_status
         await db.commit()
         await db.refresh(listing)
-        return self._to_my_listing_item(listing)
 
+        total_fl = float(listing.total_score) if listing.total_score is not None else 0.0
+        rank_str = ScoreCalculator.get_rank(total_fl)
+
+        status_messages = {
+            "hidden": "Đã ẩn tin đăng thành công",
+            "selling": "Đã hiện lại tin đăng thành công",
+            "sold": "Đã đánh dấu tin đăng là đã bán thành công",
+        }
+
+        return UpdateListingStatusResponse(
+            id=listing.listing_id,
+            status=listing.status,
+            message=status_messages.get(clean_status, "Cập nhật trạng thái thành công"),
+            hidden_by_admin=bool(listing.hidden_by_admin),
+            total_score=total_fl,
+            rank=rank_str,
+            title=listing.title,
+            price=float(listing.price) if listing.price is not None else None,
+        )
+
+    # Alias for compatibility
+    update_listing_status = set_status

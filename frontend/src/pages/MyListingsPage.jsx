@@ -31,10 +31,17 @@ import {
   Tag,
   DollarSign,
   FileText,
+  RotateCcw,
 } from 'lucide-react';
-import { getMyListingsApi, updateListingApi, updateListingStatusApi } from '../api/listings';
+import {
+  getMyListingsApi,
+  updateListingApi,
+  updateListingStatusApi,
+  uploadPhotosApi,
+} from '../api/listings';
 import { getCategoriesApi } from '../api/categories';
 import ConditionScorer, { calculateTotalScore, getConditionRank } from '../components/ConditionScorer';
+import PhotoUploader from '../components/PhotoUploader';
 
 const STATUS_TABS = [
   { key: 'all', label: 'Tất cả' },
@@ -68,6 +75,9 @@ export default function MyListingsPage() {
     scoreFunction: 8.0,
     scoreAccessories: 8.0,
   });
+  const [editPhotos, setEditPhotos] = useState([]);
+  const [originalPhotos, setOriginalPhotos] = useState([]);
+  const [editPhotoError, setEditPhotoError] = useState(null);
   const [categories, setCategories] = useState([]);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState(null);
@@ -131,6 +141,7 @@ export default function MyListingsPage() {
   const handleOpenEdit = (listing) => {
     setEditingListing(listing);
     setEditError(null);
+    setEditPhotoError(null);
     setEditFormData({
       title: listing.title || '',
       categoryId: listing.categoryId || listing.category_id || '',
@@ -141,17 +152,86 @@ export default function MyListingsPage() {
       scoreFunction: listing.scoreFunction ?? listing.score_function ?? 8.0,
       scoreAccessories: listing.scoreAccessories ?? listing.score_accessories ?? 8.0,
     });
+
+    const mappedPhotos = (listing.photos || []).map((p, idx) => {
+      const url = typeof p === 'string' ? p : (p.url || p.previewUrl || '');
+      return {
+        id: typeof p === 'object' && p.id ? String(p.id) : `photo-${idx}`,
+        previewUrl: url,
+        url: url,
+        sortOrder: typeof p === 'object' && p.sort_order !== undefined ? p.sort_order + 1 : idx + 1,
+        name: typeof p === 'object' && p.name ? p.name : `Ảnh ${idx + 1}`,
+        size: typeof p === 'object' && p.size ? p.size : 0,
+      };
+    });
+    setEditPhotos(mappedPhotos);
+    setOriginalPhotos(mappedPhotos);
   };
+
+  // Calculate change flags for review warning
+  const origApp = Number(editingListing?.scoreAppearance ?? editingListing?.score_appearance ?? 8.0);
+  const origFunc = Number(editingListing?.scoreFunction ?? editingListing?.score_function ?? 8.0);
+  const origAcc = Number(editingListing?.scoreAccessories ?? editingListing?.score_accessories ?? 8.0);
+
+  const currApp = Number(editFormData.scoreAppearance);
+  const currFunc = Number(editFormData.scoreFunction);
+  const currAcc = Number(editFormData.scoreAccessories);
+
+  const hasScoresChanged = Boolean(
+    editingListing &&
+    (origApp !== currApp || origFunc !== currFunc || origAcc !== currAcc)
+  );
+
+  const origPhotoUrls = (originalPhotos || []).map((p) => p.url || p.previewUrl || '');
+  const currPhotoUrls = (editPhotos || []).map((p) => p.url || p.previewUrl || '');
+  const hasPhotosChanged = Boolean(
+    editingListing &&
+    (origPhotoUrls.length !== currPhotoUrls.length ||
+      origPhotoUrls.some((u, i) => u !== currPhotoUrls[i]) ||
+      editPhotos.some((p) => p.file))
+  );
+
+  const willRequireReview = hasScoresChanged || hasPhotosChanged || editingListing?.status === 'rejected';
 
   // Submit edit form
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (!editingListing) return;
 
+    if (editPhotos.length === 0 && (editingListing.photos && editingListing.photos.length > 0)) {
+      setEditPhotoError('Vui lòng giữ lại ít nhất 1 ảnh sản phẩm (BR-04).');
+      return;
+    }
+
     setEditSaving(true);
     setEditError(null);
+    setEditPhotoError(null);
 
     try {
+      // 1. Upload ảnh mới nếu có file
+      const newFiles = editPhotos.filter((p) => p.file).map((p) => p.file);
+      let uploadedUrls = [];
+      if (newFiles.length > 0) {
+        const uploadRes = await uploadPhotosApi(newFiles);
+        uploadedUrls = Array.isArray(uploadRes)
+          ? uploadRes.map((item) => (typeof item === 'string' ? item : item.url))
+          : Array.isArray(uploadRes?.urls)
+          ? uploadRes.urls
+          : Array.isArray(uploadRes?.photos)
+          ? uploadRes.photos.map((item) => (typeof item === 'string' ? item : item.url))
+          : [];
+      }
+
+      let uploadIdx = 0;
+      const finalPhotoUrls = editPhotos.map((p) => {
+        if (p.file) {
+          const url = uploadedUrls[uploadIdx] || p.previewUrl || '';
+          uploadIdx++;
+          return url;
+        }
+        return p.url || p.previewUrl || '';
+      });
+
       const payload = {
         title: editFormData.title.trim(),
         categoryId: editFormData.categoryId ? Number(editFormData.categoryId) : undefined,
@@ -163,13 +243,27 @@ export default function MyListingsPage() {
         scoreAccessories: Number(editFormData.scoreAccessories),
       };
 
+      if (finalPhotoUrls.length > 0 || hasPhotosChanged) {
+        payload.photos = finalPhotoUrls;
+      }
+
       const updated = await updateListingApi(editingListing.id, payload);
       const wasStatusReset = updated.status === 'pending' && editingListing.status !== 'pending';
-      setSuccessToast(
-        wasStatusReset
-          ? 'Cập nhật thành công! Do bạn đã sửa điểm tình trạng, tin đã chuyển về Chờ duyệt để Admin kiểm duyệt lại.'
-          : 'Cập nhật tin đăng thành công!'
-      );
+
+      if (editingListing.status === 'rejected') {
+        setSuccessToast(
+          'Đã gửi lại tin đăng thành công! Tin đã chuyển về Chờ duyệt để Admin kiểm duyệt.'
+        );
+      } else if (wasStatusReset) {
+        setSuccessToast(
+          'Cập nhật thành công! Do bạn đã sửa điểm hoặc ảnh, tin đã chuyển về Chờ duyệt để Admin kiểm duyệt lại.'
+        );
+      } else {
+        setSuccessToast(
+          'Cập nhật tin đăng thành công! Sửa giá hoặc mô tả lưu ngay, không duyệt lại.'
+        );
+      }
+
       setTimeout(() => setSuccessToast(null), 5000);
       setEditingListing(null);
       await fetchListings(activeTab);
@@ -569,14 +663,16 @@ export default function MyListingsPage() {
                         </>
                       )}
 
-                      {/* Trạng thái REJECTED: Nút Sửa & Gửi lại */}
+                      {/* Trạng thái REJECTED: Nút Gửi lại */}
                       {item.status === 'rejected' && (
                         <button
                           data-testid={`btn-resubmit-${item.id}`}
                           onClick={() => handleOpenEdit(item)}
                           className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
+                          title="Gửi lại tin bị từ chối"
+                          aria-label="Gửi lại"
                         >
-                          <Edit3 size={13} /> Sửa & Gửi lại
+                          <RotateCcw size={13} /> Gửi lại
                         </button>
                       )}
 
@@ -638,6 +734,20 @@ export default function MyListingsPage() {
               </button>
             </div>
 
+            {/* Tin rejected: Hiển thị lý do từ chối để người bán biết cần sửa gì */}
+            {editingListing.status === 'rejected' && editingListing.rejectReason && (
+              <div
+                data-testid="edit-modal-reject-reason"
+                className="mt-3 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-start gap-2"
+              >
+                <AlertCircle size={16} className="shrink-0 text-rose-600 mt-0.5" />
+                <div>
+                  <strong className="font-semibold text-rose-900">Lý do từ chối trước đó:</strong> {editingListing.rejectReason}
+                  <p className="mt-0.5 text-rose-700">Vui lòng chỉnh sửa nội dung vi phạm rồi bấm &apos;Gửi lại&apos; để Admin kiểm duyệt lại.</p>
+                </div>
+              </div>
+            )}
+
             {/* Cảnh báo quan trọng: Sửa điểm hoặc ảnh sẽ phải duyệt lại */}
             <div
               data-testid="edit-warning-banner"
@@ -645,7 +755,7 @@ export default function MyListingsPage() {
             >
               <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
               <div>
-                <strong className="font-bold text-amber-950">Lưu ý kiểm duyệt:</strong> Sửa điểm tình trạng hoặc ảnh sản phẩm sẽ khiến tin chuyển về trạng thái{' '}
+                <strong className="font-bold text-amber-950">Lưu ý kiểm duyệt:</strong> Sửa điểm hoặc ảnh sẽ phải duyệt lại. Sửa điểm tình trạng hoặc ảnh sản phẩm sẽ khiến tin chuyển về trạng thái{' '}
                 <span className="font-semibold underline">Chờ duyệt (Pending)</span> để Quản trị viên duyệt lại trước khi hiện trên bản đồ. Nếu chỉ sửa tiêu đề, giá, mô tả hoặc địa chỉ, tin vẫn giữ nguyên trạng thái hiện tại.
               </div>
             </div>
@@ -661,6 +771,32 @@ export default function MyListingsPage() {
             )}
 
             <form onSubmit={handleSaveEdit} className="mt-5 space-y-4">
+              {/* Hình ảnh sản phẩm (PhotoUploader) */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Ảnh sản phẩm (1–5 ảnh) <span className="text-rose-500">*</span>
+                  </label>
+                  {hasPhotosChanged && (
+                    <span
+                      data-testid="badge-photos-changed"
+                      className="text-[11px] text-amber-800 font-semibold bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-md"
+                    >
+                      Đã sửa ảnh (cần duyệt lại)
+                    </span>
+                  )}
+                </div>
+                <PhotoUploader
+                  photos={editPhotos}
+                  onChange={(updatedPhotos) => {
+                    setEditPhotos(updatedPhotos);
+                    if (editPhotoError) setEditPhotoError(null);
+                  }}
+                  error={editPhotoError}
+                  maxPhotos={5}
+                />
+              </div>
+
               {/* Tiêu đề */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -746,6 +882,19 @@ export default function MyListingsPage() {
 
               {/* 3 Điểm tình trạng */}
               <div className="pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-700">
+                    Đánh giá tình trạng (Ngoại quan, Chức năng, Phụ kiện)
+                  </span>
+                  {hasScoresChanged && (
+                    <span
+                      data-testid="badge-scores-changed"
+                      className="text-[11px] text-amber-800 font-semibold bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-md"
+                    >
+                      Đã sửa điểm (cần duyệt lại)
+                    </span>
+                  )}
+                </div>
                 <ConditionScorer
                   appearanceScore={editFormData.scoreAppearance}
                   functionScore={editFormData.scoreFunction}
@@ -760,6 +909,36 @@ export default function MyListingsPage() {
                   }}
                 />
               </div>
+
+              {/* Cảnh báo trước khi lưu */}
+              {willRequireReview ? (
+                <div
+                  data-testid="edit-review-warning"
+                  className="p-3.5 rounded-xl bg-amber-100/80 border border-amber-300 text-xs text-amber-950 flex items-start gap-2.5 font-medium animate-fadeIn"
+                >
+                  <AlertTriangle size={18} className="text-amber-700 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-amber-950">
+                      Cảnh báo: Sửa điểm hoặc ảnh sẽ phải duyệt lại!
+                    </p>
+                    <p className="text-amber-800 mt-0.5">
+                      {editingListing.status === 'rejected'
+                        ? 'Tin bị từ chối khi gửi lại sẽ được chuyển về trạng thái Chờ duyệt để Admin kiểm duyệt lại.'
+                        : 'Do bạn đã thay đổi điểm tình trạng hoặc ảnh sản phẩm, tin đăng sẽ chuyển về trạng thái Chờ duyệt (Pending) sau khi lưu.'}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  data-testid="edit-no-review-notice"
+                  className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2.5 font-medium animate-fadeIn"
+                >
+                  <CheckCircle2 size={18} className="text-emerald-600 shrink-0" />
+                  <span>
+                    <strong>Lưu ý:</strong> Sửa giá hoặc mô tả lưu ngay, không duyệt lại. Tin vẫn giữ nguyên trạng thái đang hiển thị.
+                  </span>
+                </div>
+              )}
 
               {/* Action buttons */}
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
@@ -779,6 +958,10 @@ export default function MyListingsPage() {
                   {editSaving ? (
                     <>
                       <Loader2 size={16} className="animate-spin" /> Đang lưu...
+                    </>
+                  ) : editingListing.status === 'rejected' ? (
+                    <>
+                      <RotateCcw size={16} /> Gửi lại
                     </>
                   ) : (
                     'Lưu thay đổi'

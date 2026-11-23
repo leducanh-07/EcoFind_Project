@@ -96,8 +96,8 @@ export async function updateListingApi(id, data) {
 }
 
 /**
- * Cập nhật trạng thái tin đăng: hidden, selling, sold (TE9C74D, UC-06, SDD 4.2)
- * @param {number|string} id - Listing ID
+ * Cập nhật trạng thái tin đăng: ẩn, hiện lại hoặc đánh dấu đã bán (TE9C74E, UC-06, FR-10, SDD 4.2)
+ * @param {number|string} id - Mã tin đăng
  * @param {string} status - hidden, selling, sold
  */
 export async function updateListingStatusApi(id, status) {
@@ -110,5 +110,21 @@ export async function updateListingStatusApi(id, status) {
   });
 }
 
+/**
+ * Gửi báo cáo tin đăng vi phạm (TE9C753, TE9C754, UC-08, FR-12, TC-09)
+ * @param {number|string} id - Mã tin đăng
+ * @param {Object} data
+ * @param {string} data.reason - wrong_score, scam, prohibited, other
+ * @param {string} [data.note] - Ghi chú tối đa 200 ký tự
+ */
+export async function reportListingApi(id, { reason, note } = {}) {
+  return await fetchWithAuth(`/api/listings/${id}/reports`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ reason, note: note || null }),
+  });
+}
 
 

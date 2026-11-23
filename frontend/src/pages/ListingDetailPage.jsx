@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getListingDetailApi } from '../api/listings';
+import { getListingDetailApi, reportListingApi } from '../api/listings';
 import { addFavoriteApi, removeFavoriteApi, checkFavoriteStatusApi } from '../api/favorites';
 import { getRankBadgeColor } from '../components/MapView';
 import {
@@ -27,7 +27,7 @@ export default function ListingDetailPage() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +35,17 @@ export default function ListingDetailPage() {
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [copiedPhone, setCopiedPhone] = useState(false);
 
-  // Trạng thái Lưu tin & Báo cáo (UC-04, TE9C73C, TE9C752)
+  // Xác định xem người dùng hiện tại có phải là chủ nhân tin đăng không (E3, TE9C754)
+  const currentUserId = user?.userId ?? user?.user_id ?? user?.id;
+  const listingSellerId = listing?.sellerId ?? listing?.seller_id;
+  const isOwnListing = Boolean(
+    isAuthenticated &&
+    currentUserId != null &&
+    listingSellerId != null &&
+    String(currentUserId) === String(listingSellerId)
+  );
+
+  // Trạng thái Lưu tin & Báo cáo (UC-04, UC-08, FR-12, TE9C754)
   const [isSaved, setIsSaved] = useState(() => {
     try {
       const savedList = JSON.parse(localStorage.getItem('ecofind_saved_listings') || '[]');
@@ -61,9 +71,12 @@ export default function ListingDetailPage() {
   }, [id, isAuthenticated]);
 
   const [showReportModal, setShowReportModal] = useState(false);
-  const [reportReason, setReportReason] = useState('Thông tin sai sự thật');
+  const [reportReason, setReportReason] = useState('wrong_score');
   const [reportDetail, setReportDetail] = useState('');
+  const [submittingReport, setSubmittingReport] = useState(false);
+  const [reportError, setReportError] = useState(null);
   const [reportSuccess, setReportSuccess] = useState(false);
+  const [reportSuccessMsg, setReportSuccessMsg] = useState('');
 
   const handleToggleSave = async () => {
     if (!isAuthenticated) {
@@ -92,14 +105,42 @@ export default function ListingDetailPage() {
     }
   };
 
-  const handleSubmitReport = (e) => {
+  const handleSubmitReport = async (e) => {
     e.preventDefault();
-    setReportSuccess(true);
-    setTimeout(() => {
-      setShowReportModal(false);
-      setReportSuccess(false);
-      setReportDetail('');
-    }, 1500);
+    if (submittingReport) return;
+
+    setSubmittingReport(true);
+    setReportError(null);
+
+    try {
+      const res = await reportListingApi(id, {
+        reason: reportReason,
+        note: reportDetail.trim() ? reportDetail.trim() : null,
+      });
+      setReportSuccess(true);
+      setReportSuccessMsg(res?.message || 'Đã gửi báo cáo thành công, Admin sẽ kiểm duyệt.');
+      setTimeout(() => {
+        setShowReportModal(false);
+        setReportSuccess(false);
+        setReportDetail('');
+        setReportReason('wrong_score');
+        setReportError(null);
+      }, 1500);
+    } catch (err) {
+      if (
+        err?.status === 409 ||
+        err?.code === 409 ||
+        (err?.message && err.message.toLowerCase().includes('đã báo cáo'))
+      ) {
+        setReportError('Bạn đã báo cáo tin này');
+      } else if (err?.status === 403 || err?.code === 403) {
+        setReportError('Bạn không thể tự báo cáo tin đăng của chính mình');
+      } else {
+        setReportError(err?.message || 'Không thể gửi báo cáo vi phạm. Vui lòng thử lại sau.');
+      }
+    } finally {
+      setSubmittingReport(false);
+    }
   };
 
   useEffect(() => {
@@ -440,8 +481,11 @@ export default function ListingDetailPage() {
                   </div>
                 )}
 
-                {/* Các nút thao tác khi đã đăng nhập: Lưu & Báo cáo (UC-04, TE9C73C) */}
-                <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+                {/* Các nút thao tác khi đã đăng nhập: Lưu & Báo cáo (UC-04, UC-08, TE9C73C, TE9C754) */}
+                {/* Ẩn nút Báo cáo với tin của chính mình (E3) */}
+                <div
+                  className={`grid ${isOwnListing ? 'grid-cols-1' : 'grid-cols-2'} gap-2 pt-1 border-t border-slate-100`}
+                >
                   <button
                     type="button"
                     data-testid="btn-save-listing"
@@ -456,15 +500,21 @@ export default function ListingDetailPage() {
                     <span>{isSaved ? 'Đã lưu' : 'Lưu tin'}</span>
                   </button>
 
-                  <button
-                    type="button"
-                    data-testid="btn-report-listing"
-                    onClick={() => setShowReportModal(true)}
-                    className="py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-amber-50 hover:border-amber-200 text-slate-700 hover:text-amber-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Flag size={15} />
-                    <span>Báo cáo</span>
-                  </button>
+                  {!isOwnListing && (
+                    <button
+                      type="button"
+                      data-testid="btn-report-listing"
+                      onClick={() => {
+                        setReportError(null);
+                        setReportSuccess(false);
+                        setShowReportModal(true);
+                      }}
+                      className="py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-amber-50 hover:border-amber-200 text-slate-700 hover:text-amber-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Flag size={15} />
+                      <span>Báo cáo</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
@@ -502,56 +552,85 @@ export default function ListingDetailPage() {
         </div>
       </div>
 
-      {/* Modal Báo cáo tin vi phạm (UC-04, TE9C73C) */}
+      {/* Modal Báo cáo tin vi phạm (UC-08, FR-12, TE9C754) */}
       {showReportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div
+          data-testid="report-listing-dialog"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+        >
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
             <h3 className="text-base font-bold text-slate-900 mb-1 flex items-center gap-2">
               <Flag size={18} className="text-rose-500" />
               <span>Báo cáo tin đăng vi phạm</span>
             </h3>
             <p className="text-xs text-slate-500 mb-4">
-              Giúp cộng đồng EcoFind duy trì môi trường mua bán minh bạch và an toàn.
+              Chọn lý do và gửi để Ban quản trị kiểm duyệt và xử lý kịp thời.
             </p>
 
             {reportSuccess ? (
-              <div className="py-6 text-center space-y-2">
+              <div className="py-6 text-center space-y-2" data-testid="report-success-state">
                 <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
                   <CheckCircle size={24} />
                 </div>
                 <div className="font-semibold text-emerald-800 text-sm">Gửi báo cáo thành công</div>
                 <p className="text-xs text-slate-500">
-                  Cảm ơn bạn đã phản hồi. Ban quản trị sẽ sớm kiểm tra tin này.
+                  {reportSuccessMsg && !reportSuccessMsg.includes('báo cáo thành công')
+                    ? reportSuccessMsg
+                    : 'Thông báo đã nhận. Ban quản trị sẽ sớm kiểm tra và xử lý tin này.'}
                 </p>
               </div>
             ) : (
               <form onSubmit={handleSubmitReport} className="space-y-4">
+                {reportError && (
+                  <div
+                    data-testid="report-error-message"
+                    className="p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl flex items-start gap-2"
+                  >
+                    <AlertTriangle size={15} className="shrink-0 text-amber-600 mt-0.5" />
+                    <span>{reportError}</span>
+                  </div>
+                )}
+
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Lý do báo cáo
+                  <label htmlFor="report-reason-select" className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Lý do báo cáo <span className="text-rose-500">*</span>
                   </label>
                   <select
+                    id="report-reason-select"
+                    data-testid="report-reason-select"
                     value={reportReason}
                     onChange={(e) => setReportReason(e.target.value)}
                     className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
                   >
-                    <option value="Thông tin sai sự thật">Thông tin sai sự thật / Ảnh không đúng</option>
-                    <option value="Hàng giả / Hàng cấm">Hàng giả, hàng cấm hoặc không được phép bán</option>
-                    <option value="Đã bán nhưng chưa gỡ">Sản phẩm đã bán nhưng chưa được gỡ</option>
-                    <option value="Lừa đảo / Spam">Dấu hiệu lừa đảo, quấy rối hoặc spam</option>
-                    <option value="Khác">Lý do khác</option>
+                    <option value="wrong_score">Sai điểm tình trạng</option>
+                    <option value="scam">Lừa đảo</option>
+                    <option value="prohibited">Hàng cấm</option>
+                    <option value="other">Lý do khác</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Chi tiết bổ sung (tùy chọn)
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label htmlFor="report-detail-textarea" className="text-xs font-semibold text-slate-700">
+                      Ghi chú thêm (tùy chọn)
+                    </label>
+                    <span
+                      data-testid="report-note-counter"
+                      className={`text-[11px] font-mono ${
+                        reportDetail.length >= 200 ? 'text-rose-600 font-bold' : 'text-slate-400'
+                      }`}
+                    >
+                      {reportDetail.length}/200
+                    </span>
+                  </div>
                   <textarea
+                    id="report-detail-textarea"
+                    data-testid="report-detail-textarea"
                     rows={3}
+                    maxLength={200}
                     value={reportDetail}
-                    onChange={(e) => setReportDetail(e.target.value)}
-                    placeholder="Mô tả cụ thể vấn đề bạn gặp phải với tin đăng này..."
+                    onChange={(e) => setReportDetail(e.target.value.slice(0, 200))}
+                    placeholder="Mô tả cụ thể lý do vi phạm (tối đa 200 ký tự)..."
                     className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
                   />
                 </div>
@@ -559,16 +638,24 @@ export default function ListingDetailPage() {
                 <div className="flex items-center justify-end gap-2 pt-2">
                   <button
                     type="button"
-                    onClick={() => setShowReportModal(false)}
+                    onClick={() => {
+                      setShowReportModal(false);
+                      setReportError(null);
+                    }}
                     className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                   >
                     Hủy
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-sm transition-colors cursor-pointer"
+                    disabled={submittingReport}
+                    data-testid="btn-submit-report"
+                    className="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl shadow-sm transition-colors cursor-pointer flex items-center gap-1.5"
                   >
-                    Gửi báo cáo
+                    {submittingReport && (
+                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    )}
+                    <span>{submittingReport ? 'Đang gửi...' : 'Gửi báo cáo'}</span>
                   </button>
                 </div>
               </form>
