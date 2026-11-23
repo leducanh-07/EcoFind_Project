@@ -426,7 +426,7 @@ export default function MapView({
   }, [loadListings]);
 
   return (
-    <div className="relative w-full h-[calc(100vh-10rem)] min-h-[480px] rounded-3xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100">
+    <div data-testid="map-view-container" className="relative w-full h-[calc(100vh-10rem)] min-h-[480px] rounded-3xl overflow-hidden border border-slate-200/90 shadow-xs bg-slate-100">
       {/* Container Leaflet map */}
       <div ref={mapContainerRef} className="w-full h-full z-0" tabIndex={0} />
 

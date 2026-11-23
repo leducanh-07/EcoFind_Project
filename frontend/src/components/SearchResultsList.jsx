@@ -45,9 +45,13 @@ export default function SearchResultsList({
   const formatPrice = (price) => {
     const num = Number(price);
     if (num === 0) {
-      return <span className="text-emerald-600 font-bold">Cho tặng</span>;
+      return <span className="text-emerald-600 font-extrabold text-sm">Cho tặng</span>;
     }
-    return <span className="font-bold text-slate-800">{num.toLocaleString('vi-VN')} đ</span>;
+    return (
+      <span className="font-extrabold text-slate-900 text-sm">
+        {num.toLocaleString('vi-VN')} đ
+      </span>
+    );
   };
 
   // Định dạng hiển thị khoảng cách
@@ -85,16 +89,16 @@ export default function SearchResultsList({
   return (
     <div
       data-testid="search-results-list-container"
-      className={`flex flex-col bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden h-full ${className}`}
+      className={`flex flex-col bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden h-full ${className}`}
     >
       {/* Header danh sách */}
-      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
+      <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-slate-800 text-sm">Kết quả tìm kiếm</span>
+          <span className="font-bold text-slate-800 text-sm">Kết quả tìm kiếm</span>
           {!loading && !error && (
             <span
               data-testid="results-count-badge"
-              className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-medium"
+              className="text-xs bg-teal-100/70 text-teal-800 px-2.5 py-0.5 rounded-full font-semibold"
             >
               {listings.length} tin
             </span>
@@ -104,11 +108,12 @@ export default function SearchResultsList({
         {/* Nút lọc nhanh / reset nếu có bộ lọc */}
         {onResetFilters && (
           <button
+            type="button"
             onClick={onResetFilters}
-            className="text-[11px] text-slate-500 hover:text-emerald-700 flex items-center gap-1 transition-colors cursor-pointer"
+            className="text-xs text-slate-500 hover:text-teal-700 flex items-center gap-1 transition-colors cursor-pointer"
             title="Đặt lại bộ lọc"
           >
-            <SlidersHorizontal size={12} />
+            <SlidersHorizontal size={13} />
             <span>Đặt lại</span>
           </button>
         )}
@@ -118,17 +123,17 @@ export default function SearchResultsList({
       <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
         {/* 1. Trạng thái Đang tải (Loading Skeleton) */}
         {loading && (
-          <div data-testid="results-loading-state" className="space-y-3 py-2">
+          <div data-testid="results-loading-state" className="space-y-2.5 py-1">
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="animate-pulse flex gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100"
+                className="animate-pulse flex gap-3 p-3 bg-slate-50/80 rounded-2xl border border-slate-100"
               >
                 <div className="w-20 h-20 bg-slate-200 rounded-xl shrink-0" />
-                <div className="flex-1 space-y-2 py-1">
-                  <div className="h-4 bg-slate-200 rounded w-3/4" />
-                  <div className="h-3 bg-slate-200 rounded w-1/3" />
-                  <div className="h-3 bg-slate-200 rounded w-1/2 pt-2" />
+                <div className="flex-1 space-y-2.5 py-1">
+                  <div className="h-4 bg-slate-200 rounded-md w-3/4" />
+                  <div className="h-3 bg-slate-200 rounded-md w-1/3" />
+                  <div className="h-3 bg-slate-200 rounded-md w-1/2 pt-2" />
                 </div>
               </div>
             ))}
@@ -139,10 +144,10 @@ export default function SearchResultsList({
         {!loading && error && (
           <div
             data-testid="connection-error-state"
-            className="py-10 px-4 text-center flex flex-col items-center justify-center my-auto"
+            className="py-12 px-4 text-center flex flex-col items-center justify-center my-auto"
           >
-            <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mb-3">
-              <AlertTriangle size={28} />
+            <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mb-3 shadow-xs">
+              <AlertTriangle size={26} />
             </div>
             <h3 className="font-bold text-slate-800 text-base mb-1">
               Không thể tải danh sách kết quả do lỗi kết nối
@@ -152,8 +157,9 @@ export default function SearchResultsList({
             </p>
             {onRetry && (
               <button
+                type="button"
                 onClick={onRetry}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
               >
                 <RotateCw size={14} />
                 <span>Thử lại</span>
@@ -166,10 +172,10 @@ export default function SearchResultsList({
         {!loading && !error && listings.length === 0 && (
           <div
             data-testid="empty-results-state"
-            className="py-10 px-4 text-center flex flex-col items-center justify-center my-auto"
+            className="py-12 px-4 text-center flex flex-col items-center justify-center my-auto"
           >
-            <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mb-3">
-              <SearchX size={28} />
+            <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mb-3 shadow-xs">
+              <SearchX size={26} />
             </div>
             <h3 className="font-bold text-slate-800 text-base mb-1">Không tìm thấy tin</h3>
             <p className="text-xs text-slate-500 max-w-xs mb-4 leading-relaxed">
@@ -180,17 +186,19 @@ export default function SearchResultsList({
             {/* Các nút hành động gợi ý theo tiêu chí UC-03 E2 */}
             <div className="flex flex-col sm:flex-row items-center gap-2">
               <button
+                type="button"
                 onClick={handleExpandRadius}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-medium transition-colors cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200/80 rounded-xl text-xs font-medium transition-colors cursor-pointer"
               >
-                <Compass size={13} />
+                <Compass size={14} />
                 <span>Tăng bán kính lên 20 km</span>
               </button>
               <button
+                type="button"
                 onClick={handleClearMinScore}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium transition-colors cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-medium transition-colors cursor-pointer shadow-xs"
               >
-                <Sparkles size={13} />
+                <Sparkles size={14} />
                 <span>Bỏ lọc điểm tối thiểu</span>
               </button>
             </div>
@@ -199,7 +207,7 @@ export default function SearchResultsList({
 
         {/* 4. Danh sách các dòng tin đăng */}
         {!loading && !error && listings.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {listings.map((item) => {
               const score = Number(item.totalScore ?? item.total_score ?? 0);
               const rankColor = getRankBadgeColor(item.rank, score);
@@ -214,12 +222,12 @@ export default function SearchResultsList({
                   onClick={() => handleItemClick(item.id)}
                   className={`group relative flex gap-3 p-2.5 rounded-2xl border transition-all cursor-pointer hover:shadow-md ${
                     isSelected
-                      ? 'border-emerald-500 bg-emerald-50/40 shadow-sm ring-1 ring-emerald-400'
-                      : 'border-slate-100 bg-white hover:border-slate-300 hover:bg-slate-50/50'
+                      ? 'border-teal-500 bg-teal-50/40 shadow-xs ring-1 ring-teal-400'
+                      : 'border-slate-100 bg-white hover:border-slate-200/90 hover:bg-slate-50/40'
                   }`}
                 >
                   {/* Thumbnail ảnh */}
-                  <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-100">
+                  <div className="relative w-22 h-22 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-100">
                     {thumb ? (
                       <img
                         src={thumb}
@@ -229,15 +237,15 @@ export default function SearchResultsList({
                       />
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 text-[10px]">
-                        <Compass size={20} className="mb-0.5 opacity-40" />
-                        <span>EcoFind</span>
+                        <Compass size={22} className="mb-0.5 opacity-40 text-slate-400" />
+                        <span className="font-semibold">EcoFind</span>
                       </div>
                     )}
 
                     {/* Badge điểm tình trạng trên ảnh */}
                     <div
                       style={{ backgroundColor: rankColor.bg }}
-                      className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold text-white shadow-sm flex items-center gap-0.5"
+                      className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded-md text-[10px] font-extrabold text-white shadow-xs flex items-center gap-0.5"
                       title={`Điểm tình trạng: ${score.toFixed(1)}/10`}
                     >
                       <span>{score.toFixed(1)}</span>
@@ -249,7 +257,7 @@ export default function SearchResultsList({
                     <div>
                       {/* Tiêu đề & Hạng */}
                       <div className="flex items-start justify-between gap-1.5 mb-1">
-                        <h4 className="text-xs font-semibold text-slate-800 truncate group-hover:text-emerald-700 transition-colors">
+                        <h4 className="text-xs font-bold text-slate-800 line-clamp-1 group-hover:text-teal-700 transition-colors">
                           {item.title}
                         </h4>
                         <span
@@ -257,19 +265,19 @@ export default function SearchResultsList({
                             color: rankColor.border,
                             borderColor: rankColor.border,
                           }}
-                          className="shrink-0 text-[10px] font-semibold px-1.5 py-0.2 rounded border bg-white"
+                          className="shrink-0 text-[10px] font-bold px-1.5 py-0.2 rounded-md border bg-white"
                         >
                           {item.rank || rankColor.label}
                         </span>
                       </div>
 
                       {/* Giá */}
-                      <div className="text-xs">{formatPrice(item.price)}</div>
+                      <div className="text-xs font-semibold">{formatPrice(item.price)}</div>
                     </div>
 
                     {/* Vị trí & Khoảng cách */}
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 mt-1 border-t border-slate-100/80">
-                      <div className="flex items-center gap-1 truncate max-w-[70%]">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 mt-1 border-t border-slate-100/90">
+                      <div className="flex items-center gap-1 truncate max-w-[68%]">
                         <MapPin size={11} className="shrink-0 text-slate-400" />
                         <span className="truncate">{item.address || 'TP. Hồ Chí Minh'}</span>
                       </div>
@@ -277,7 +285,7 @@ export default function SearchResultsList({
                       {distanceStr && (
                         <span
                           data-testid={`distance-badge-${item.id}`}
-                          className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded shrink-0"
+                          className="text-[10px] font-semibold text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded-md shrink-0 border border-teal-100/80"
                         >
                           {distanceStr}
                         </span>
@@ -295,7 +303,7 @@ export default function SearchResultsList({
                         onSelectListing(item.id);
                       }}
                       title="Xem vị trí trên bản đồ"
-                      className="hidden sm:flex absolute top-2 right-2 p-1 rounded-lg bg-white/90 border border-slate-200 text-slate-500 hover:text-emerald-600 hover:border-emerald-300 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm cursor-pointer"
+                      className="hidden sm:flex absolute top-2 right-2 p-1 rounded-lg bg-white/95 border border-slate-200 text-slate-500 hover:text-teal-600 hover:border-teal-300 opacity-0 group-hover:opacity-100 transition-opacity shadow-xs cursor-pointer"
                     >
                       <Eye size={13} />
                     </button>

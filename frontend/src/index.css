@@ -2,12 +2,39 @@
 
 @layer base {
   :root {
-    --primary: 16 185 129; /* emerald-500 */
-    --primary-dark: 5 150 105; /* emerald-600 */
-    --primary-light: 209 250 229; /* emerald-100 */
+    --primary: 13 148 136; /* teal-600 */
+    --primary-dark: 15 118 110; /* teal-700 */
+    --primary-light: 204 251 241; /* teal-100 */
+    --accent: 22 163 74; /* green-600 */
   }
 
   body {
-    @apply bg-slate-50 text-slate-800 antialiased min-h-screen selection:bg-emerald-500 selection:text-white font-sans;
+    @apply bg-slate-50/80 text-slate-900 antialiased min-h-screen selection:bg-teal-600 selection:text-white font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
+
+  /* Custom subtle scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full hover:bg-slate-400 transition-colors;
+  }
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }

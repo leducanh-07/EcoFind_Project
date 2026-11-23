@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { PlusCircle, Compass, Map, List } from 'lucide-react';
+import { Compass, Map, List, MapPin, RefreshCw, AlertCircle } from 'lucide-react';
 import { useGeolocation } from '../hooks/useGeolocation';
 import MapView from '../components/MapView';
 import SearchAndFilterBar, { INITIAL_FILTERS } from '../components/SearchAndFilterBar';
@@ -43,30 +42,42 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="space-y-3">
-      {/* Top Banner / Hero Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-emerald-700 via-teal-700 to-emerald-800 rounded-2xl px-5 py-3.5 text-white shadow-sm">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-emerald-200">
-            <Compass size={18} />
+    <div className="space-y-2.5">
+      {/* Top Context Sub-header: Subtle, informative & non-intrusive */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+        <div className="flex items-center gap-2 text-xs text-slate-600">
+          <div className="flex items-center gap-1.5 font-medium">
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+            </span>
+            <span className="font-semibold text-slate-800">
+              {isFallback ? 'Vị trí mặc định: TP. Hồ Chí Minh' : 'Định vị GPS thực tế'}
+            </span>
           </div>
-          <div>
-            <h1 className="text-sm sm:text-base font-bold tracking-tight">
-              Bản đồ đồ cũ quanh bạn
-            </h1>
-            <p className="text-[11px] text-emerald-100/80">
-              Khám phá món đồ cũ chất lượng theo vị trí GPS thực tế & điểm tình trạng (0–10)
-            </p>
-          </div>
+          <span className="text-slate-300">•</span>
+          <span className="text-slate-500 hidden sm:inline">
+            Khám phá món đồ cũ chất lượng theo khoảng cách & điểm tình trạng (0–10)
+          </span>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <Link
-            to="/post"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white text-emerald-800 text-xs font-semibold hover:bg-emerald-50 transition-colors shadow-sm"
-          >
-            <PlusCircle size={15} /> Đăng tin bán
-          </Link>
+        {/* Location refresh / GPS indicator */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {loadingLocation && (
+            <span className="inline-flex items-center gap-1 text-[11px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md font-medium">
+              <RefreshCw size={11} className="animate-spin" /> Đang lấy vị trí...
+            </span>
+          )}
+          {isFallback && !loadingLocation && (
+            <button
+              type="button"
+              onClick={() => requestLocation(true)}
+              className="inline-flex items-center gap-1 text-[11px] text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer"
+              title="Kích hoạt định vị chính xác vị trí của bạn"
+            >
+              <MapPin size={12} /> Bật GPS của tôi
+            </button>
+          )}
         </div>
       </div>
 
@@ -79,13 +90,13 @@ export default function HomePage() {
       />
 
       {/* Thanh chuyển tab trên mobile (Bản đồ / Danh sách) */}
-      <div className="lg:hidden flex items-center justify-center p-1 bg-slate-200/70 rounded-2xl w-full max-w-xs mx-auto">
+      <div className="lg:hidden flex items-center justify-center p-1 bg-slate-200/60 rounded-2xl w-full max-w-xs mx-auto shadow-inner">
         <button
           type="button"
           onClick={() => setMobileTab('map')}
           className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
             mobileTab === 'map'
-              ? 'bg-white text-emerald-800 shadow-sm'
+              ? 'bg-white text-teal-800 shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -97,7 +108,7 @@ export default function HomePage() {
           onClick={() => setMobileTab('list')}
           className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
             mobileTab === 'list'
-              ? 'bg-white text-emerald-800 shadow-sm'
+              ? 'bg-white text-teal-800 shadow-xs'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -107,10 +118,10 @@ export default function HomePage() {
       </div>
 
       {/* Khu vực hiển thị: Cột danh sách kết quả cạnh bản đồ (Desktop) & Tab View (Mobile) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-3.5 items-start">
         {/* Cột Danh sách kết quả */}
         <div
-          className={`lg:col-span-5 xl:col-span-4 h-[calc(100vh-14rem)] min-h-[500px] ${
+          className={`lg:col-span-5 xl:col-span-4 h-[calc(100vh-12.5rem)] min-h-[520px] ${
             mobileTab === 'list' ? 'block' : 'hidden lg:block'
           }`}
         >
