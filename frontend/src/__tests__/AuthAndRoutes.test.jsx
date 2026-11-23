@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
@@ -93,7 +93,7 @@ describe('Auth State, Logout & Route Guard (FR-02, NFR-SEC-03, TE9C730)', () => 
     expect(screen.queryByRole('link', { name: /đăng nhập/i })).not.toBeInTheDocument();
   });
 
-  test('Bấm Đăng xuất thì xóa token khỏi localStorage và quay về trạng thái chưa đăng nhập', () => {
+  test('Bấm Đăng xuất thì xóa token khỏi localStorage và quay về trạng thái chưa đăng nhập', async () => {
     render(
       <TestApp
         initialRoute="/"
@@ -107,9 +107,15 @@ describe('Auth State, Logout & Route Guard (FR-02, NFR-SEC-03, TE9C730)', () => 
     const logoutBtn = screen.getByRole('button', { name: /đăng xuất/i });
     fireEvent.click(logoutBtn);
 
-    expect(localStorage.getItem('access_token')).toBeNull();
-    expect(localStorage.getItem('auth_user')).toBeNull();
-    expect(screen.getAllByRole('link', { name: /đăng nhập/i })[0]).toBeInTheDocument();
+    // Xác nhận trong hộp thoại đăng xuất
+    const confirmBtn = screen.getByTestId('confirm-logout-btn');
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(localStorage.getItem('access_token')).toBeNull();
+      expect(localStorage.getItem('auth_user')).toBeNull();
+      expect(screen.getAllByRole('link', { name: /đăng nhập/i })[0]).toBeInTheDocument();
+    });
   });
 
   test('Chưa đăng nhập truy cập /post bị chuyển hướng về /login', () => {

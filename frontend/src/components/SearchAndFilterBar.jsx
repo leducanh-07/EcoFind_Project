@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, SlidersHorizontal, X, AlertCircle, RotateCcw, Check, Sparkles, MapPin } from 'lucide-react';
 import { getCategoriesApi } from '../api/categories';
 
@@ -45,6 +46,17 @@ export default function SearchAndFilterBar({
 
   // Draft filters inside the modal
   const [draftFilters, setDraftFilters] = useState(filters);
+
+  // Đóng modal bộ lọc khi bấm ESC
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && showFilterModal) {
+        setShowFilterModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showFilterModal]);
 
   // Sync draft filters when props change
   useEffect(() => {
@@ -161,26 +173,26 @@ export default function SearchAndFilterBar({
   return (
     <div className="relative z-20 space-y-2">
       {/* Floating Modern Toolbar */}
-      <div className="flex items-center gap-2 bg-white/95 backdrop-blur-md p-1.5 sm:p-2 rounded-2xl border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all">
+      <div className="flex items-center gap-2.5 bg-white/95 backdrop-blur-md p-2 sm:p-2.5 rounded-2xl border border-slate-200/90 shadow-sm hover:border-slate-300 transition-all">
         {/* Form Ô tìm kiếm */}
         <form onSubmit={handleSearchSubmit} className="flex-1 relative flex items-center">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+          <Search className="w-5 h-5 text-slate-400 absolute left-4 pointer-events-none" />
           <input
             type="text"
             value={keyword}
             onChange={handleKeywordChange}
             placeholder="Tìm theo tên đồ cũ, mô tả..."
-            className="w-full pl-10 pr-9 py-2 text-xs sm:text-sm bg-slate-50/70 hover:bg-slate-50 focus:bg-white rounded-xl border border-transparent focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100 text-slate-800 placeholder:text-slate-400 transition-all"
+            className="w-full pl-12 pr-10 py-3 text-sm sm:text-base bg-slate-50/70 hover:bg-slate-50 focus:bg-white rounded-xl border border-transparent focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100 text-slate-900 placeholder:text-slate-400 font-medium transition-all"
             aria-label="Ô tìm kiếm từ khóa"
           />
           {keyword && (
             <button
               type="button"
               onClick={handleClearKeyword}
-              className="absolute right-2.5 text-slate-400 hover:text-slate-600 p-1 rounded-md"
+              className="absolute right-3 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg active:scale-90 transition-transform cursor-pointer"
               aria-label="Xóa từ khóa"
             >
-              <X size={14} />
+              <X size={16} />
             </button>
           )}
         </form>
@@ -189,9 +201,9 @@ export default function SearchAndFilterBar({
         <button
           type="button"
           onClick={handleSearchSubmit}
-          className="px-4 py-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs active:scale-95"
+          className="px-5 sm:px-6 py-3 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer shrink-0 shadow-sm hover:shadow active:scale-95 select-none"
         >
-          <Search size={14} />
+          <Search size={16} />
           <span className="hidden sm:inline">Tìm</span>
         </button>
 
@@ -199,17 +211,17 @@ export default function SearchAndFilterBar({
         <button
           type="button"
           onClick={handleOpenModal}
-          className={`px-3 sm:px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer shrink-0 border ${
+          className={`px-4 sm:px-5 py-3 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer shrink-0 border select-none active:scale-95 ${
             activeFilterCount > 0
-              ? 'bg-teal-50 border-teal-300 text-teal-800 shadow-xs'
-              : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs'
+              ? 'bg-teal-50 border-teal-300 text-teal-800 shadow-xs hover:bg-teal-100/70'
+              : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs hover:border-slate-300'
           }`}
           aria-label="Mở bộ lọc"
         >
-          <SlidersHorizontal size={14} className={activeFilterCount > 0 ? 'text-teal-700' : 'text-slate-500'} />
+          <SlidersHorizontal size={16} className={activeFilterCount > 0 ? 'text-teal-700' : 'text-slate-500'} />
           <span className="hidden sm:inline">Bộ lọc</span>
           {activeFilterCount > 0 && (
-            <span className="w-4 h-4 rounded-full bg-teal-700 text-white text-[10px] font-bold flex items-center justify-center">
+            <span className="w-5 h-5 rounded-full bg-teal-700 text-white text-xs font-black flex items-center justify-center">
               {activeFilterCount}
             </span>
           )}
@@ -227,10 +239,10 @@ export default function SearchAndFilterBar({
         </div>
       )}
 
-      {/* MODAL / DRAWER BỘ LỌC CHI TIẾT */}
-      {showFilterModal && (
+      {/* MODAL / DRAWER BỘ LỌC CHI TIẾT (Portal ra document.body) */}
+      {showFilterModal && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
           onClick={() => setShowFilterModal(false)}
         >
           <div
@@ -413,7 +425,8 @@ export default function SearchAndFilterBar({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

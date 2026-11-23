@@ -9,16 +9,16 @@ export default function Layout() {
       {/* Top Header */}
       <Header />
 
-      {/* Main Content (Container max-width 7xl on desktop, full-width responsive on mobile 360-430px) */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 pb-20 md:pb-8">
+      {/* Main Content (Spacious container up to 1720px on desktop, responsive full-width on mobile) */}
+      <main className="flex-1 w-full max-w-[1600px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-3 sm:py-5 pb-20 md:pb-8">
         <Outlet />
       </main>
 
       {/* Desktop Footer */}
       <footer className="hidden md:block bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4">
-          <p>© 2026 EcoFind — Nền tảng Chợ đồ cũ tích hợp bản đồ & đánh giá tình trạng.</p>
-          <p className="mt-1 text-slate-400">Kiến trúc chuẩn IEEE SRS/SDD • Tối ưu trải nghiệm 360px – 1920px</p>
+        <div className="max-w-[1600px] 2xl:max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10">
+          <p>© 2026 EcoFind — Nền tảng Chợ đồ cũ thông minh tích hợp bản đồ & đánh giá tình trạng.</p>
+          <p className="mt-1 text-slate-400">Định vị khoảng cách thực tế • Thẩm định chất lượng minh bạch</p>
         </div>
       </footer>
 

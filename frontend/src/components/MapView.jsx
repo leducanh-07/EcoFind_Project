@@ -12,6 +12,35 @@ export const RANK_COLORS = {
   POOR: { label: 'Cũ', scoreRange: '<5.0', bg: '#EF4444', text: '#ffffff', border: '#DC2626' },
 };
 
+// Bảng tọa độ trung tâm các quận/huyện/TP.Thủ Đức phục vụ di chuyển góc nhìn bản đồ khi lọc
+export const DISTRICT_CENTERS = {
+  'Quận 1': { lat: 10.7757, lng: 106.7004, zoom: 14 },
+  'Quận 2': { lat: 10.7873, lng: 106.7498, zoom: 13 },
+  'Quận 3': { lat: 10.7844, lng: 106.6844, zoom: 14 },
+  'Quận 4': { lat: 10.7578, lng: 106.7013, zoom: 14 },
+  'Quận 5': { lat: 10.7540, lng: 106.6634, zoom: 14 },
+  'Quận 6': { lat: 10.7481, lng: 106.6352, zoom: 14 },
+  'Quận 7': { lat: 10.7340, lng: 106.7216, zoom: 13 },
+  'Quận 8': { lat: 10.7241, lng: 106.6286, zoom: 13 },
+  'Quận 9': { lat: 10.8428, lng: 106.8287, zoom: 13 },
+  'Quận 10': { lat: 10.7746, lng: 106.6680, zoom: 14 },
+  'Quận 11': { lat: 10.7628, lng: 106.6501, zoom: 14 },
+  'Quận 12': { lat: 10.8672, lng: 106.6413, zoom: 13 },
+  'Bình Thạnh': { lat: 10.8106, lng: 106.7091, zoom: 14 },
+  'Phú Nhuận': { lat: 10.7992, lng: 106.6803, zoom: 14 },
+  'Gò Vấp': { lat: 10.8387, lng: 106.6653, zoom: 14 },
+  'Tân Bình': { lat: 10.8015, lng: 106.6526, zoom: 14 },
+  'Tân Phú': { lat: 10.7900, lng: 106.6282, zoom: 14 },
+  'Bình Tân': { lat: 10.7652, lng: 106.6038, zoom: 13 },
+  'Thủ Đức': { lat: 10.8494, lng: 106.7537, zoom: 13 },
+  'TP. Thủ Đức': { lat: 10.8494, lng: 106.7537, zoom: 13 },
+  'Bình Chánh': { lat: 10.6874, lng: 106.5939, zoom: 12 },
+  'Nhà Bè': { lat: 10.6953, lng: 106.7049, zoom: 12 },
+  'Hóc Môn': { lat: 10.8862, lng: 106.5954, zoom: 12 },
+  'Củ Chi': { lat: 10.9733, lng: 106.4933, zoom: 11 },
+  'Cần Giờ': { lat: 10.4112, lng: 106.9547, zoom: 11 },
+};
+
 // Hàm lấy màu sắc marker theo BR-02 (hỗ trợ cả rank string và fallback totalScore)
 export function getRankBadgeColor(rank, score) {
   let resolvedRank = rank;
@@ -57,6 +86,7 @@ export default function MapView({
   const markersMapRef = useRef({});
   const lastBboxRef = useRef(null);
   const isFirstMountRef = useRef(true);
+  const isFittingBoundsRef = useRef(false);
   const navigate = useNavigate();
 
   const filtersRef = useRef(filters);
@@ -138,15 +168,24 @@ export default function MapView({
   }, []); // Run once on mount
 
   // Di chuyển tâm bản đồ khi coords thay đổi và cập nhật GPS blue dot marker
+  const prevCoordsRef = useRef(null);
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
 
-    // Tự động zoom gần vào vị trí người dùng (zoom 16) để thấy rõ đường phố xung quanh
-    map.flyTo([coords.lat, coords.lng], 16, {
-      duration: 1.0,
-      easeLinearity: 0.25,
-    });
+    const hasCoordsChanged =
+      !prevCoordsRef.current ||
+      Math.abs(prevCoordsRef.current.lat - coords.lat) > 0.0001 ||
+      Math.abs(prevCoordsRef.current.lng - coords.lng) > 0.0001;
+
+    if (hasCoordsChanged) {
+      prevCoordsRef.current = coords;
+      // Tự động zoom vừa vặn vùng lân cận người dùng (zoom 13) để thấy rõ các tin đăng trong bán kính 10km
+      map.flyTo([coords.lat, coords.lng], 13, {
+        duration: 0.8,
+        easeLinearity: 0.25,
+      });
+    }
 
     // Tạo icon chấm tròn xanh Google Maps GPS Blue Dot kinh điển
     const userIcon = L.divIcon({
@@ -186,8 +225,8 @@ export default function MapView({
     }
   }, [coords, isFallback]);
 
-  // Tải danh sách tin đăng theo khung nhìn bản đồ (bbox) và các tiêu chí lọc
-  const loadListings = useCallback(async (force = false) => {
+  // Tải danh sách tin đăng theo khung nhìn bản đồ (bbox) hoặc theo phạm vi bộ lọc/tìm kiếm chủ động
+  const loadListings = useCallback(async (force = false, isFilterTrigger = false) => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
     const bounds = map.getBounds();
@@ -212,6 +251,14 @@ export default function MapView({
 
     const bboxStr = `${minLng},${minLat},${maxLng},${maxLat}`;
 
+    // Xác định tọa độ tham chiếu: ưu tiên tâm quận nếu người dùng lọc theo khu vực quận/huyện
+    let targetLat = currentCoords?.lat;
+    let targetLng = currentCoords?.lng;
+    if (currentFilters.district && DISTRICT_CENTERS[currentFilters.district]) {
+      targetLat = DISTRICT_CENTERS[currentFilters.district].lat;
+      targetLng = DISTRICT_CENTERS[currentFilters.district].lng;
+    }
+
     const startTime = performance.now();
     setLoadingListings(true);
     setMapError(null);
@@ -219,24 +266,56 @@ export default function MapView({
       onLoadingChangeRef.current(true);
     }
     try {
+      // Khi người dùng bấm Tìm kiếm hoặc thay đổi Bộ lọc (isFilterTrigger = true):
+      // KHÔNG truyền bbox cũ để tránh bị kẹp cứng vào khung nhìn hiện tại.
+      // API sẽ tìm kiếm toàn bộ phạm vi bán kính (hoặc quận/huyện) mà người dùng mong muốn.
       const data = await getListingsMapApi({
-        bbox: bboxStr,
+        bbox: isFilterTrigger ? undefined : bboxStr,
         q: currentFilters.q || undefined,
         categoryId: currentFilters.categoryId || undefined,
         minScore: currentFilters.minScore || undefined,
         district: currentFilters.district || undefined,
-        lat: currentCoords?.lat,
-        lng: currentCoords?.lng,
+        lat: targetLat,
+        lng: targetLng,
         radius: currentFilters.radius || undefined,
         sort: currentFilters.sort || 'distance',
         limit: 50,
       });
 
+      const listingsData = data || [];
+
       if (onListingsLoadedRef.current) {
-        onListingsLoadedRef.current(data || []);
+        onListingsLoadedRef.current(listingsData);
       }
       if (onFetchErrorRef.current) {
         onFetchErrorRef.current(null);
+      }
+
+      // Tự động điều chỉnh góc nhìn bản đồ (camera) khớp với phạm vi lọc/tìm kiếm:
+      if (isFilterTrigger && mapInstanceRef.current) {
+        if (currentFilters.district && DISTRICT_CENTERS[currentFilters.district]) {
+          const d = DISTRICT_CENTERS[currentFilters.district];
+          isFittingBoundsRef.current = true;
+          map.flyTo([d.lat, d.lng], d.zoom, { duration: 0.8 });
+        } else if (listingsData.length > 0) {
+          isFittingBoundsRef.current = true;
+          if (listingsData.length === 1) {
+            map.flyTo([listingsData[0].lat, listingsData[0].lng], 15, { duration: 0.8 });
+          } else {
+            const points = listingsData.map((item) => [item.lat, item.lng]);
+            if (currentCoords?.lat && currentCoords?.lng) {
+              points.push([currentCoords.lat, currentCoords.lng]);
+            }
+            const fitBbox = L.latLngBounds(points);
+            map.fitBounds(fitBbox, { padding: [50, 50], maxZoom: 15 });
+          }
+        } else if (currentFilters.radius && currentCoords?.lat && currentCoords?.lng) {
+          isFittingBoundsRef.current = true;
+          const circleBounds = L.latLng(currentCoords.lat, currentCoords.lng).toBounds(
+            currentFilters.radius * 1000
+          );
+          map.fitBounds(circleBounds, { maxZoom: 15, duration: 0.8 });
+        }
       }
 
       const elapsed = performance.now() - startTime;
@@ -252,72 +331,102 @@ export default function MapView({
         const map = mapInstanceRef.current;
         const listingsData = data || [];
         const shouldCluster = listingsData.length >= 30;
+        const currentIsClustered = listingsLayerRef.current?._isClusterGroup;
 
-        // Xóa layer cũ nếu có trên map
-        if (listingsLayerRef.current) {
-          if (typeof listingsLayerRef.current.clearLayers === 'function') {
-            listingsLayerRef.current.clearLayers();
+        // Nếu chưa có layer hoặc chế độ gom cụm thay đổi (từ <30 sang >=30 hoặc ngược lại)
+        const needsRecreateLayer = !listingsLayerRef.current || currentIsClustered !== shouldCluster;
+
+        if (needsRecreateLayer) {
+          if (listingsLayerRef.current) {
+            if (typeof listingsLayerRef.current.clearLayers === 'function') {
+              listingsLayerRef.current.clearLayers();
+            }
+            if (map.hasLayer(listingsLayerRef.current)) {
+              map.removeLayer(listingsLayerRef.current);
+            }
           }
-          if (map.hasLayer(listingsLayerRef.current)) {
-            map.removeLayer(listingsLayerRef.current);
+          markersMapRef.current = {};
+
+          if (shouldCluster && typeof L.markerClusterGroup === 'function') {
+            const clusterGroup = L.markerClusterGroup({
+              maxClusterRadius: 50,
+              spiderfyOnMaxZoom: true,
+              showCoverageOnHover: false,
+              zoomToBoundsOnClick: true,
+              iconCreateFunction: (cluster) => {
+                const count = cluster.getChildCount();
+                let size = 36;
+                let bg = '#059669'; // emerald-600
+                if (count >= 100) {
+                  size = 46;
+                  bg = '#0f766e'; // teal-700
+                } else if (count >= 50) {
+                  size = 42;
+                  bg = '#047857'; // emerald-700
+                }
+                return L.divIcon({
+                  html: `
+                    <div style="background-color: ${bg}; width: ${size}px; height: ${size}px;" 
+                         class="rounded-full text-white font-bold font-mono text-xs flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-emerald-400/40 cursor-pointer hover:scale-110 transition-transform"
+                         title="${count} tin đăng trong khu vực này">
+                      <span>${count}</span>
+                    </div>
+                  `,
+                  className: 'custom-cluster-marker',
+                  iconSize: [size, size],
+                  iconAnchor: [size / 2, size / 2],
+                });
+              },
+            });
+            clusterGroup._isClusterGroup = true;
+            listingsLayerRef.current = clusterGroup.addTo(map);
+          } else {
+            const standardGroup = L.layerGroup();
+            standardGroup._isClusterGroup = false;
+            listingsLayerRef.current = standardGroup.addTo(map);
           }
         }
-        markersMapRef.current = {};
 
-        // Khởi tạo cluster group khi từ 30 tin trở lên (hoặc layerGroup thông thường khi dưới 30 tin)
-        if (shouldCluster && typeof L.markerClusterGroup === 'function') {
-          listingsLayerRef.current = L.markerClusterGroup({
-            maxClusterRadius: 50,
-            spiderfyOnMaxZoom: true,
-            showCoverageOnHover: false,
-            zoomToBoundsOnClick: true,
-            iconCreateFunction: (cluster) => {
-              const count = cluster.getChildCount();
-              let size = 36;
-              let bg = '#059669'; // emerald-600
-              if (count >= 100) {
-                size = 46;
-                bg = '#0f766e'; // teal-700
-              } else if (count >= 50) {
-                size = 42;
-                bg = '#047857'; // emerald-700
-              }
-              return L.divIcon({
-                html: `
-                  <div style="background-color: ${bg}; width: ${size}px; height: ${size}px;" 
-                       class="rounded-full text-white font-bold font-mono text-xs flex items-center justify-center shadow-lg border-2 border-white ring-2 ring-emerald-400/40 cursor-pointer hover:scale-110 transition-transform"
-                       title="${count} tin đăng trong khu vực này">
-                    <span>${count}</span>
-                  </div>
-                `,
-                className: 'custom-cluster-marker',
-                iconSize: [size, size],
-                iconAnchor: [size / 2, size / 2],
-              });
-            },
-          }).addTo(map);
-        } else {
-          listingsLayerRef.current = L.layerGroup().addTo(map);
+        // Marker Diffing Reconciliation:
+        // 1. Tìm các ID hiện có trên map và ID từ API
+        const newIds = new Set(listingsData.map((item) => String(item.id)));
+        const existingIds = Object.keys(markersMapRef.current);
+
+        // 2. Xóa các marker không còn nằm trong kết quả tìm kiếm mới
+        for (const id of existingIds) {
+          if (!newIds.has(id)) {
+            const marker = markersMapRef.current[id];
+            if (marker && listingsLayerRef.current) {
+              listingsLayerRef.current.removeLayer(marker);
+            }
+            delete markersMapRef.current[id];
+          }
         }
 
+        // 3. Thêm các marker mới (marker đã có được giữ nguyên trên DOM, loại bỏ 100% hiện tượng nhấp nháy giật hình)
         listingsData.forEach((item) => {
+          const itemIdStr = String(item.id);
+          if (markersMapRef.current[itemIdStr]) {
+            return;
+          }
+
           const colors = getRankBadgeColor(item.rank, item.totalScore);
 
           const itemIcon = L.divIcon({
             className: 'custom-listing-marker',
             html: `
               <div style="background-color: ${colors.bg}; border-color: ${colors.border};" 
-                   class="px-2 py-0.5 rounded-full text-white text-xs font-bold shadow-md border flex items-center gap-1 cursor-pointer transform hover:scale-110 transition-transform"
+                   class="px-2.5 py-1 rounded-full text-white text-xs font-black shadow-md border flex items-center gap-1 cursor-pointer transform hover:scale-110 transition-transform select-none"
                    title="${colors.label} - ${Number(item.totalScore).toFixed(1)} điểm">
                 <span>${Number(item.totalScore).toFixed(1)}</span>
               </div>
             `,
-            iconSize: [42, 24],
-            iconAnchor: [21, 12],
+            iconSize: [44, 26],
+            iconAnchor: [22, 13],
           });
 
           const marker = L.marker([item.lat, item.lng], { icon: itemIcon });
-          markersMapRef.current[item.id] = marker;
+          markersMapRef.current[itemIdStr] = marker;
 
           const formattedPrice =
             Number(item.price) === 0
@@ -325,13 +434,13 @@ export default function MapView({
               : `${Number(item.price).toLocaleString('vi-VN')} đ`;
 
           const popupContent = `
-            <div class="p-1 min-w-[180px]">
+            <div class="p-1 min-w-[200px]">
               <div class="font-bold text-slate-800 text-sm mb-1">${item.title}</div>
-              <div class="text-sm font-semibold text-emerald-700 mb-1">${formattedPrice}</div>
+              <div class="text-sm font-extrabold text-emerald-700 mb-1">${formattedPrice}</div>
               <div class="text-xs text-slate-500 mb-2">${item.address || ''}</div>
-              <div class="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
-                <span style="color: ${colors.border}" class="font-semibold">${item.rank || colors.label} (${Number(item.totalScore).toFixed(1)})</span>
-                <a href="/listings/${item.id}" data-id="${item.id}" class="listing-link-${item.id} text-emerald-600 font-medium hover:underline inline-flex items-center gap-0.5 cursor-pointer">
+              <div class="flex items-center justify-between text-xs pt-1.5 border-t border-slate-100">
+                <span style="color: ${colors.border}" class="font-bold">${item.rank || colors.label} (${Number(item.totalScore).toFixed(1)})</span>
+                <a href="/listings/${item.id}" data-id="${item.id}" class="listing-link-${item.id} text-emerald-600 font-bold hover:underline inline-flex items-center gap-0.5 cursor-pointer">
                   Xem chi tiết →
                 </a>
               </div>
@@ -386,17 +495,17 @@ export default function MapView({
   // Hỗ trợ kích hoạt tải lại thủ công từ bên ngoài (ví dụ: nút Thử lại lỗi kết nối)
   useEffect(() => {
     if (reloadKey > 0) {
-      loadListings(true);
+      loadListings(true, false);
     }
   }, [reloadKey, loadListings]);
 
-  // Khi filterKey thay đổi (ngoại trừ mount ban đầu), tải lại danh sách
+  // Khi filterKey thay đổi (người dùng bấm Tìm kiếm hoặc thay đổi bộ lọc), tải lại danh sách theo phạm vi bộ lọc
   useEffect(() => {
     if (isFirstMountRef.current) {
       isFirstMountRef.current = false;
       return;
     }
-    loadListings(true);
+    loadListings(true, true);
   }, [filterKey, loadListings]);
 
   // Lắng nghe sự kiện kéo/zoom để tải lại tin (sự kiện moveend/zoomend có debounce 400ms trong khoảng 300–500ms)
@@ -405,13 +514,17 @@ export default function MapView({
     const map = mapInstanceRef.current;
 
     // Tải dữ liệu khung nhìn ban đầu
-    loadListings(true);
+    loadListings(true, false);
 
     let debounceTimer;
     const handleViewportChange = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        loadListings();
+        if (isFittingBoundsRef.current) {
+          isFittingBoundsRef.current = false;
+          return;
+        }
+        loadListings(false, false);
       }, 400); // Debounce 400ms theo tiêu chí 300-500ms
     };
 
@@ -426,7 +539,7 @@ export default function MapView({
   }, [loadListings]);
 
   return (
-    <div data-testid="map-view-container" className="relative w-full h-[calc(100vh-10rem)] min-h-[480px] rounded-3xl overflow-hidden border border-slate-200/90 shadow-xs bg-slate-100">
+    <div data-testid="map-view-container" className="relative w-full h-[calc(100vh-11.5rem)] min-h-[560px] xl:min-h-[620px] rounded-3xl overflow-hidden border border-slate-200/90 shadow-xs bg-slate-100">
       {/* Container Leaflet map */}
       <div ref={mapContainerRef} className="w-full h-full z-0" tabIndex={0} />
 

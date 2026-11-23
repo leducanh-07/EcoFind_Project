@@ -1,11 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Compass, Map, List, MapPin, RefreshCw, AlertCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { useGeolocation } from '../hooks/useGeolocation';
 import MapView from '../components/MapView';
 import SearchAndFilterBar, { INITIAL_FILTERS } from '../components/SearchAndFilterBar';
 import SearchResultsList from '../components/SearchResultsList';
 
 export default function HomePage() {
+  const { isAuthenticated } = useAuth();
+  const prevAuthRef = useRef(isAuthenticated);
   const {
     coords,
     loading: loadingLocation,
@@ -22,6 +25,16 @@ export default function HomePage() {
   const [selectedListingId, setSelectedListingId] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [mobileTab, setMobileTab] = useState('map'); // 'map' | 'list'
+
+  // Khi người dùng đăng xuất: Reset toàn bộ bộ lọc và từ khóa về mặc định
+  useEffect(() => {
+    if (prevAuthRef.current && !isAuthenticated) {
+      setFilters(INITIAL_FILTERS);
+      setSelectedListingId(null);
+      setReloadKey((k) => k + 1);
+    }
+    prevAuthRef.current = isAuthenticated;
+  }, [isAuthenticated]);
 
   const handleApplyFilters = useCallback((newFilters) => {
     setFilters(newFilters);
@@ -118,10 +131,10 @@ export default function HomePage() {
       </div>
 
       {/* Khu vực hiển thị: Cột danh sách kết quả cạnh bản đồ (Desktop) & Tab View (Mobile) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-3.5 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 items-start">
         {/* Cột Danh sách kết quả */}
         <div
-          className={`lg:col-span-5 xl:col-span-4 h-[calc(100vh-12.5rem)] min-h-[520px] ${
+          className={`lg:col-span-5 xl:col-span-5 2xl:col-span-4 h-[calc(100vh-11.5rem)] min-h-[560px] xl:min-h-[620px] ${
             mobileTab === 'list' ? 'block' : 'hidden lg:block'
           }`}
         >
@@ -140,7 +153,7 @@ export default function HomePage() {
 
         {/* Cột Bản đồ */}
         <div
-          className={`lg:col-span-7 xl:col-span-8 ${
+          className={`lg:col-span-7 xl:col-span-7 2xl:col-span-8 ${
             mobileTab === 'map' ? 'block' : 'hidden lg:block'
           }`}
         >
