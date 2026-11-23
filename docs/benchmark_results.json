@@ -1,0 +1,276 @@
+{
+  "timestamp": "2026-11-23 09:27:00",
+  "total_records": 10000,
+  "tc02": {
+    "test_case": "TC-02",
+    "nfr": "NFR-PER-01",
+    "threshold_ms": 3000.0,
+    "simulated_network": "4G (RTT +70ms)",
+    "runs": [
+      {
+        "run": 1,
+        "viewport": "Quận 1 (Trung tâm)",
+        "bbox": "106.685,10.765,106.715,10.785",
+        "items_returned": 50,
+        "server_latency_ms": 79.4,
+        "simulated_4g_ms": 149.4,
+        "target_ms": 3000.0,
+        "passed": true
+      },
+      {
+        "run": 2,
+        "viewport": "Bình Thạnh & Phú Nhuận",
+        "bbox": "106.670,10.790,106.720,10.820",
+        "items_returned": 50,
+        "server_latency_ms": 12.62,
+        "simulated_4g_ms": 82.62,
+        "target_ms": 3000.0,
+        "passed": true
+      },
+      {
+        "run": 3,
+        "viewport": "TP Thủ Đức (Khu Đông)",
+        "bbox": "106.730,10.810,106.820,10.880",
+        "items_returned": 50,
+        "server_latency_ms": 9.51,
+        "simulated_4g_ms": 79.51,
+        "target_ms": 3000.0,
+        "passed": true
+      },
+      {
+        "run": 4,
+        "viewport": "Quận 7 (Khu Nam)",
+        "bbox": "106.690,10.720,106.740,10.750",
+        "items_returned": 50,
+        "server_latency_ms": 9.73,
+        "simulated_4g_ms": 79.73,
+        "target_ms": 3000.0,
+        "passed": true
+      },
+      {
+        "run": 5,
+        "viewport": "Tân Bình & Tân Phú",
+        "bbox": "106.620,10.780,106.665,10.820",
+        "items_returned": 50,
+        "server_latency_ms": 9.53,
+        "simulated_4g_ms": 79.53,
+        "target_ms": 3000.0,
+        "passed": true
+      },
+      {
+        "run": 6,
+        "viewport": "Gò Vấp & Quận 12",
+        "bbox": "106.640,10.820,106.700,10.880",
+        "items_returned": 50,
+        "server_latency_ms": 10.0,
+        "simulated_4g_ms": 80.0,
+        "target_ms": 3000.0,
+        "passed": true
+      },
+      {
+        "run": 7,
+        "viewport": "Quận 5 & Quận 10",
+        "bbox": "106.650,10.745,106.680,10.770",
+        "items_returned": 50,
+        "server_latency_ms": 11.08,
+        "simulated_4g_ms": 81.08,
+        "target_ms": 3000.0,
+        "passed": true
+      },
+      {
+        "run": 8,
+        "viewport": "Bình Tân (Khu Tây)",
+        "bbox": "106.580,10.730,106.630,10.780",
+        "items_returned": 50,
+        "server_latency_ms": 9.92,
+        "simulated_4g_ms": 79.92,
+        "target_ms": 3000.0,
+        "passed": true
+      },
+      {
+        "run": 9,
+        "viewport": "Quận 8 & Bình Chánh",
+        "bbox": "106.620,10.680,106.680,10.730",
+        "items_returned": 50,
+        "server_latency_ms": 8.69,
+        "simulated_4g_ms": 78.69,
+        "target_ms": 3000.0,
+        "passed": true
+      },
+      {
+        "run": 10,
+        "viewport": "Toàn cảnh TP.HCM (Wide)",
+        "bbox": "106.550,10.650,106.850,10.900",
+        "items_returned": 50,
+        "server_latency_ms": 30.26,
+        "simulated_4g_ms": 100.26,
+        "target_ms": 3000.0,
+        "passed": true
+      }
+    ],
+    "statistics_4g": {
+      "min": 78.69,
+      "max": 149.4,
+      "mean": 89.07,
+      "median": 79.96,
+      "stdev": 22.15,
+      "p95": 171.51
+    },
+    "statistics_server": {
+      "min": 8.69,
+      "max": 79.4,
+      "mean": 19.07,
+      "median": 9.96,
+      "stdev": 22.15,
+      "p95": 101.51
+    },
+    "passed": true
+  },
+  "tc03": {
+    "test_case": "TC-03",
+    "nfr": "NFR-PER-02",
+    "threshold_ms": 2000.0,
+    "max_items": 50,
+    "runs": [
+      {
+        "run": 1,
+        "scenario": "Từ khóa 'laptop' (Tìm kiếm toàn văn)",
+        "params": {
+          "q": "laptop",
+          "limit": 50
+        },
+        "items_returned": 50,
+        "response_time_ms": 34.15,
+        "target_ms": 2000.0,
+        "passed": true
+      },
+      {
+        "run": 2,
+        "scenario": "Danh mục 1 (Đồ điện tử) + Sắp xếp mới nhất",
+        "params": {
+          "category_id": 1,
+          "sort": "newest",
+          "limit": 50
+        },
+        "items_returned": 50,
+        "response_time_ms": 20.31,
+        "target_ms": 2000.0,
+        "passed": true
+      },
+      {
+        "run": 3,
+        "scenario": "Từ khóa 'xe máy' + Danh mục 4 (Phương tiện)",
+        "params": {
+          "q": "xe máy",
+          "category_id": 4,
+          "limit": 50
+        },
+        "items_returned": 0,
+        "response_time_ms": 9.61,
+        "target_ms": 2000.0,
+        "passed": true
+      },
+      {
+        "run": 4,
+        "scenario": "Điểm tình trạng >= 8.0 + Danh mục 2 (Đồ gia dụng)",
+        "params": {
+          "category_id": 2,
+          "min_score": 8.0,
+          "limit": 50
+        },
+        "items_returned": 50,
+        "response_time_ms": 13.35,
+        "target_ms": 2000.0,
+        "passed": true
+      },
+      {
+        "run": 5,
+        "scenario": "Từ khóa 'bàn ghế' + Lọc theo Quận 1",
+        "params": {
+          "q": "bàn ghế",
+          "district": "Quận 1",
+          "limit": 50
+        },
+        "items_returned": 0,
+        "response_time_ms": 29.73,
+        "target_ms": 2000.0,
+        "passed": true
+      },
+      {
+        "run": 6,
+        "scenario": "Danh mục 3 (Thời trang) + Sắp xếp theo điểm",
+        "params": {
+          "category_id": 3,
+          "sort": "score",
+          "limit": 50
+        },
+        "items_returned": 50,
+        "response_time_ms": 12.59,
+        "target_ms": 2000.0,
+        "passed": true
+      },
+      {
+        "run": 7,
+        "scenario": "Từ khóa 'iphone' (Sản phẩm cụ thể)",
+        "params": {
+          "q": "iphone",
+          "limit": 50
+        },
+        "items_returned": 50,
+        "response_time_ms": 31.57,
+        "target_ms": 2000.0,
+        "passed": true
+      },
+      {
+        "run": 8,
+        "scenario": "Danh mục 5 (Sách) + Điểm tình trạng >= 7.5",
+        "params": {
+          "category_id": 5,
+          "min_score": 7.5,
+          "limit": 50
+        },
+        "items_returned": 50,
+        "response_time_ms": 10.84,
+        "target_ms": 2000.0,
+        "passed": true
+      },
+      {
+        "run": 9,
+        "scenario": "Từ khóa 'tủ lạnh' + Lọc Bình Thạnh",
+        "params": {
+          "q": "tủ lạnh",
+          "district": "Bình Thạnh",
+          "limit": 50
+        },
+        "items_returned": 0,
+        "response_time_ms": 32.56,
+        "target_ms": 2000.0,
+        "passed": true
+      },
+      {
+        "run": 10,
+        "scenario": "Đa tiêu chí: 'tai nghe' + Điện tử + Điểm >= 8.5",
+        "params": {
+          "q": "tai nghe",
+          "category_id": 1,
+          "min_score": 8.5,
+          "sort": "score",
+          "limit": 50
+        },
+        "items_returned": 0,
+        "response_time_ms": 9.67,
+        "target_ms": 2000.0,
+        "passed": true
+      }
+    ],
+    "statistics": {
+      "min": 9.61,
+      "max": 34.15,
+      "mean": 20.44,
+      "median": 16.83,
+      "stdev": 10.45,
+      "p95": 34.87
+    },
+    "passed": true
+  }
+}
