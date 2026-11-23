@@ -1,0 +1,75 @@
+version: '3.8'
+
+# =============================================================================
+# EcoFind Docker Compose Orchestration (Task TE9C75A)
+# Triển khai trọn bộ: PostgreSQL 15 + FastAPI (Uvicorn) + React 18 (Nginx)
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # 1. Cơ sở dữ liệu quan hệ PostgreSQL 15 (Data Tier)
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:15-alpine
+    container_name: ecofind_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ecofind_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/create_tables.sql:/docker-entrypoint-initdb.d/01_create_tables.sql
+      - ./scripts/create_indexes.sql:/docker-entrypoint-initdb.d/02_create_indexes.sql
+      - ./scripts/seed_data.sql:/docker-entrypoint-initdb.d/03_seed_data.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ecofind_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # 2. Máy chủ Backend FastAPI + ASGI Uvicorn (Business Logic Tier)
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecofind_backend
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploads_volume:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "python scripts/seed_demo_data.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  # ---------------------------------------------------------------------------
+  # 3. Giao diện người dùng Frontend React + Nginx Reverse Proxy (Presentation Tier)
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=/api
+    container_name: ecofind_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+    driver: local
+  uploads_volume:
+    driver: local

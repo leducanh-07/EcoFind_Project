@@ -33,7 +33,16 @@ try:
         MAX_IMAGE_COUNT: int = 5
 
         # CORS
-        CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
+        CORS_ORIGINS: List[str] = [
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:80",
+            "http://localhost",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:8000",
+            "http://127.0.0.1",
+            "http://127.0.0.1:80",
+        ]
 
         @property
         def database_url(self) -> str:
@@ -84,7 +93,16 @@ except ImportError:
         MAX_IMAGE_COUNT: int = int(os.getenv("MAX_IMAGE_COUNT", "5"))
 
         # CORS
-        CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
+        CORS_ORIGINS: List[str] = [
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:80",
+            "http://localhost",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:8000",
+            "http://127.0.0.1",
+            "http://127.0.0.1:80",
+        ]
 
         @property
         def database_url(self) -> str:
