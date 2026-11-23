@@ -41,7 +41,7 @@ async def upload_listing_photos(
       - Yêu cầu đăng nhập (JWT token hợp lệ).
       - Nhận 1–5 tệp bằng UploadFile (python-multipart).
       - Chỉ chấp nhận định dạng JPG/PNG (kiểm tra đuôi tệp, Content-Type và magic bytes).
-      - Mỗi tệp <= 5 MB; ảnh 6 MB hoặc tệp GIF trả về 400 (TC-06).
+      - Mỗi tệp <= 5 MB; ảnh quá dung lượng hoặc tệp GIF trả về lỗi 400.
       - Lưu vào thư mục máy chủ (hoặc Cloudinary) với tên tệp ngẫu nhiên (UUID) để bảo mật.
       - Trả về danh sách URL đường dẫn ảnh đã lưu.
     """

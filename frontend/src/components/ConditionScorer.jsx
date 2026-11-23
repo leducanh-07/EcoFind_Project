@@ -67,14 +67,14 @@ export const getConditionRank = (totalScore) => {
 
 export const validateComponentScore = (value, fieldName = 'Điểm') => {
   if (value === '' || value === null || value === undefined) {
-    return `${fieldName} không được để trống (E3).`;
+    return `${fieldName} không được để trống.`;
   }
   const num = Number(value);
   if (isNaN(num)) {
-    return `${fieldName} phải là một con số từ 0 đến 10 (E3).`;
+    return `${fieldName} phải là một con số từ 0 đến 10.`;
   }
   if (num < 0 || num > 10) {
-    return `${fieldName} phải nằm trong khoảng từ 0 đến 10 (E3).`;
+    return `${fieldName} phải nằm trong khoảng từ 0 đến 10.`;
   }
   return null;
 };
@@ -126,7 +126,7 @@ export default function ConditionScorer({
               Đánh giá tình trạng món đồ
             </h3>
             <span className="text-xs px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-semibold">
-              BR-01 & BR-02
+              Tiêu chuẩn hệ thống
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -161,7 +161,7 @@ export default function ConditionScorer({
         >
           <ShieldAlert size={16} className="shrink-0 mt-0.5 text-red-600" />
           <div className="space-y-0.5">
-            <span className="font-bold">Lỗi nhập điểm (E3):</span>
+            <span className="font-bold">Lỗi nhập điểm:</span>
             {appError && <div>• {appError}</div>}
             {funcError && <div>• {funcError}</div>}
             {accError && <div>• {accError}</div>}
@@ -348,7 +348,7 @@ export default function ConditionScorer({
         >
           <span className="flex items-center gap-1.5">
             <HelpCircle size={15} className="text-emerald-600" />
-            Xem hướng dẫn tiêu chuẩn tự chấm điểm (BR-01, BR-02)
+            Xem hướng dẫn tiêu chuẩn tự chấm điểm
           </span>
           {showGuide ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
@@ -365,7 +365,7 @@ export default function ConditionScorer({
               • <strong>Điểm Phụ kiện (20%):</strong> Còn hộp gốc, dây sạc zin, ốc vít, chân đế, sách hướng dẫn kèm theo hay chỉ có sản phẩm đơn lẻ.
             </p>
             <div className="p-2.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-[11px]">
-              ⚠️ <strong>Lưu ý quan trọng:</strong> Điểm tạm tính phía trên chỉ mang tính tham khảo cho người bán. Khi gửi duyệt, <strong>Server sẽ tính lại điểm tổng độc lập</strong> và Admin sẽ đối chiếu với hình ảnh thực tế, có quyền hạ điểm nếu không khớp (BR-01, BR-02).
+              ⚠️ <strong>Lưu ý quan trọng:</strong> Điểm tạm tính phía trên chỉ mang tính tham khảo cho người bán. Khi gửi duyệt, <strong>Server sẽ tính lại điểm tổng độc lập</strong> và Admin sẽ đối chiếu với hình ảnh thực tế, có quyền hạ điểm nếu không khớp.
             </div>
           </div>
         )}
@@ -374,7 +374,7 @@ export default function ConditionScorer({
       {/* Hộp ghi chú Server tính lại (BR-01) */}
       <div className="p-3 rounded-xl bg-slate-100 text-slate-600 text-xs flex items-center gap-2">
         <Info size={16} className="text-slate-500 shrink-0" />
-        <span>Điểm tổng và hạng chỉ để tham khảo, Server sẽ tính toán lại khi tiếp nhận tin đăng (BR-01).</span>
+        <span>Điểm tổng và hạng chỉ để tham khảo, Server sẽ tính toán lại khi tiếp nhận tin đăng.</span>
       </div>
     </div>
   );

@@ -208,7 +208,7 @@ export default function AdminPage() {
               Bảng điều khiển Quản trị viên
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Kiểm duyệt tin đăng, đối soát 3 điểm tình trạng và xử lý báo cáo vi phạm cộng đồng (FR-13, FR-14, FR-15)
+              Kiểm duyệt tin đăng, đối soát 3 điểm tình trạng và xử lý báo cáo vi phạm cộng đồng
             </p>
           </div>
         </div>
@@ -367,7 +367,7 @@ export default function AdminPage() {
                 Không có báo cáo vi phạm nào cần xử lý
               </h3>
               <p className="text-xs text-slate-500 mt-1 max-w-sm">
-                Tất cả các tin bị báo cáo đã được giải quyết hoặc chưa có khiếu nại mới từ người dùng (FR-15).
+                Tất cả các tin bị báo cáo đã được giải quyết hoặc chưa có khiếu nại mới từ người dùng.
               </p>
             </div>
           ) : (
@@ -540,7 +540,7 @@ export default function AdminPage() {
             </h3>
             <p className="text-xs text-slate-500 mt-1 max-w-sm">
               {activeTab === 'pending'
-                ? 'Tất cả các tin mới đã được kiểm duyệt xong. Hệ thống sẽ tự động cập nhật khi có người bán gửi tin mới (FR-13).'
+                ? 'Tất cả các tin mới đã được kiểm duyệt xong. Hệ thống sẽ tự động cập nhật khi có người bán gửi tin mới.'
                 : 'Hàng đợi đang trống.'}
             </p>
           </div>

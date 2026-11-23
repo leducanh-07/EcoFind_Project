@@ -68,7 +68,7 @@ export default function PhotoUploader({
     }
     if (file.size > MAX_FILE_SIZE_BYTES) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-      return `Ảnh "${file.name}" dung lượng ${sizeMB} MB, vượt quá giới hạn tối đa 5 MB (E2, BR-04).`;
+      return `Ảnh "${file.name}" dung lượng ${sizeMB} MB, vượt quá giới hạn tối đa 5 MB.`;
     }
 
     // 2. Kiểm tra phần mở rộng tệp
@@ -77,11 +77,11 @@ export default function PhotoUploader({
     const ext = lastDot !== -1 ? name.slice(lastDot).toLowerCase() : '';
 
     if (ext === '.gif' || file.type === 'image/gif') {
-      return `Tệp "${file.name}" là định dạng GIF không được chấp nhận. Hệ thống chỉ hỗ trợ ảnh JPG hoặc PNG (E2, BR-04).`;
+      return `Tệp "${file.name}" là định dạng GIF không được chấp nhận. Hệ thống chỉ hỗ trợ ảnh JPG hoặc PNG.`;
     }
 
     if (!ALLOWED_EXTENSIONS.includes(ext) && !ALLOWED_MIME_TYPES.includes(file.type)) {
-      return `Định dạng tệp "${file.name}" không hợp lệ. Chỉ chấp nhận ảnh JPG hoặc PNG (E2, BR-04).`;
+      return `Định dạng tệp "${file.name}" không hợp lệ. Chỉ chấp nhận ảnh JPG hoặc PNG.`;
     }
 
     return null;
@@ -97,13 +97,13 @@ export default function PhotoUploader({
     // Kiểm tra tổng số lượng ảnh (chặn > 5 ảnh)
     const remainingSlots = maxPhotos - photos.length;
     if (remainingSlots <= 0) {
-      setLocalError(`Bạn đã tải lên tối đa ${maxPhotos} ảnh. Vui lòng xóa bớt ảnh trước khi thêm mới (BR-04).`);
+      setLocalError(`Bạn đã tải lên tối đa ${maxPhotos} ảnh. Vui lòng xóa bớt ảnh trước khi thêm mới.`);
       return;
     }
 
     if (newFiles.length > remainingSlots) {
       setLocalError(
-        `Chỉ được tải lên tối đa ${maxPhotos} ảnh (BR-04). Bạn đã có ${photos.length} ảnh và chỉ có thể thêm tối đa ${remainingSlots} ảnh nữa.`
+        `Chỉ được tải lên tối đa ${maxPhotos} ảnh. Bạn đã có ${photos.length} ảnh và chỉ có thể thêm tối đa ${remainingSlots} ảnh nữa.`
       );
       return;
     }
@@ -114,7 +114,7 @@ export default function PhotoUploader({
       const fileError = validateFile(file);
       if (fileError) {
         setLocalError(fileError);
-        return; // Dừng lại nếu có bất kỳ tệp nào không hợp lệ (E2)
+        return; // Dừng lại nếu có bất kỳ tệp nào không hợp lệ
       }
 
       validPhotoObjects.push({
@@ -227,7 +227,7 @@ export default function PhotoUploader({
             Hình ảnh sản phẩm <span className="text-red-500">*</span>
           </label>
           <p className="text-xs text-slate-500 mt-0.5">
-            Từ 1 đến 5 ảnh JPG/PNG, mỗi ảnh ≤ 5 MB (BR-04, E2). Ảnh đầu tiên sẽ là ảnh bìa.
+            Từ 1 đến 5 ảnh JPG/PNG, mỗi ảnh ≤ 5 MB. Ảnh đầu tiên sẽ là ảnh bìa.
           </p>
         </div>
         <span
@@ -311,7 +311,7 @@ export default function PhotoUploader({
       {photos.length === 0 && (
         <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
           <FileImage size={16} className="text-amber-600 shrink-0" />
-          <span>Bắt buộc có ít nhất 1 ảnh để người mua thấy được hiện trạng thật của món đồ (BR-04).</span>
+          <span>Bắt buộc có ít nhất 1 ảnh để người mua thấy được hiện trạng thật của món đồ.</span>
         </div>
       )}
 

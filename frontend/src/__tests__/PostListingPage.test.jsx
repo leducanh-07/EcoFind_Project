@@ -75,7 +75,7 @@ describe('PostListingPage & TE9C746: Gửi duyệt & Phản hồi kết quả', 
     const submitBtn = screen.getByTestId('submit-listing-btn');
     fireEvent.click(submitBtn);
 
-    expect(await screen.findByText(/Vui lòng tải lên ít nhất 1 ảnh sản phẩm \(BR-04\)/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Vui lòng tải lên ít nhất 1 ảnh sản phẩm/i)).toBeInTheDocument();
   });
 
   test('Chặn gửi tin và báo lỗi E3 khi điểm thành phần ngoài khoảng 0–10', async () => {
@@ -284,7 +284,7 @@ describe('PostListingPage & TE9C746: Gửi duyệt & Phản hồi kết quả', 
     // Chuyển sang màn hình Tin của tôi
     expect(await screen.findByText(/Quản lý tin của tôi/i)).toBeInTheDocument();
     expect(screen.getByTestId('flash-success-banner')).toHaveTextContent(/Đã gửi, chờ duyệt/i);
-    expect(screen.getByText(/Quy tắc FR-09:/i)).toBeInTheDocument();
+    expect(screen.getByText(/Quy tắc hiển thị:/i)).toBeInTheDocument();
     expect(screen.getByTestId('pending-listing-card')).toHaveTextContent(/Tủ lạnh mini Aqua 90L/i);
   });
 });

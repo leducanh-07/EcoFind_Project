@@ -356,7 +356,7 @@ export default function ListingDetailPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-slate-900 text-base">Đánh giá tình trạng</h3>
-                <p className="text-xs text-slate-500">Chấm điểm theo tiêu chuẩn BR-01</p>
+                <p className="text-xs text-slate-500">Chấm điểm theo tiêu chuẩn hệ thống</p>
               </div>
 
               {/* Huy hiệu điểm tổng */}
@@ -420,7 +420,7 @@ export default function ListingDetailPage() {
             <div className="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-3.5 text-xs text-emerald-900 space-y-1.5">
               <div className="flex items-center gap-1.5 font-bold text-emerald-950">
                 <Info size={14} className="text-emerald-600" />
-                <span>Công thức tính điểm (BR-01):</span>
+                <span>Công thức tính điểm:</span>
               </div>
               <p className="font-mono text-[11px] text-emerald-800 bg-white/60 p-1.5 rounded-lg border border-emerald-200/50">
                 Điểm tổng = 0,4 × Ngoại quan + 0,4 × Chức năng + 0,2 × Phụ kiện

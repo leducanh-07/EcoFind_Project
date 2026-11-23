@@ -96,7 +96,7 @@ export default function SearchAndFilterBar({
     const val = e.target.value;
     setKeyword(val);
     if (val.length > 100) {
-      setKeywordError('Từ khóa không được vượt quá 100 ký tự (UC-03 E1)');
+      setKeywordError('Từ khóa không được vượt quá 100 ký tự');
     } else {
       setKeywordError('');
     }
@@ -105,7 +105,7 @@ export default function SearchAndFilterBar({
   const handleSearchSubmit = (e) => {
     e?.preventDefault();
     if (keyword.length > 100) {
-      setKeywordError('Từ khóa không được vượt quá 100 ký tự (UC-03 E1)');
+      setKeywordError('Từ khóa không được vượt quá 100 ký tự');
       return;
     }
     setKeywordError('');

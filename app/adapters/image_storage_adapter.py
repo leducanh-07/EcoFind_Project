@@ -204,13 +204,13 @@ async def process_and_save_upload_files(
     if not files or len(files) == 0:
         raise BadRequestException(
             message="Vui lòng tải lên từ 1 đến 5 ảnh",
-            fields={"photos": "Yêu cầu tải lên ít nhất 1 ảnh (BR-04)"},
+            fields={"photos": "Yêu cầu tải lên ít nhất 1 ảnh"},
         )
 
     if len(files) > MAX_IMAGE_COUNT:
         raise BadRequestException(
             message=f"Mỗi tin chỉ được tải tối đa {MAX_IMAGE_COUNT} ảnh",
-            fields={"photos": f"Số lượng ảnh gửi lên ({len(files)}) vượt quá giới hạn tối đa {MAX_IMAGE_COUNT} ảnh (BR-04)"},
+            fields={"photos": f"Số lượng ảnh gửi lên ({len(files)}) vượt quá giới hạn tối đa {MAX_IMAGE_COUNT} ảnh"},
         )
 
     storage = adapter or default_image_storage_adapter

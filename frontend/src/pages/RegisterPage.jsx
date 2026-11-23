@@ -47,7 +47,7 @@ export default function RegisterPage() {
     if (!formData.password) {
       errors.password = 'Vui lòng nhập mật khẩu';
     } else if (formData.password.length < 8) {
-      errors.password = 'Mật khẩu phải chứa ít nhất 8 ký tự (FR-01)';
+      errors.password = 'Mật khẩu phải chứa ít nhất 8 ký tự';
     }
 
     setClientErrors(errors);

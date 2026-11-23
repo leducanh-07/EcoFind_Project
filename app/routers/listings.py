@@ -226,7 +226,7 @@ async def update_listing(
     "/{id}/status",
     response_model=UpdateListingStatusResponse,
     status_code=status.HTTP_200_OK,
-    summary="Cập nhật trạng thái tin đăng: ẩn, hiện lại hoặc đánh dấu đã bán (UC-06, FR-10, TE9C74E)",
+    summary="Cập nhật trạng thái tin đăng: ẩn, hiện lại hoặc đánh dấu đã bán",
 )
 async def update_listing_status(
     id: int,
@@ -235,7 +235,7 @@ async def update_listing_status(
     current_user: User = Depends(get_current_user),
 ):
     """
-    Là Người bán, tôi muốn ẩn tin, hiện lại hoặc đánh dấu đã bán khi cần (UC-06, FR-10, TE9C74E):
+    Là Người bán, tôi muốn ẩn tin, hiện lại hoặc đánh dấu đã bán khi cần:
       - Nhận hidden, selling hoặc sold theo bảng chuyển trạng thái SDD 4.2.
       - Tin pending đánh dấu sold trả 409 Conflict (E1).
       - Tin do Admin ẩn (hidden_by_admin) hiện lại trả 403 Forbidden (E3).

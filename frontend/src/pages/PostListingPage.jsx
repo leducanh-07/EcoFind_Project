@@ -112,37 +112,37 @@ export default function PostListingPage() {
     const newErrors = {};
 
     if (!title.trim()) {
-      newErrors.title = 'Vui lòng nhập tiêu đề món đồ (E1).';
+      newErrors.title = 'Vui lòng nhập tiêu đề món đồ.';
     } else if (title.trim().length > 100) {
-      newErrors.title = 'Tiêu đề không được vượt quá 100 ký tự (E1).';
+      newErrors.title = 'Tiêu đề không được vượt quá 100 ký tự.';
     }
 
     if (!categoryId) {
-      newErrors.categoryId = 'Vui lòng chọn danh mục phù hợp (E1).';
+      newErrors.categoryId = 'Vui lòng chọn danh mục phù hợp.';
     }
 
     const numPrice = Number(price);
     if (price === '' || isNaN(numPrice)) {
-      newErrors.price = 'Vui lòng nhập giá bán (hoặc 0 nếu cho tặng) (E1).';
+      newErrors.price = 'Vui lòng nhập giá bán (hoặc 0 nếu cho tặng).';
     } else if (numPrice < 0 || numPrice > 1000000000) {
-      newErrors.price = 'Giá bán phải từ 0 đến 1.000.000.000 đ (BR-05, E4).';
+      newErrors.price = 'Giá bán phải từ 0 đến 1.000.000.000 đ.';
     }
 
     if (!description.trim()) {
-      newErrors.description = 'Vui lòng mô tả chi tiết món đồ (E1).';
+      newErrors.description = 'Vui lòng mô tả chi tiết món đồ.';
     }
 
-    // Bắt buộc có ít nhất 1 ảnh (BR-04, UC-05)
+    // Bắt buộc có ít nhất 1 ảnh
     if (!photos || photos.length === 0) {
-      newErrors.photos = 'Vui lòng tải lên ít nhất 1 ảnh sản phẩm (BR-04).';
+      newErrors.photos = 'Vui lòng tải lên ít nhất 1 ảnh sản phẩm.';
     } else if (photos.length > 5) {
-      newErrors.photos = 'Mỗi tin chỉ được tải tối đa 5 ảnh (BR-04).';
+      newErrors.photos = 'Mỗi tin chỉ được tải tối đa 5 ảnh.';
     }
 
     if (!address.trim()) {
-      newErrors.address = 'Vui lòng nhập địa chỉ giao dịch (E1).';
+      newErrors.address = 'Vui lòng nhập địa chỉ giao dịch.';
     } else if (lat === null || lng === null || isNaN(Number(lat)) || isNaN(Number(lng))) {
-      newErrors.address = 'Vui lòng chọn vị trí trên bản đồ (UC-05).';
+      newErrors.address = 'Vui lòng chọn vị trí trên bản đồ.';
     }
 
     // Kiểm tra 3 điểm thành phần 0-10 (E3)
@@ -266,7 +266,7 @@ export default function PostListingPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Đăng tin bán đồ cũ</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Tải ảnh thực tế, định vị trên bản đồ và tự chấm điểm tình trạng món đồ (UC-05)
+            Tải ảnh thực tế, định vị trên bản đồ và tự chấm điểm tình trạng món đồ
           </p>
         </div>
       </div>
@@ -303,7 +303,7 @@ export default function PostListingPage() {
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 max-w-lg mx-auto text-left flex items-start gap-3">
             <EyeOff className="text-amber-600 mt-0.5 shrink-0" size={18} />
             <div className="text-xs text-slate-600 leading-relaxed">
-              <strong className="text-slate-800">Quy tắc hiển thị (FR-09):</strong> Tin chưa hiện trên bản đồ công khai cho đến khi được Ban quản trị phê duyệt. Bạn có thể theo dõi tiến độ duyệt tin trong mục <strong>Tin của tôi</strong>.
+              <strong className="text-slate-800">Quy tắc hiển thị:</strong> Tin chưa hiện trên bản đồ công khai cho đến khi được Ban quản trị phê duyệt. Bạn có thể theo dõi tiến độ duyệt tin trong mục <strong>Tin của tôi</strong>.
             </div>
           </div>
 

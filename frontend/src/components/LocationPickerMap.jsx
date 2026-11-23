@@ -294,7 +294,7 @@ export default function LocationPickerMap({
         >
           <Info size={16} className="text-amber-600 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <span className="font-semibold">Không tìm thấy địa chỉ này trên bản đồ (UC-05 A1).</span>
+            <span className="font-semibold">Không tìm thấy địa chỉ này trên bản đồ.</span>
             <p className="mt-0.5 text-amber-700">
               Bạn có thể chạm trực tiếp lên bản đồ hoặc kéo biểu tượng ghim xanh đến vị trí chính xác của món đồ.
             </p>

@@ -873,7 +873,7 @@ class ListingService:
         if clean_status == "sold":
             if listing.status == "pending":
                 raise ConflictException(
-                    message="Tin đang chờ duyệt không được phép đánh dấu đã bán (E1)",
+                    message="Tin đang chờ duyệt không được phép đánh dấu đã bán",
                     code=409,
                 )
             if listing.status == "rejected":
@@ -887,12 +887,12 @@ class ListingService:
             # E3: Tin do Admin ẩn (hidden_by_admin = True) người bán không thể tự hiện lại
             if listing.hidden_by_admin and current_user.role != "admin":
                 raise ForbiddenException(
-                    message="Tin do Admin ẩn do vi phạm (Quản trị viên ẩn), bạn không thể tự hiện lại (E3)",
+                    message="Tin do Admin ẩn do vi phạm (Quản trị viên ẩn), bạn không thể tự hiện lại",
                     code=403,
                 )
             if listing.status == "pending":
                 raise ConflictException(
-                    message="Tin đang chờ duyệt cần được Quản trị viên phê duyệt trước khi hiển thị (E2)",
+                    message="Tin đang chờ duyệt cần được Quản trị viên phê duyệt trước khi hiển thị",
                     code=409,
                 )
             if listing.status == "rejected":

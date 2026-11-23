@@ -243,7 +243,7 @@ export default function MapView({
       if (typeof window !== 'undefined' && window.__FIRST_MARKER_LOADED__ === undefined) {
         window.__FIRST_MARKER_LOADED__ = elapsed;
         if (import.meta.env.DEV) {
-          console.info(`[NFR-PER-01] First marker batch loaded in ${elapsed.toFixed(1)}ms (target: <= 3000ms)`);
+          console.info(`First marker batch loaded in ${elapsed.toFixed(1)}ms (target: <= 3000ms)`);
         }
       }
 

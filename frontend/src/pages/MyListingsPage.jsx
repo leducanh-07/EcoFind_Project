@@ -199,7 +199,7 @@ export default function MyListingsPage() {
     if (!editingListing) return;
 
     if (editPhotos.length === 0 && (editingListing.photos && editingListing.photos.length > 0)) {
-      setEditPhotoError('Vui lòng giữ lại ít nhất 1 ảnh sản phẩm (BR-04).');
+      setEditPhotoError('Vui lòng giữ lại ít nhất 1 ảnh sản phẩm.');
       return;
     }
 
@@ -371,7 +371,7 @@ export default function MyListingsPage() {
             <div className="mt-2.5 flex items-center gap-2 text-xs font-medium text-emerald-700 bg-white/70 px-3 py-1.5 rounded-lg border border-emerald-200/60 inline-flex">
               <EyeOff size={14} className="text-amber-600" />
               <span>
-                <strong>Quy tắc FR-09:</strong> Tin chưa hiện trên bản đồ cho đến khi được duyệt.
+                <strong>Quy tắc hiển thị:</strong> Tin chưa hiện trên bản đồ cho đến khi được duyệt.
               </span>
             </div>
           </div>
@@ -409,7 +409,7 @@ export default function MyListingsPage() {
           </div>
           <div className="flex items-center gap-2 text-xs text-amber-700 bg-amber-100/60 px-3 py-1.5 rounded-xl border border-amber-200">
             <EyeOff size={13} />
-            <span>Chưa hiện trên bản đồ (FR-09)</span>
+            <span>Chưa hiện trên bản đồ</span>
           </div>
         </div>
       )}

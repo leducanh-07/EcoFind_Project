@@ -25,7 +25,7 @@ export default function AdminListingModal({
   isOpen,
   onClose,
   onActionSuccess,
-  enableActions = true, // Cho phép thao tác duyệt/từ chối/hạ điểm (Task TE9C74B)
+  enableActions = true, // Cho phép thao tác duyệt/từ chối/hạ điểm
 }) {
   const [listing, setListing] = useState(initialListing);
   const [loading, setLoading] = useState(false);
@@ -193,7 +193,7 @@ export default function AdminListingModal({
     setRejectError(null);
 
     if (!rejectReason || !rejectReason.trim()) {
-      setRejectError('Vui lòng nhập lý do từ chối tin đăng (E1).');
+      setRejectError('Vui lòng nhập lý do từ chối tin đăng.');
       return;
     }
 
@@ -437,7 +437,7 @@ export default function AdminListingModal({
                         />
                         <span className="flex items-center gap-1.5">
                           <TrendingDown size={16} className="text-amber-700" />
-                          Hạ điểm thành phần nếu người bán tự chấm cao hơn thực tế (UC-09 A2)
+                          Hạ điểm thành phần nếu người bán tự chấm cao hơn thực tế
                         </span>
                       </label>
                       {enableAdjustment && (
@@ -450,7 +450,7 @@ export default function AdminListingModal({
                     {enableAdjustment && (
                       <div className="space-y-4 pt-2 border-t border-amber-200/60 animate-in fade-in">
                         <p className="text-xs text-amber-800">
-                          * Lưu ý quy tắc FR-14: Admin chỉ được phép hạ điểm (điểm mới ≤ điểm ban đầu). Điểm tổng và xếp hạng sẽ được tính lại tự động.
+                          * Lưu ý: Quản trị viên chỉ được phép hạ điểm (điểm mới ≤ điểm ban đầu). Điểm tổng và xếp hạng sẽ được tính lại tự động.
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           <div>

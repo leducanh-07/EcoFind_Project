@@ -47,13 +47,13 @@ describe('ConditionScorer Component (TE9C745, BR-01, BR-02, E3)', () => {
     expect(validateComponentScore(7.5)).toBeNull();
 
     // Giá trị âm < 0
-    expect(validateComponentScore(-1, 'Điểm ngoại quan')).toContain('từ 0 đến 10 (E3)');
+    expect(validateComponentScore(-1, 'Điểm ngoại quan')).toContain('từ 0 đến 10');
     // Giá trị lớn hơn 10
-    expect(validateComponentScore(10.5, 'Điểm chức năng')).toContain('từ 0 đến 10 (E3)');
-    expect(validateComponentScore(15, 'Điểm phụ kiện')).toContain('từ 0 đến 10 (E3)');
+    expect(validateComponentScore(10.5, 'Điểm chức năng')).toContain('từ 0 đến 10');
+    expect(validateComponentScore(15, 'Điểm phụ kiện')).toContain('từ 0 đến 10');
     // Chuỗi rỗng hoặc không phải số
-    expect(validateComponentScore('', 'Điểm')).toContain('không được để trống (E3)');
-    expect(validateComponentScore('abc', 'Điểm')).toContain('từ 0 đến 10 (E3)');
+    expect(validateComponentScore('', 'Điểm')).toContain('không được để trống');
+    expect(validateComponentScore('abc', 'Điểm')).toContain('từ 0 đến 10');
   });
 
   test('Hiển thị đầy đủ 3 thanh trượt và ô nhập điểm với trọng số tương ứng', () => {
@@ -140,7 +140,7 @@ describe('ConditionScorer Component (TE9C745, BR-01, BR-02, E3)', () => {
 
     const alert = screen.getByTestId('e3-error-alert');
     expect(alert).toBeInTheDocument();
-    expect(alert).toHaveTextContent(/Lỗi nhập điểm \(E3\)/i);
+    expect(alert).toHaveTextContent(/Lỗi nhập điểm/i);
     expect(alert).toHaveTextContent(/Điểm ngoại quan phải nằm trong khoảng từ 0 đến 10/i);
     expect(alert).toHaveTextContent(/Điểm chức năng phải nằm trong khoảng từ 0 đến 10/i);
   });
