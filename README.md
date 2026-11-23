@@ -209,13 +209,19 @@ Bao gồm kiểm thử tương tác bản đồ, bộ lọc tìm kiếm, bộ đ
 
 ---
 
-## 7. Kiểm thử tải & hiệu năng với 10.000 tin đăng (Task TE9C757)
+## 7. Kiểm thử tải & hiệu năng với 10.000 tin đăng (Task TE9C757, TE9C75B)
 
 - **Sinh 10.000 tin mẫu**: `python scripts/generate_10k_listings.py` (hoàn thành trong ~0.25s).
 - **Chạy benchmark tự động**: `python scripts/benchmark_performance.py`.
 - **Kết quả đo lường (10 lần lặp)**:
   - **TC-02 (NFR-PER-01)**: Tải marker bản đồ trên 4G đạt **89.07 ms** (Yêu cầu: $\le 3.000$ ms, **nhanh gấp 33 lần**).
   - **TC-03 (NFR-PER-02)**: Tìm kiếm & lọc $\le 50$ tin đạt **20.44 ms** (Yêu cầu: $\le 2.000$ ms, **nhanh gấp 98 lần**).
+- **Giải pháp chỉ mục tăng tốc tìm từ khóa pg_trgm (Task TE9C75B, SDD 6.2)**:
+  - Kịch bản: Khi khối lượng dữ liệu mở rộng hàng trăm ngàn tin hoặc nếu thời gian tìm kiếm từ khóa vượt quá 2 giây, kích hoạt chỉ mục GIN Trigram:
+    ```bash
+    psql -U postgres -d ecofind_db -f scripts/add_pg_trgm.sql
+    ```
+  - Cài đặt extension `pg_trgm`, tạo chỉ mục GIN trên `title`, `description` và `(title || ' ' || description)` cho các tin `selling`, chuyển đổi Seq Scan sang Bitmap Index Scan giúp duy trì thời gian tìm kiếm $\le 2$ giây.
 - Chi tiết xem tại báo cáo [docs/PERFORMANCE_REPORT_10K.md](docs/PERFORMANCE_REPORT_10K.md).
 
 ---

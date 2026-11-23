@@ -71,6 +71,21 @@ ON favorites (listing_id);
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_key 
 ON users (email);
 
+-- -----------------------------------------------------------------------------
+-- 8. Optional Trigram Index for Full-Text and Substring Search (Task TE9C75B, SDD 6.2)
+-- Purpose: Optimize ILIKE '%keyword%' search over large dataset (10,000+ items).
+-- Ensures keyword query executes in <= 2s (NFR-PER-02, SDD 6.2).
+-- -----------------------------------------------------------------------------
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+CREATE INDEX IF NOT EXISTS idx_listings_title_trgm 
+ON listings USING gin (title gin_trgm_ops) 
+WHERE status = 'selling';
+
+CREATE INDEX IF NOT EXISTS idx_listings_search_trgm 
+ON listings USING gin ((title || ' ' || description) gin_trgm_ops) 
+WHERE status = 'selling';
+
 -- =============================================================================
 -- SAMPLE QUERIES FOR EXPLAIN VERIFICATION (Criterion: EXPLAIN map query uses Index Scan)
 -- =============================================================================
