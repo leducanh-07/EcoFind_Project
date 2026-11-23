@@ -10,7 +10,7 @@
 **EcoFind** là nền tảng thương mại điện tử kết nối người mua và người bán đồ cũ (SecondHand), tập trung vào trải nghiệm trực quan trên bản đồ địa lý khu vực TP.HCM. Điểm đột phá của hệ thống là **Cơ chế đánh giá tình trạng minh bạch (Condition Score)** dựa trên 3 tiêu chí cốt lõi (Ngoại quan, Công năng, Phụ kiện), kết hợp quy trình kiểm duyệt nghiêm ngặt của Quản trị viên (Admin) và tính năng tự điều chỉnh trạng thái thông minh của Người bán.
 
 ### Các phân hệ chính (Modules):
-- 🗺️ **Bản đồ tương tác (Interactive Map - Leaflet / OSM)**: Tìm kiếm tin đăng theo khung nhìn (bounding box), bán kính (1–20 km theo Haversine), quận/huyện, từ khóa và bộ lọc giá / điểm tình trạng. Marker hiển thị huy hiệu điểm tình trạng trực quan.
+- 🗺️ **Bản đồ tương tác (Interactive Map - Leaflet & Google Maps Tiles)**: Tìm kiếm tin đăng theo khung nhìn (bounding box), bán kính (1–20 km theo Haversine), quận/huyện, từ khóa và bộ lọc giá / điểm tình trạng. Sử dụng gạch bản đồ Google Maps Tiles cho trải nghiệm mượt mà, tốc độ cao và hiển thị marker điểm tình trạng trực quan.
 - 🔐 **Xác thực & Phân quyền (Authentication & Authorization)**: Đăng ký, đăng nhập JWT access token, kiểm tra vai trò (Admin / User), bảo mật mật khẩu với thuật toán Bcrypt.
 - 📝 **Đăng tin & Chấm điểm (Post Listing & Condition Scoring - BR-01/BR-02)**: Đăng tin kèm tải nhiều ảnh, tự động tính điểm trung bình có trọng số, cảnh báo quy tắc duyệt lại khi sửa điểm/ảnh.
 - 🛡️ **Kiểm duyệt tin đăng (Admin Moderation - UC-09, BR-01, FR-14)**: Admin duyệt tin (có thể hạ điểm thành phần nếu người bán tự chấm quá cao), từ chối tin kèm lý do vi phạm chi tiết, ngăn chặn duyệt trùng lặp (HTTP 409 Conflict).
@@ -35,7 +35,7 @@ EcoFind_Project/
 │   ├── services/                # Business Logic Tier (Quy tắc BR-01 -> BR-05, moderation, score calc)
 │   ├── repositories/            # Data Access Tier (SQLAlchemy async queries, parameterized)
 │   └── adapters/                # Tích hợp dịch vụ ngoài (Storage ảnh, Geocoding)
-├── frontend/                    # Frontend (React 18 + Vite + Tailwind CSS + Lucide Icons + Leaflet)
+├── frontend/                    # Frontend (React 18 + Vite + Tailwind CSS + Lucide Icons + Leaflet & Google Tiles)
 │   ├── src/
 │   │   ├── api/                 # Axios HTTP client cấu hình JWT interceptor
 │   │   ├── components/          # UI Components (Navbar, MapView, ListingCard, AuthModal, ReportDialog...)
