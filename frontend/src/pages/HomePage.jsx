@@ -1,5 +1,15 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Compass, Map, List, MapPin, RefreshCw, AlertCircle } from 'lucide-react';
+import {
+  Compass,
+  Map,
+  List,
+  MapPin,
+  RefreshCw,
+  AlertCircle,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Sparkles,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useGeolocation } from '../hooks/useGeolocation';
 import MapView from '../components/MapView';
@@ -25,6 +35,7 @@ export default function HomePage() {
   const [selectedListingId, setSelectedListingId] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [mobileTab, setMobileTab] = useState('map'); // 'map' | 'list'
+  const [isListCollapsed, setIsListCollapsed] = useState(false); // Thu gọn danh sách để xem Full Map
 
   // Khi người dùng đăng xuất: Reset toàn bộ bộ lọc và từ khóa về mặc định
   useEffect(() => {
@@ -55,16 +66,16 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="space-y-2.5">
-      {/* Top Context Sub-header: Subtle, informative & non-intrusive */}
+    <div className="space-y-3">
+      {/* Top Context Sub-header: Tinh gọn, rõ ràng, phong cách Modern Clean */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
         <div className="flex items-center gap-2 text-xs text-slate-600">
           <div className="flex items-center gap-1.5 font-medium">
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+            <span className="flex h-2.5 w-2.5 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
             </span>
-            <span className="font-semibold text-slate-800">
+            <span className="font-semibold text-slate-900">
               {isFallback ? 'Vị trí mặc định: TP. Hồ Chí Minh' : 'Định vị GPS thực tế'}
             </span>
           </div>
@@ -77,7 +88,7 @@ export default function HomePage() {
         {/* Location refresh / GPS indicator */}
         <div className="flex items-center gap-2 self-start sm:self-auto">
           {loadingLocation && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md font-medium">
+            <span className="inline-flex items-center gap-1 text-[11px] text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg font-medium border border-emerald-200/60">
               <RefreshCw size={11} className="animate-spin" /> Đang lấy vị trí...
             </span>
           )}
@@ -85,12 +96,32 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => requestLocation(true)}
-              className="inline-flex items-center gap-1 text-[11px] text-teal-700 hover:text-teal-900 bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 text-[11px] text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-lg font-bold border border-emerald-200/80 transition-colors cursor-pointer shadow-2xs"
               title="Kích hoạt định vị chính xác vị trí của bạn"
             >
               <MapPin size={12} /> Bật GPS của tôi
             </button>
           )}
+
+          {/* Desktop Toggle Button: Thu gọn / Mở rộng danh sách để xem Full Map */}
+          <button
+            type="button"
+            onClick={() => setIsListCollapsed(!isListCollapsed)}
+            className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-700 hover:text-emerald-800 bg-white hover:bg-slate-50 px-3 py-1 rounded-lg border border-slate-200/90 shadow-2xs transition-all cursor-pointer select-none"
+            title={isListCollapsed ? 'Mở lại danh sách kết quả' : 'Mở rộng bản đồ 100% toàn màn hình'}
+          >
+            {isListCollapsed ? (
+              <>
+                <PanelLeftOpen size={13} className="text-emerald-600" />
+                <span>Hiện danh sách ({listings.length})</span>
+              </>
+            ) : (
+              <>
+                <PanelLeftClose size={13} className="text-slate-500" />
+                <span>Toàn màn hình bản đồ</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
@@ -109,7 +140,7 @@ export default function HomePage() {
           onClick={() => setMobileTab('map')}
           className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
             mobileTab === 'map'
-              ? 'bg-white text-teal-800 shadow-xs'
+              ? 'bg-white text-emerald-800 shadow-2xs'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -121,7 +152,7 @@ export default function HomePage() {
           onClick={() => setMobileTab('list')}
           className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
             mobileTab === 'list'
-              ? 'bg-white text-teal-800 shadow-xs'
+              ? 'bg-white text-emerald-800 shadow-2xs'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
@@ -130,13 +161,13 @@ export default function HomePage() {
         </button>
       </div>
 
-      {/* Khu vực hiển thị: Cột danh sách kết quả cạnh bản đồ (Desktop) & Tab View (Mobile) */}
+      {/* Khu vực hiển thị: Cột danh sách kết quả cạnh bản đồ (Desktop 45/55 Split) & Tab View (Mobile) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 items-start">
-        {/* Cột Danh sách kết quả */}
+        {/* Cột Danh sách kết quả: Chiếm 5/12 (~42-45%) rộng rãi cho thẻ ngang, có thể thu gọn */}
         <div
-          className={`lg:col-span-5 xl:col-span-5 2xl:col-span-4 h-[calc(100vh-11.5rem)] min-h-[560px] xl:min-h-[620px] ${
-            mobileTab === 'list' ? 'block' : 'hidden lg:block'
-          }`}
+          className={`h-[calc(100vh-12rem)] min-h-[580px] xl:min-h-[640px] transition-all duration-300 ${
+            isListCollapsed ? 'hidden' : 'lg:col-span-5 xl:col-span-5 2xl:col-span-5'
+          } ${mobileTab === 'list' ? 'block' : 'hidden lg:block'}`}
         >
           <SearchResultsList
             listings={listings}
@@ -151,11 +182,13 @@ export default function HomePage() {
           />
         </div>
 
-        {/* Cột Bản đồ */}
+        {/* Cột Bản đồ: Tự động mở rộng sang 12/12 khi danh sách thu gọn, hoặc 7/12 bình thường */}
         <div
-          className={`lg:col-span-7 xl:col-span-7 2xl:col-span-8 ${
-            mobileTab === 'map' ? 'block' : 'hidden lg:block'
-          }`}
+          className={`transition-all duration-300 ${
+            isListCollapsed
+              ? 'lg:col-span-12'
+              : 'lg:col-span-7 xl:col-span-7 2xl:col-span-7'
+          } ${mobileTab === 'map' ? 'block' : 'hidden lg:block'}`}
         >
           <MapView
             coords={coords}

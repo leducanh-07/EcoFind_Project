@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, SlidersHorizontal, X, AlertCircle, RotateCcw, Check, Sparkles, MapPin } from 'lucide-react';
+import {
+  Search,
+  SlidersHorizontal,
+  X,
+  AlertCircle,
+  RotateCcw,
+  Check,
+  Sparkles,
+  MapPin,
+  Layers,
+  ChevronRight,
+} from 'lucide-react';
 import { getCategoriesApi } from '../api/categories';
 
 export const HCM_DISTRICTS = [
@@ -78,11 +89,11 @@ export default function SearchAndFilterBar({
         // Fallback categories nếu API lỗi
         if (isMounted) {
           setCategories([
-            { id: 1, name: 'Đồ điện tử' },
-            { id: 2, name: 'Nội thất' },
-            { id: 3, name: 'Sách vở' },
-            { id: 4, name: 'Gia dụng' },
-            { id: 5, name: 'Quần áo' },
+            { id: 1, name: 'Đồ điện tử & Công nghệ' },
+            { id: 2, name: 'Nội thất & Gia dụng' },
+            { id: 3, name: 'Xe cộ & Phụ tùng' },
+            { id: 4, name: 'Sách & Đồ học tập' },
+            { id: 5, name: 'Thời trang & Phụ kiện' },
           ]);
         }
       })
@@ -95,65 +106,76 @@ export default function SearchAndFilterBar({
     };
   }, []);
 
-  // Đếm số lượng bộ lọc đang kích hoạt (khác mặc định)
-  const activeFilterCount = [
-    Boolean(filters.categoryId),
-    Boolean(filters.district),
-    filters.radius !== 10,
-    Boolean(filters.minScore),
-    filters.sort && filters.sort !== 'distance',
-  ].filter(Boolean).length;
-
+  // Xử lý thay đổi ô tìm kiếm từ khóa (giới hạn 100 ký tự theo BR-01, UC-03 E1)
   const handleKeywordChange = (e) => {
     const val = e.target.value;
-    setKeyword(val);
     if (val.length > 100) {
-      setKeywordError('Từ khóa không được vượt quá 100 ký tự');
-    } else {
-      setKeywordError('');
-    }
-  };
-
-  const handleSearchSubmit = (e) => {
-    e?.preventDefault();
-    if (keyword.length > 100) {
-      setKeywordError('Từ khóa không được vượt quá 100 ký tự');
+      setKeywordError('Từ khóa không được vượt quá 100 ký tự (UC-03 E1)');
       return;
     }
     setKeywordError('');
-    onApplyFilters({
-      ...filters,
-      q: keyword.trim(),
-    });
+    setKeyword(val);
+  };
+
+  // Submit tìm kiếm từ khóa
+  const handleSearchSubmit = (e) => {
+    if (e) e.preventDefault();
+    if (keyword.length > 100) {
+      setKeywordError('Từ khóa không được vượt quá 100 ký tự (UC-03 E1)');
+      return;
+    }
+    setKeywordError('');
+    if (onApplyFilters) {
+      onApplyFilters({
+        ...filters,
+        q: keyword.trim(),
+      });
+    }
   };
 
   const handleClearKeyword = () => {
     setKeyword('');
     setKeywordError('');
-    onApplyFilters({
-      ...filters,
-      q: '',
-    });
+    if (onApplyFilters) {
+      onApplyFilters({
+        ...filters,
+        q: '',
+      });
+    }
   };
 
+  // Chọn nhanh danh mục từ thanh Quick Category Chips
   const handleQuickCategorySelect = (catId) => {
-    const nextCat = String(filters.categoryId) === String(catId) ? '' : String(catId);
-    onApplyFilters({
-      ...filters,
-      categoryId: nextCat,
-    });
+    const newCatId = filters.categoryId === catId ? '' : catId;
+    if (onApplyFilters) {
+      onApplyFilters({
+        ...filters,
+        categoryId: newCatId,
+      });
+    }
   };
+
+  // Tính số lượng bộ lọc đang được kích hoạt (khác mặc định)
+  const activeFilterCount = [
+    Boolean(filters.categoryId),
+    Boolean(filters.district),
+    Boolean(filters.radius && filters.radius !== 10),
+    Boolean(filters.minScore),
+    Boolean(filters.sort && filters.sort !== 'distance'),
+  ].filter(Boolean).length;
 
   const handleOpenModal = () => {
-    setDraftFilters({ ...filters });
+    setDraftFilters(filters);
     setShowFilterModal(true);
   };
 
   const handleApplyModal = () => {
-    onApplyFilters({
-      ...draftFilters,
-      q: keyword.trim(),
-    });
+    if (onApplyFilters) {
+      onApplyFilters({
+        ...draftFilters,
+        q: keyword.trim(),
+      });
+    }
     setShowFilterModal(false);
   };
 
@@ -171,9 +193,9 @@ export default function SearchAndFilterBar({
   };
 
   return (
-    <div className="relative z-20 space-y-2">
+    <div className="relative z-20 space-y-2.5">
       {/* Floating Modern Toolbar */}
-      <div className="flex items-center gap-2.5 bg-white/95 backdrop-blur-md p-2 sm:p-2.5 rounded-2xl border border-slate-200/90 shadow-sm hover:border-slate-300 transition-all">
+      <div className="flex items-center gap-2.5 bg-white/95 backdrop-blur-md p-2 sm:p-2.5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all">
         {/* Form Ô tìm kiếm */}
         <form onSubmit={handleSearchSubmit} className="flex-1 relative flex items-center">
           <Search className="w-5 h-5 text-slate-400 absolute left-4 pointer-events-none" />
@@ -182,7 +204,7 @@ export default function SearchAndFilterBar({
             value={keyword}
             onChange={handleKeywordChange}
             placeholder="Tìm theo tên đồ cũ, mô tả..."
-            className="w-full pl-12 pr-10 py-3 text-sm sm:text-base bg-slate-50/70 hover:bg-slate-50 focus:bg-white rounded-xl border border-transparent focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100 text-slate-900 placeholder:text-slate-400 font-medium transition-all"
+            className="w-full pl-12 pr-10 py-3 text-sm sm:text-base bg-slate-50/70 hover:bg-slate-50 focus:bg-white rounded-xl border border-transparent focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 text-slate-900 placeholder:text-slate-400 font-medium transition-all"
             aria-label="Ô tìm kiếm từ khóa"
           />
           {keyword && (
@@ -201,7 +223,7 @@ export default function SearchAndFilterBar({
         <button
           type="button"
           onClick={handleSearchSubmit}
-          className="px-5 sm:px-6 py-3 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer shrink-0 shadow-sm hover:shadow active:scale-95 select-none"
+          className="px-5 sm:px-6 py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer shrink-0 shadow-xs hover:shadow active:scale-95 select-none"
         >
           <Search size={16} />
           <span className="hidden sm:inline">Tìm</span>
@@ -213,15 +235,15 @@ export default function SearchAndFilterBar({
           onClick={handleOpenModal}
           className={`px-4 sm:px-5 py-3 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer shrink-0 border select-none active:scale-95 ${
             activeFilterCount > 0
-              ? 'bg-teal-50 border-teal-300 text-teal-800 shadow-xs hover:bg-teal-100/70'
-              : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs hover:border-slate-300'
+              ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-2xs hover:bg-emerald-100/70'
+              : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-2xs hover:border-slate-300'
           }`}
           aria-label="Mở bộ lọc"
         >
-          <SlidersHorizontal size={16} className={activeFilterCount > 0 ? 'text-teal-700' : 'text-slate-500'} />
+          <SlidersHorizontal size={16} className={activeFilterCount > 0 ? 'text-emerald-700' : 'text-slate-500'} />
           <span className="hidden sm:inline">Bộ lọc</span>
           {activeFilterCount > 0 && (
-            <span className="w-5 h-5 rounded-full bg-teal-700 text-white text-xs font-black flex items-center justify-center">
+            <span className="w-5 h-5 rounded-full bg-emerald-700 text-white text-xs font-black flex items-center justify-center">
               {activeFilterCount}
             </span>
           )}
@@ -239,6 +261,39 @@ export default function SearchAndFilterBar({
         </div>
       )}
 
+      {/* Hàng Quick Category Chips: Lọc nhanh 1-chạm theo danh mục */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar select-none text-xs">
+        <button
+          type="button"
+          onClick={() => handleQuickCategorySelect('')}
+          className={`px-3 py-1.5 rounded-xl font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1 ${
+            !filters.categoryId
+              ? 'bg-emerald-600 text-white shadow-2xs'
+              : 'bg-white hover:bg-slate-50 text-slate-600 border border-slate-200/80 shadow-2xs'
+          }`}
+        >
+          <span className="opacity-70">#</span>
+          <span>Tất cả</span>
+        </button>
+        {categories.map((cat) => {
+          const isCatSelected = String(filters.categoryId) === String(cat.id);
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => handleQuickCategorySelect(cat.id)}
+              className={`px-3 py-1.5 rounded-xl font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1 ${
+                isCatSelected
+                  ? 'bg-emerald-600 text-white shadow-2xs'
+                  : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80 shadow-2xs'
+              }`}
+            >
+              <span>#{cat.name}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* MODAL / DRAWER BỘ LỌC CHI TIẾT (Portal ra document.body) */}
       {showFilterModal && typeof document !== 'undefined' && createPortal(
         <div
@@ -252,9 +307,9 @@ export default function SearchAndFilterBar({
           >
             {/* Header Modal */}
             <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center">
-                  <SlidersHorizontal size={16} />
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shadow-2xs">
+                  <SlidersHorizontal size={18} />
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-base">Bộ lọc tìm kiếm</h3>
@@ -264,7 +319,7 @@ export default function SearchAndFilterBar({
               <button
                 type="button"
                 onClick={() => setShowFilterModal(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
                 aria-label="Đóng bộ lọc"
               >
                 <X size={18} />
@@ -283,7 +338,7 @@ export default function SearchAndFilterBar({
                   onChange={(e) =>
                     setDraftFilters({ ...draftFilters, categoryId: e.target.value })
                   }
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
                   aria-label="Chọn danh mục"
                 >
                   <option value="">Tất cả danh mục</option>
@@ -305,7 +360,7 @@ export default function SearchAndFilterBar({
                   onChange={(e) =>
                     setDraftFilters({ ...draftFilters, district: e.target.value })
                   }
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
                   aria-label="Chọn khu vực"
                 >
                   <option value="">Tất cả khu vực (Theo định vị)</option>
@@ -323,7 +378,7 @@ export default function SearchAndFilterBar({
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
                     Bán kính khoảng cách
                   </label>
-                  <span className="text-xs font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-200">
+                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
                     {draftFilters.radius || 10} km
                   </span>
                 </div>
@@ -336,7 +391,7 @@ export default function SearchAndFilterBar({
                   onChange={(e) =>
                     setDraftFilters({ ...draftFilters, radius: Number(e.target.value) })
                   }
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
                   aria-label="Thanh trượt bán kính"
                 />
                 <div className="flex justify-between text-[10px] text-slate-400 mt-1 font-mono">
@@ -366,7 +421,7 @@ export default function SearchAndFilterBar({
                       onClick={() => setDraftFilters({ ...draftFilters, minScore: opt.val })}
                       className={`py-2 px-2.5 rounded-xl text-xs font-medium border text-center transition-all cursor-pointer ${
                         (draftFilters.minScore || '') === opt.val
-                          ? 'bg-teal-700 border-teal-700 text-white font-bold shadow-xs'
+                          ? 'bg-emerald-700 border-emerald-700 text-white font-bold shadow-xs'
                           : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
@@ -393,7 +448,7 @@ export default function SearchAndFilterBar({
                       onClick={() => setDraftFilters({ ...draftFilters, sort: opt.val })}
                       className={`py-2 px-2 rounded-xl text-xs font-medium border text-center transition-all cursor-pointer ${
                         (draftFilters.sort || 'distance') === opt.val
-                          ? 'bg-teal-700 border-teal-700 text-white font-bold shadow-xs'
+                          ? 'bg-emerald-700 border-emerald-700 text-white font-bold shadow-xs'
                           : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
@@ -418,7 +473,7 @@ export default function SearchAndFilterBar({
               <button
                 type="button"
                 onClick={handleApplyModal}
-                className="flex-1 px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                className="flex-1 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
               >
                 <Check size={16} />
                 <span>Áp dụng bộ lọc</span>
