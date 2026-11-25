@@ -49,7 +49,7 @@ EcoFind_Project/
 │   ├── PERFORMANCE_REPORT_10K.md# Báo cáo đo lường hiệu năng với 10.000 tin mẫu (TC-02, TC-03)
 │   └── benchmark_results.json   # Dữ liệu đo lường chi tiết 10 lần chạy
 ├── scripts/                     # Scripts hỗ trợ CSDL, Seed Demo & Benchmark
-│   ├── seed_demo_listings.py    # Seed dữ liệu demo TP.HCM (7 danh mục, 5 tài khoản, 65 tin mẫu đa dạng)
+│   ├── seed_demo_listings.py    # Seed dữ liệu demo TP.HCM (7 danh mục, 5 tài khoản, 96 tin mẫu tại 21 quận/huyện)
 │   ├── generate_10k_listings.py # Script sinh 10.000 tin mẫu tại 20 quận/huyện TP.HCM
 │   ├── benchmark_performance.py # Script đo lường hiệu năng tự động TC-02 & TC-03
 │   ├── add_pg_trgm.sql          # Script cấu hình chỉ mục PostgreSQL Trigram (pg_trgm)

@@ -78,7 +78,7 @@ Hệ thống đã chuẩn bị sẵn bộ tài khoản đại diện cho đầy 
 1. Đăng xuất tài khoản thường và đăng nhập tài khoản Quản trị: `admin@ecofind.vn` / `Admin@123`.
 2. Header xuất hiện nút **Quản trị** màu vàng đồng. Bấm vào để vào **Bảng điều khiển Quản trị viên**.
 3. **Tab Chờ duyệt & Quản trị nâng cao (Pending, Đang bán, Đã ẩn, Thành viên):**
-   - Xem 6 tin đăng đang chờ duyệt (Máy ảnh Canon, Tủ quần áo, Bộ tạ tay...).
+   - Xem 8 tin đăng đang chờ duyệt (Máy ảnh Canon, Tủ quần áo, Bộ tạ tay...).
    - Theo dõi KPI toàn sàn, ẩn trực tiếp hoặc khôi phục tin trong tab **Đang bán** / **Đã ẩn**, và quản lý khóa/mở khóa tài khoản thành viên trong tab **Thành viên**.
    - Mở xem tin *"Máy ảnh cơ Canon EOS M50"*: Người bán tự chấm Ngoại quan $10/10$.
    - **Demo tính năng Hạ điểm:** Tích chọn *"Hạ điểm thành phần nếu người bán tự chấm cao hơn thực tế"*, hạ điểm Ngoại quan xuống $7.0$ $\rightarrow$ Hệ thống tự động tính lại điểm tổng và phân hạng mới.

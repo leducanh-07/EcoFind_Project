@@ -1047,6 +1047,454 @@ DEMO_LISTINGS = [
             "https://images.unsplash.com/photo-1633680889715-2c9752bf0840?w=800&auto=format&fit=crop",
         ],
     },
+
+    # ------------------ BỔ SUNG ĐẶC BIỆT: TĂNG CƯỜNG MẬT ĐỘ TIN ĐĂNG TẠI TP.HCM ------------------
+    # --- 1. KHU VỰC TRUNG TÂM (QUẬN 1, QUẬN 3, QUẬN 4, QUẬN 5, QUẬN 10) ---
+    {
+        "seller": "seller1",
+        "category_id": 2,
+        "title": "Máy chơi game Nintendo Switch OLED White kèm thẻ nhớ 128GB",
+        "description": "Máy cá nhân dùng giữ gìn dán cường lực màn hình từ đầu, không trôi cần Joy-Con. Phụ kiện đầy đủ dock tivi, grip, nguồn sạc zin và hộp đựng.",
+        "price": 5400000,
+        "address": "180 Bến Vân Đồn, Phường 2, Quận 4, TP. Hồ Chí Minh",
+        "lat": 10.7605, "lng": 106.6970,
+        "score_app": 9.0, "score_fn": 9.5, "score_acc": 9.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 1,
+        "title": "Bàn ăn thông minh gấp gọn gỗ cao su 4 ghế nhét gầm",
+        "description": "Bàn ăn mở rộng được 2 cánh cho 4-6 người, khi gập lại chỉ rộng 35cm gọn gàng. Có 4 bánh xe khóa vị trí di chuyển nhẹ nhàng, mặt bàn sáng đẹp.",
+        "price": 1650000,
+        "address": "250 Nguyễn Thị Minh Khai, Phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh",
+        "lat": 10.7765, "lng": 106.6885,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 5,
+        "title": "Robot hút bụi lau nhà Ecovacs Deebot N8 Pro lực hút 2600Pa",
+        "description": "Robot cảm biến laser dToF quét bản đồ nhà cực chuẩn, tránh vật cản thông minh. Khăn lau rung và hộp nước tự động, điều khiển qua app Ecovacs Home.",
+        "price": 3200000,
+        "address": "45 Sư Vạn Hạnh, Phường 12, Quận 10, TP. Hồ Chí Minh",
+        "lat": 10.7732, "lng": 106.6698,
+        "score_app": 8.5, "score_fn": 9.5, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 3,
+        "title": "Bộ sách Kỹ năng Sống & Kinh doanh Đắc Nhân Tâm - Nghĩ Giàu Làm Giàu",
+        "description": "Combo 5 cuốn sách best-seller bìa mềm còn rất mới, gáy vuông vắn không quăn mép, giấy thơm nguyên bản không ghi chú bút mực.",
+        "price": 180000,
+        "address": "135 An Dương Vương, Phường 8, Quận 5, TP. Hồ Chí Minh",
+        "lat": 10.7550, "lng": 106.6720,
+        "score_app": 9.0, "score_fn": 10.0, "score_acc": 9.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 4,
+        "title": "Kính râm Ray-Ban Aviator Classic mạ vàng tròng G-15",
+        "description": "Kính phi công gọng mạ vàng 14K sáng bóng, tròng thủy tinh chống tia UV400 cực tốt. Đầy đủ bao da Ray-Ban chính hãng và khăn lau lụa.",
+        "price": 1450000,
+        "address": "72 Lê Thánh Tôn, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+        "lat": 10.7760, "lng": 106.7025,
+        "score_app": 9.0, "score_fn": 9.5, "score_acc": 9.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=800&auto=format&fit=crop",
+        ],
+    },
+
+    # --- 2. KHU VỰC THỦ ĐỨC, QUẬN 2, QUẬN 9 (ĐÔNG TP.HCM) ---
+    {
+        "seller": "seller1",
+        "category_id": 2,
+        "title": "Flycam DJI Mini 2 bản Combo 3 pin bay 31 phút",
+        "description": "Flycam quay phim 4K sắc nét chống rung 3 trục, cân nặng chỉ 249g không cần xin phép bay. Bộ 3 pin còn khỏe, hub sạc nhanh và cánh quạt dự phòng.",
+        "price": 6900000,
+        "address": "12 Đường Song Hành, Phường An Phú, TP. Thủ Đức, TP. Hồ Chí Minh",
+        "lat": 10.8010, "lng": 106.7450,
+        "score_app": 9.0, "score_fn": 9.5, "score_acc": 9.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1507582020474-9a35b7d455d9?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 1,
+        "title": "Sofa giường nỉ nhung cao cấp dài 1m8 gấp 3 khúc",
+        "description": "Sofa đa năng vừa làm ghế phòng khách vừa kéo ra thành giường ngủ êm ái. Khung thép chịu lực 200kg, vải nỉ màu xám tro sạch sẽ không rách mép.",
+        "price": 1500000,
+        "address": "88 Đỗ Xuân Hợp, Phường Phước Long B, TP. Thủ Đức, TP. Hồ Chí Minh",
+        "lat": 10.8250, "lng": 106.7720,
+        "score_app": 8.0, "score_fn": 9.0, "score_acc": 8.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 6,
+        "title": "Giày đá bóng sân cỏ nhân tạo Mizuno Morelia Neo 3 Pro TF size 41",
+        "description": "Dòng giày đá bóng da kangaroo mềm mại, đinh dăm bám sân mưa cực tốt. Mới đá 5 trận, lót giày và form giày còn ôm chân chắc nịch.",
+        "price": 1200000,
+        "address": "25 Võ Văn Ngân, Phường Linh Chiểu, TP. Thủ Đức, TP. Hồ Chí Minh",
+        "lat": 10.8510, "lng": 106.7620,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 7,
+        "title": "Máy hút sữa điện đôi Medela Pump In Style Advanced",
+        "description": "Máy hút sữa công nghệ 2 pha mô phỏng nhịp bú mẹ, lực hút sâu êm ái không đau rát. Đầy đủ túi xách, 4 bình trữ sữa và bộ phễu silicon mềm.",
+        "price": 1850000,
+        "address": "10 Mai Chí Thọ, Phường An Khánh, TP. Thủ Đức, TP. Hồ Chí Minh",
+        "lat": 10.7830, "lng": 106.7280,
+        "score_app": 8.5, "score_fn": 9.5, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1584824486509-112e4181ff6b?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 3,
+        "title": "Bảng vẽ điện tử Wacom Intuos S Bluetooth màu đen",
+        "description": "Bảng vẽ đồ họa cho dân thiết kế, bút cảm ứng 4096 mức lực nhấn không cần sạc. Kết nối Bluetooth tiện lợi, bề mặt vẽ dán film chống trầy.",
+        "price": 1100000,
+        "address": "216 Đặng Văn Bi, Phường Bình Thọ, TP. Thủ Đức, TP. Hồ Chí Minh",
+        "lat": 10.8420, "lng": 106.7680,
+        "score_app": 9.0, "score_fn": 9.5, "score_acc": 9.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&auto=format&fit=crop",
+        ],
+    },
+
+    # --- 3. KHU VỰC BẮC & TÂY BẮC (BÌNH THẠNH, PHÚ NHUẬN, GÒ VẤP, QUẬN 12, HÓC MÔN) ---
+    {
+        "seller": "seller2",
+        "category_id": 5,
+        "title": "Máy lọc không khí Xiaomi Smart Air Purifier 4 Compact",
+        "description": "Máy lọc bụi mịn PM2.5 khử mùi diện tích 27m2, màn hình LED hiển thị chất lượng không khí thời gian thực. Lõi lọc còn 82%, vận hành ban đêm siêu êm.",
+        "price": 950000,
+        "address": "48 Phan Xích Long, Phường 3, Quận Phú Nhuận, TP. Hồ Chí Minh",
+        "lat": 10.7960, "lng": 106.6880,
+        "score_app": 9.0, "score_fn": 9.5, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 2,
+        "title": "Máy ảnh Sony Alpha A6000 kèm lens Sony 16-50mm OSS",
+        "description": "Máy ảnh mirrorless chụp sắc nét màu da đẹp, lấy nét lai 179 điểm theo pha siêu nhanh. Màn hình lật góc, pin sạc theo máy chụp tốt cả ngày.",
+        "price": 6800000,
+        "address": "340 Lê Đức Thọ, Phường 16, Quận Gò Vấp, TP. Hồ Chí Minh",
+        "lat": 10.8450, "lng": 106.6710,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 1,
+        "title": "Kệ tivi gỗ công nghiệp MDF phủ Melamine 1m4 hiện đại",
+        "description": "Kệ tivi phòng khách 2 ngăn kéo và 2 hộc tủ thoáng, chân gỗ sồi chịu lực chắc chắn. Mặt kệ chống trầy chống nước, màu gỗ phối trắng Bắc Âu.",
+        "price": 650000,
+        "address": "178 Nguyễn Xí, Phường 26, Quận Bình Thạnh, TP. Hồ Chí Minh",
+        "lat": 10.8160, "lng": 106.7110,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 4,
+        "title": "Áo phao lông vũ nam Uniqlo Ultra Light Down size M",
+        "description": "Áo khoác lông vũ siêu nhẹ có thể cuộn tròn nhét vừa túi nhỏ đi phượt, giữ ấm cực tốt. Khóa YKK bền bỉ, vải ngoài cản gió chống nước nhẹ.",
+        "price": 550000,
+        "address": "85 Nguyễn Ảnh Thủ, Xã Bà Điểm, Huyện Hóc Môn, TP. Hồ Chí Minh",
+        "lat": 10.8520, "lng": 106.6080,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 5,
+        "title": "Bếp từ đơn cảm ứng Philips HD4932 công suất 2100W",
+        "description": "Bếp điện từ nấu ăn nhanh tiết kiệm điện, mặt kính Ceramic cường lực sáng bóng không trầy xước. Tặng kèm nồi lẩu inox nắp kính theo bếp.",
+        "price": 420000,
+        "address": "62 Hà Huy Giáp, Phường Thạnh Lộc, Quận 12, TP. Hồ Chí Minh",
+        "lat": 10.8710, "lng": 106.6780,
+        "score_app": 8.5, "score_fn": 9.5, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&auto=format&fit=crop",
+        ],
+    },
+
+    # --- 4. KHU VỰC TÂY & TÂY NAM (TÂN BÌNH, TÂN PHÚ, BÌNH TÂN, QUẬN 6, QUẬN 11) ---
+    {
+        "seller": "seller1",
+        "category_id": 2,
+        "title": "Bàn phím cơ không dây NuPhy Air75 v2 Low-Profile Switch Red",
+        "description": "Bàn phím cơ siêu mỏng kết nối đa năng Bluetooth, 2.4Ghz và Type-C tương thích hoàn hảo Mac/Windows. LED RGB nhiều hiệu ứng, gõ êm mượt không mỏi cổ tay.",
+        "price": 1950000,
+        "address": "120 Cộng Hòa, Phường 4, Quận Tân Bình, TP. Hồ Chí Minh",
+        "lat": 10.7995, "lng": 106.6570,
+        "score_app": 9.5, "score_fn": 9.5, "score_acc": 9.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 1,
+        "title": "Tủ giày dép thông minh 3 tầng cánh lật sức chứa 24 đôi",
+        "description": "Tủ giày thiết kế cánh lật tiết kiệm 70% không gian cửa ra vào, chất liệu gỗ MDF phủ vân gỗ sồi sang trọng. Bản lề sắt sơn tĩnh điện đóng mở êm.",
+        "price": 580000,
+        "address": "45 Tân Sơn Nhì, Phường Tân Sơn Nhì, Quận Tân Phú, TP. Hồ Chí Minh",
+        "lat": 10.8030, "lng": 106.6290,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 6,
+        "title": "Xe trượt Scooter người lớn Oxelo Town 7 XL có giảm xóc",
+        "description": "Xe scooter bánh xe lớn 200mm lướt nhanh êm ái trên đường phố, giảm xóc lò xo trước sau chống rung tay. Phanh chân và phanh tay tiện lợi, gập gọn trong 3 giây.",
+        "price": 1350000,
+        "address": "88 Bình Phú, Phường 11, Quận 6, TP. Hồ Chí Minh",
+        "lat": 10.7450, "lng": 106.6310,
+        "score_app": 8.0, "score_fn": 9.0, "score_acc": 8.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 5,
+        "title": "Máy ép chậm trái cây Kalite KL-530 nhỏ gọn giữ trọn dưỡng chất",
+        "description": "Máy ép chậm trục xoắn không sinh nhiệt, kiệt bã 95% không bị tách nước. Tháo lắp vệ sinh đơn giản trong 1 phút, hoạt động êm ái.",
+        "price": 750000,
+        "address": "15 Lê Đại Hành, Phường 11, Quận 11, TP. Hồ Chí Minh",
+        "lat": 10.7680, "lng": 106.6540,
+        "score_app": 9.0, "score_fn": 9.5, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 4,
+        "title": "Balo du lịch dã ngoại Osprey Daylite Plus 20L chính hãng",
+        "description": "Balo trợ lực đệm lưng thoáng khí AirScape, ngăn đựng vừa laptop 15 inch và túi nước đi trek. Chất liệu nylon ripstop chống xước bền bỉ.",
+        "price": 950000,
+        "address": "210 Kinh Dương Vương, Phường An Lạc, Quận Bình Tân, TP. Hồ Chí Minh",
+        "lat": 10.7490, "lng": 106.6120,
+        "score_app": 9.0, "score_fn": 9.5, "score_acc": 9.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&auto=format&fit=crop",
+        ],
+    },
+
+    # --- 5. KHU VỰC NAM & NGOẠI THÀNH (QUẬN 7, QUẬN 8, NHÀ BÈ, BÌNH CHÁNH, CỦ CHI) ---
+    {
+        "seller": "seller2",
+        "category_id": 7,
+        "title": "Ghế ngồi ô tô cho bé Joie Steadi dùng từ sơ sinh đến 4 tuổi",
+        "description": "Ghế an toàn đạt tiêu chuẩn châu Âu ECE R44/04, đệm đỡ đầu điều chỉnh 6 vị trí. Đai an toàn 5 điểm có bọc đệm êm ái, lắp đặt bằng dây đai an toàn xe hơi.",
+        "price": 1400000,
+        "address": "150 Phạm Thế Hiển, Phường 2, Quận 8, TP. Hồ Chí Minh",
+        "lat": 10.7510, "lng": 106.6850,
+        "score_app": 8.5, "score_fn": 9.5, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1591088398332-8a7791972843?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 2,
+        "title": "Loa thanh Soundbar Sony HT-S100F 120W Bluetooth HDMI ARC",
+        "description": "Loa thanh tivi thiết kế nhỏ gọn sang trọng, công nghệ âm thanh vòm S-Force PRO Front Surround tái tạo âm thanh xem phim sống động như rạp.",
+        "price": 1350000,
+        "address": "45 Nguyễn Thị Thập, Phường Tân Phú, Quận 7, TP. Hồ Chí Minh",
+        "lat": 10.7350, "lng": 106.7210,
+        "score_app": 9.0, "score_fn": 9.5, "score_acc": 9.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 1,
+        "title": "Giường ngủ Pallet gỗ thông tự nhiên 1m6 x 2m đã xử lý bóng",
+        "description": "Giường gỗ thông thanh pallet dày dặn đã bào nhẵn 4 cạnh và phun sơn bóng chống ẩm mốc. Thiết kế tháo lắp 4 mảnh tiện vận chuyển phòng trọ.",
+        "price": 450000,
+        "address": "78 Lê Văn Lương, Xã Phước Kiển, Huyện Nhà Bè, TP. Hồ Chí Minh",
+        "lat": 10.7180, "lng": 106.7020,
+        "score_app": 8.0, "score_fn": 9.0, "score_acc": 8.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 6,
+        "title": "Bộ ghế xếp cắm trại Naturehike kèm bàn nhôm cuộn dã ngoại",
+        "description": "Bộ dã ngoại gồm 2 ghế tựa lưng xếp gọn vải Oxford 600D chịu tải 120kg và 1 bàn nhôm vân gỗ siêu nhẹ. Phù hợp camping ven sông Nhà Bè hoặc Cần Giờ.",
+        "price": 720000,
+        "address": "35 Nguyễn Hữu Thọ, Xã Phước Kiển, Huyện Nhà Bè, TP. Hồ Chí Minh",
+        "lat": 10.7120, "lng": 106.7090,
+        "score_app": 9.0, "score_fn": 9.5, "score_acc": 9.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 3,
+        "title": "Trọn bộ truyện tranh Thám Tử Lừng Danh Conan từ tập 1 đến 80",
+        "description": "Bộ truyện tranh Kim Đồng sưu tầm từ nhỏ, giấy vàng xưa hoài niệm nhưng bìa còn nguyên vẹn không mất trang. Để lại cho bạn nào thích sưu tầm truyện tranh.",
+        "price": 600000,
+        "address": "12 Quốc Lộ 50, Xã Bình Hưng, Huyện Bình Chánh, TP. Hồ Chí Minh",
+        "lat": 10.7250, "lng": 106.6620,
+        "score_app": 7.0, "score_fn": 8.5, "score_acc": 7.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 5,
+        "title": "Nồi chiên không dầu Lock&Lock 5.2 lít cơ EJF351BLK",
+        "description": "Nồi chiên nút vặn cơ siêu bền ít hỏng vặt, dung tích 5.2L nướng gà nguyên con thoải mái. Lòng nồi chống dính không tróc, bảo dưỡng kỹ lưỡng.",
+        "price": 680000,
+        "address": "40 Tỉnh Lộ 8, Thị Trấn Củ Chi, Huyện Củ Chi, TP. Hồ Chí Minh",
+        "lat": 10.9720, "lng": 106.4950,
+        "score_app": 8.0, "score_fn": 9.0, "score_acc": 8.0,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 4,
+        "title": "Giày chạy bộ nam Nike Air Zoom Pegasus 39 size 42.5",
+        "description": "Đôi giày chạy bộ đa năng đệm Zoom Air đàn hồi êm chân, mới chạy khoảng 50km mặt đường nhựa. Đế giày còn gai bám tốt, vải lưới thông thoáng.",
+        "price": 1150000,
+        "address": "55 Nguyễn Thị Thập, Phường Tân Hưng, Quận 7, TP. Hồ Chí Minh",
+        "lat": 10.7420, "lng": 106.7040,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 7,
+        "title": "Nôi rung tự động Mastela có nhạc và hẹn giờ ru bé ngủ",
+        "description": "Nôi rung điện điều chỉnh 5 mức độ đu đưa tự nhiên, có màn che chống muỗi và thanh đồ chơi treo nôi. Vải bọc tháo giặt dễ dàng, hoạt động hoàn hảo.",
+        "price": 520000,
+        "address": "120 Dương Bá Trạc, Phường 2, Quận 8, TP. Hồ Chí Minh",
+        "lat": 10.7480, "lng": 106.6910,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.5,
+        "status": "selling",
+        "photos": [
+            "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&auto=format&fit=crop",
+        ],
+    },
+
+    # --- 6. TIN CHỜ DUYỆT & BỊ TỪ CHỐI BỔ SUNG TẠI TP.HCM (DEMO ADMIN) ---
+    {
+        "seller": "seller1",
+        "category_id": 2,
+        "title": "Màn hình di động Asus ZenScreen 15.6 inch Full HD IPS Type-C",
+        "description": "Màn hình phụ di động siêu mỏng nhẹ chỉ 800g kết nối 1 cáp Type-C xuất hình trực tiếp cho laptop/điện thoại. Bao da kiêm chân đế gập thông minh.",
+        "price": 2800000,
+        "address": "285 Cách Mạng Tháng Tám, Phường 12, Quận 10, TP. Hồ Chí Minh",
+        "lat": 10.7768, "lng": 106.6782,
+        "score_app": 9.0, "score_fn": 9.5, "score_acc": 9.0,
+        "status": "pending",
+        "photos": [
+            "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller2",
+        "category_id": 5,
+        "title": "Nồi áp suất điện đa năng Tefal Smart Pro 6L lòng nồi niêu",
+        "description": "Nồi áp suất điện tử 16 chương trình nấu tự động, công nghệ xả áp tự động an toàn không lo bỏng. Lòng nồi niêu dày 3 lớp nấu cháo hầm xương cực nhừ.",
+        "price": 1450000,
+        "address": "152 Bạch Đằng, Phường 24, Quận Bình Thạnh, TP. Hồ Chí Minh",
+        "lat": 10.8032, "lng": 106.7095,
+        "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.5,
+        "status": "pending",
+        "photos": [
+            "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&auto=format&fit=crop",
+        ],
+    },
+    {
+        "seller": "seller1",
+        "category_id": 4,
+        "title": "Ví da nam cầm tay dáng dài Montblanc da bò saffiano",
+        "description": "Ví nam cầm tay cao cấp ngăn chứa thẻ và tiền rộng rãi. Bị Admin từ chối do ảnh chụp góc mờ không thấy rõ logo ngôi sao và tem dập chìm bên trong.",
+        "price": 950000,
+        "address": "65 Lê Lợi, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
+        "lat": 10.7745, "lng": 106.7015,
+        "score_app": 6.0, "score_fn": 7.5, "score_acc": 6.0,
+        "status": "rejected",
+        "reject_reason": "Ảnh chụp góc mờ không thấy rõ logo và tem dập chìm bên trong. Vui lòng chụp lại nơi đủ sáng và gửi duyệt lại.",
+        "photos": [
+            "https://images.unsplash.com/photo-1627123424574-724758594e93?w=800&auto=format&fit=crop",
+        ],
+    },
 ]
 
 
@@ -1141,7 +1589,7 @@ def seed_demo(clean: bool = True):
             user_ids[u["email"]] = uid
 
         # 3. Tạo tin đăng mẫu (Listings & Photos)
-        print(f"\n[3/5] Đang tạo {len(DEMO_LISTINGS)} tin đăng mẫu cùng ảnh thực tế...")
+        print(f"\n[3/5] Đang tạo {len(DEMO_LISTINGS)} tin đăng mẫu TP.HCM cùng ảnh thực tế...")
         inserted_listing_ids = []
         now = datetime.now(timezone.utc)
 
@@ -1261,12 +1709,12 @@ def seed_demo(clean: bool = True):
     print("┌───────────────────────────┬──────────────┬────────┬───────────────────────────────────────┐")
     print("│ Email                     │ Mật khẩu     │ Vai trò│ Kịch bản trải nghiệm chính            │")
     print("├───────────────────────────┼──────────────┼────────┼───────────────────────────────────────┤")
-    print("│ admin@ecofind.vn          │ Admin@123    │ admin  │ Duyệt 6 tin chờ duyệt & xử lý 4 report│")
+    print("│ admin@ecofind.vn          │ Admin@123    │ admin  │ Duyệt 8 tin chờ duyệt & xử lý 4 report│")
     print("│ seller1@ecofind.vn        │ Demo@1234    │ user   │ Quản lý tin công nghệ, sửa tin, ẩn tin│")
     print("│ seller2@ecofind.vn        │ Demo@1234    │ user   │ Quản lý tin gia dụng & nội thất       │")
     print("│ buyer@ecofind.vn          │ Demo@1234    │ user   │ Xem 4 tin Yêu thích, xem SĐT, báo cáo │")
     print("└───────────────────────────┴──────────────┴────────┴───────────────────────────────────────┘")
-    print(f"\n📍 BẢN ĐỒ: {len(selling_listings)} tin đang bán (trong tổng {len(DEMO_LISTINGS)} tin) đã sẵn sàng trên bản đồ TP.HCM!")
+    print(f"\n📍 BẢN ĐỒ: {len(selling_listings)} tin đang bán (trong tổng {len(DEMO_LISTINGS)} tin) đã sẵn sàng hiển thị tại 21 quận huyện TP.HCM!")
     print("==================================================================\n")
 
 
