@@ -16,8 +16,8 @@
 - **Kiến trúc:** 3 tầng phân tách độc lập (Presentation Tier $\leftrightarrow$ Business Logic Tier $\leftrightarrow$ Data Access Tier).
 - **Backend:** Python 3.12, FastAPI (Asynchronous ASGI), SQLAlchemy 2.0 Async, PostgreSQL, Pydantic v2.
 - **Frontend:** React 18, Vite, Tailwind CSS, Lucide Icons.
-- **Bản đồ nền:** Thư viện tương tác Leaflet kết hợp **Google Maps Tiles (Google Tiles - chuẩn đường phố `lyrs=m`)** cho trải nghiệm gạch bản đồ sắc nét, tốc độ tải dưới 100ms thông qua máy chủ CDN tại Việt Nam.
-- **Dịch vụ hỗ trợ:** PostgreSQL Trigram (`pg_trgm`) tăng tốc tìm kiếm từ khóa tiếng Việt dưới 2s, Nominatim Geocoding adapter, Bcrypt cost factor 12.
+- **Bản đồ nền:** Thư viện tương tác Leaflet kết hợp **Google Maps Tiles (`https://mt1.google.com/vt/lyrs=m&hl=vi&gl=VN&x={x}&y={y}&z={z}`)** qua cấu hình tập trung trong `leafletCluster.js` cho trải nghiệm bản đồ tiếng Việt sắc nét, không lệch lưới tile hay lẫn nhãn ngoại ngữ.
+- **Dịch vụ hỗ trợ:** PostgreSQL Trigram (`pg_trgm`) tăng tốc tìm kiếm từ khóa tiếng Việt dưới 2s, **Geocoding đa nguồn** (Google Geocoding / ArcGIS PointAddress / Nominatim fallback) qua `GeocodeAdapter` (hỗ trợ autocomplete & định vị ngược GPS), Bcrypt cost factor 12.
 
 ---
 
@@ -27,10 +27,10 @@ Hệ thống đã chuẩn bị sẵn bộ tài khoản phân quyền chuẩn đ�
 
 | Email | Mật khẩu | Vai trò | Người đại diện | Kịch bản trải nghiệm chính |
 | :--- | :--- | :---: | :--- | :--- |
-| **`admin@ecofind.vn`** | `Admin@123` | **Quản trị viên (Admin)** | Quản trị viên Hệ thống | Kiểm duyệt tin chờ duyệt, đối soát 3 điểm tình trạng, hạ điểm thành phần, xử lý báo cáo vi phạm (ẩn tin/bỏ qua). |
+| **`admin@ecofind.vn`** | `Admin@123` | **Quản trị viên (Admin)** | Quản trị viên Hệ thống | Kiểm duyệt tin chờ duyệt, đối soát 3 điểm tình trạng, hạ điểm thành phần, ẩn/khôi phục tin, xem KPI toàn sàn, quản lý khóa/mở khóa tài khoản và xử lý báo cáo vi phạm. |
 | **`seller1@ecofind.vn`** | `Demo@1234` | **Người bán (Seller 1)** | Nguyễn Văn Hùng | Quản lý tin đồ công nghệ (Laptop, bàn phím, tai nghe), sửa tin, ẩn/hiện tin, xem tin bị từ chối kèm lý do. |
 | **`seller2@ecofind.vn`** | `Demo@1234` | **Người bán (Seller 2)** | Trần Thị Mai | Quản lý tin đồ gia dụng, nội thất, thời trang, đánh dấu tin đã bán. |
-| **`buyer@ecofind.vn`** | `Demo@1234` | **Người mua (Buyer)** | Lê Hoàng Nam | Xem 3 tin lưu Yêu thích sẵn, xem số điện thoại người bán, gửi báo cáo vi phạm tin đăng. |
+| **`buyer@ecofind.vn`** | `Demo@1234` | **Người mua (Buyer)** | Lê Hoàng Nam | Xem 4 tin lưu Yêu thích sẵn, xem & sao chép số điện thoại người bán, xem trang người bán công khai, gửi báo cáo vi phạm tin đăng. |
 | **`seller@ecofind.vn`** | `Seller@123` | **Người bán (Mặc định)** | Nguyễn Văn Người Bán | Tài khoản người bán tương thích với tài liệu kiểm thử ban đầu. |
 
 ---
@@ -48,8 +48,9 @@ Hệ thống đã chuẩn bị sẵn bộ tài khoản phân quyền chuẩn đ�
 4. **Bảo mật thông tin liên hệ:** Khi xem chi tiết tin, số điện thoại người bán sẽ bị che để chống thu thập số điện thoại trái phép. Hệ thống hiển thị nút **"Đăng nhập để xem số điện thoại"**.
 
 ### 3.2. Dành cho Người dùng / Người bán / Người mua (Registered User)
-1. **Xem thông tin liên hệ đầy đủ:** Sau khi đăng nhập, mở chi tiết bất kỳ tin đăng nào sẽ thấy số điện thoại người bán kèm nút gọi điện trực tiếp.
-2. **Đăng tin bán đồ & Chấm điểm 3 tiêu chí (UC-05, BR-01):**
+1. **Xem thông tin liên hệ đầy đủ & Hồ sơ người bán:** Sau khi đăng nhập, mở chi tiết bất kỳ tin đăng nào sẽ thấy số điện thoại người bán kèm nút **Sao chép SĐT**, ghi chú liên lạc qua SĐT & hẹn gặp trực tiếp kiểm tra đồ (không hỗ trợ nhắn tin trong ứng dụng) và liên kết **Xem trang cá nhân** công khai của người bán (`/sellers/:userId`). Khi phiên JWT hết hạn (HTTP `401`), hệ thống tự động đăng xuất và đưa về `/login`.
+2. **Trang cá nhân & Đổi mật khẩu (UC-10):** Truy cập `/profile` từ menu tài khoản để xem thống kê cá nhân, vai trò hoạt động, cập nhật họ tên / SĐT hoặc đổi mật khẩu.
+3. **Đăng tin bán đồ & Chấm điểm 3 tiêu chí (UC-05, BR-01):**
    - Bấm nút **"Đăng tin"** trên thanh tiêu đề.
    - Nhập thông tin sản phẩm, tải từ 1 đến 5 hình ảnh thực tế.
    - **Tự chấm điểm tình trạng (Thang điểm 0–10):**
@@ -58,30 +59,27 @@ Hệ thống đã chuẩn bị sẵn bộ tài khoản phân quyền chuẩn đ�
      + *Phụ kiện (trọng số 20%):* Hộp, sạc zin, sách hướng dẫn, bảo hành.
      + *Hệ thống tự động tính điểm tổng và xếp hạng theo công thức:*
        $$\text{Điểm tổng} = 0.4 \times \text{Ngoại quan} + 0.4 \times \text{Công năng} + 0.2 \times \text{Phụ kiện}$$
-   - **Chọn vị trí trên bản đồ:** Nhập địa chỉ để tự động tìm tọa độ hoặc bấm trực tiếp lên bản đồ Google Tiles để ghim vị trí.
-3. **Quản lý tin tại mục "Tin của tôi" (UC-06):**
+   - **Chọn vị trí trên bản đồ:** Nhập địa chỉ để chọn từ gợi ý tự động (`Autocomplete`), bấm **"Vị trí của tôi"** (định vị ngược GPS) hoặc bấm trực tiếp lên bản đồ để ghim vị trí.
+4. **Quản lý tin tại mục "Tin của tôi" (UC-06):**
    - Phân loại rõ ràng qua 5 tab trạng thái: **Đang bán**, **Chờ duyệt**, **Tạm ẩn**, **Đã bán**, **Bị từ chối**.
    - Với tin bị từ chối: Xem chi tiết lý do từ chối từ Quản trị viên, bấm **"Sửa tin & Gửi lại"** để nộp duyệt lại.
    - Thao tác nhanh: Nút **Tạm ẩn / Hiện lại / Đã bán** được kích hoạt linh hoạt tùy trạng thái cho phép.
-4. **Lưu tin Yêu thích (UC-07):** Bấm biểu tượng trái tim để lưu tin quan tâm, xem lại mọi lúc tại trang **"Yêu thích"**.
-5. **Báo cáo vi phạm (UC-08):** Bấm nút **"Báo cáo"** khi phát hiện tin khai khống điểm tình trạng, lừa đảo hoặc bán hàng cấm.
+5. **Lưu tin Yêu thích (UC-07):** Bấm biểu tượng trái tim để lưu tin quan tâm, xem lại mọi lúc tại trang **"Yêu thích"**.
+6. **Báo cáo vi phạm (UC-08):** Bấm nút **"Báo cáo"** khi phát hiện tin khai khống điểm tình trạng, lừa đảo hoặc bán hàng cấm.
 
 ### 3.3. Dành cho Quản trị viên (Admin)
 1. **Đăng nhập quyền Admin:** Sử dụng tài khoản `admin@ecofind.vn` / `Admin@123`.
-2. **Kiểm duyệt tin đăng (UC-09, FR-14, TC-10):**
-   - Truy cập trang **"Quản trị"** $\rightarrow$ Tab **"Chờ kiểm duyệt"**.
-   - Đối chiếu hình ảnh thực tế với 3 điểm thành phần người bán tự chấm.
-   - *Hạ điểm thành phần:* Nếu người bán tự chấm 9.5 nhưng mô tả có vết xước sâu, Admin nhập điểm hạ (ví dụ: 7.5), hệ thống tự động tính lại điểm tổng mới và gửi thông báo lý do hạ điểm cho người bán.
-   - *Từ chối tin:* Nhập lý do từ chối rõ ràng nếu tin vi phạm quy chế hoặc thiếu ảnh thực tế.
-3. **Xử lý Báo cáo vi phạm (FR-15):**
-   - Chuyển sang tab **"Báo cáo vi phạm"**.
-   - Xem thông tin người báo cáo, lý do và ghi chú tố cáo.
-   - Bấm **"Ẩn tin đăng"** nếu tin vi phạm quy chế (tin sẽ chuyển sang `hidden_by_admin = true`, người bán không thể tự hiện lại).
-   - Bấm **"Bỏ qua báo cáo"** nếu xác minh tin đăng hợp lệ.
+2. **Kiểm duyệt & Quản trị tin đăng (UC-09, FR-14, FR-17, TC-10):**
+   - Truy cập trang **"Quản trị"** $\rightarrow$ theo dõi KPI tổng quan toàn sàn & phân bổ danh mục ở đầu trang.
+   - Tab **"Chờ duyệt"**: Đối chiếu hình ảnh thực tế với 3 điểm thành phần người bán tự chấm; duyệt, **hạ điểm thành phần** kèm ghi chú, hoặc từ chối kèm lý do.
+   - Tab **"Đang bán"** & **"Đã ẩn"**: Tìm kiếm, lọc theo danh mục, **ẩn trực tiếp** tin vi phạm khỏi bản đồ hoặc **khôi phục** tin đang ẩn về lại đang bán.
+3. **Xử lý Báo cáo vi phạm & Quản lý Thành viên (FR-15, FR-17):**
+   - Tab **"Báo cáo vi phạm"**: Xem thông tin người báo cáo, lý do và ghi chú tố cáo; chọn **"Ẩn tin đăng"** hoặc **"Bỏ qua báo cáo"**.
+   - Tab **"Thành viên"**: Xem danh sách người dùng kèm thống kê hoạt động, thực hiện **khóa tài khoản theo thời hạn** (chặn khóa Admin) hoặc **mở khóa** ngay lập tức.
 
 ---
 
-## 4. Kịch Bản Demo Chi Tiết Từng Use Case (UC-01 đến UC-09)
+## 4. Kịch Bản Demo Chi Tiết Từng Use Case (UC-01 đến UC-10)
 
 ### 🎬 Kịch bản UC-01: Đăng nhập & Khóa tài khoản 15 phút (TC-01)
 1. Truy cập trang Đăng nhập.
@@ -100,7 +98,7 @@ Hệ thống đã chuẩn bị sẵn bộ tài khoản phân quyền chuẩn đ�
 
 ### 🎬 Kịch bản UC-04: Xem chi tiết & Ẩn hiện số điện thoại
 1. Mở một tin khi chưa đăng nhập: Số điện thoại bị ẩn dưới dạng `0901***`.
-2. Đăng nhập bằng `buyer@ecofind.vn`: Số điện thoại hiện đầy đủ (`0901234567`) kèm nút gọi ngay.
+2. Đăng nhập bằng `buyer@ecofind.vn`: Số điện thoại hiện đầy đủ (`0901234567`) kèm nút **Sao chép SĐT** và ghi chú hẹn gặp trực tiếp kiểm tra đồ.
 
 ### 🎬 Kịch bản UC-05: Đăng tin kèm chấm điểm tình trạng 3 tiêu chí (TC-05, TC-06)
 1. Đăng nhập `seller1@ecofind.vn`, bấm **Đăng tin**.
@@ -114,7 +112,7 @@ Hệ thống đã chuẩn bị sẵn bộ tài khoản phân quyền chuẩn đ�
 3. Bấm **"Sửa tin & Gửi lại"**, tải ảnh mới rõ nét và gửi lại duyệt.
 
 ### 🎬 Kịch bản UC-07: Lưu tin Yêu thích
-1. Đăng nhập `buyer@ecofind.vn`, vào trang **"Yêu thích"**: Có sẵn 3 tin mẫu đã lưu.
+1. Đăng nhập `buyer@ecofind.vn`, vào trang **"Yêu thích"**: Có sẵn 4 tin mẫu đã lưu.
 2. Bấm bỏ lưu một tin: Tin ngay lập tức được dỡ khỏi danh sách với phản hồi mượt mà.
 
 ### 🎬 Kịch bản UC-08: Báo cáo tin vi phạm (TC-09)
@@ -134,8 +132,8 @@ Hệ thống đã chuẩn bị sẵn bộ tài khoản phân quyền chuẩn đ�
 
 | Bộ kiểm thử | Công cụ / Tiêu chuẩn | Số lượng Test Cases | Kết quả thực tế |
 | :--- | :--- | :---: | :---: |
-| **Backend Unit & API Tests** | Pytest, Pytest-Asyncio, HTTPX | **202 / 202 passed** | **100% ĐẠT** |
-| **Frontend Component & Integration** | Vitest, React Testing Library, JSDOM | **140 / 140 passed** (24 suites) | **100% ĐẠT** |
+| **Backend Unit & API Tests** | Pytest, Pytest-Asyncio, HTTPX | **219 / 219 passed** | **100% ĐẠT** |
+| **Frontend Component & Integration** | Vitest, React Testing Library, JSDOM | **152 / 152 passed** (26 suites) | **100% ĐẠT** |
 | **Kiểm thử tích hợp Luồng E2E** | TestClient FastAPI + AsyncSession | **Full Flow (Khép kín)** | **100% ĐẠT** |
 | **Kiểm thử chuẩn 12 Test Cases SRS** | Postman Collection & Environment | **TC-01 đến TC-12** | **12 / 12 PASS** |
 | **Hiệu năng tải bản đồ (10.000 tin)** | Benchmark Script (NFR-PER-01, TC-02) | Target $\le 3000$ ms | **Đạt 4.2 ms** (Vượt chuẩn 700x) |

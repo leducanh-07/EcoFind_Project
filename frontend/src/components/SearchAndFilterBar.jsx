@@ -54,6 +54,22 @@ export default function SearchAndFilterBar({
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
+  const [headerSlot, setHeaderSlot] = useState(null);
+
+  // Tìm slot gắn trên header nếu trên desktop (>= 768px)
+  useEffect(() => {
+    const updateSlot = () => {
+      if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+        const slot = document.getElementById('header-search-slot');
+        setHeaderSlot(slot);
+      } else {
+        setHeaderSlot(null);
+      }
+    };
+    updateSlot();
+    window.addEventListener('resize', updateSlot);
+    return () => window.removeEventListener('resize', updateSlot);
+  }, []);
 
   // Draft filters inside the modal
   const [draftFilters, setDraftFilters] = useState(filters);
@@ -106,11 +122,11 @@ export default function SearchAndFilterBar({
     };
   }, []);
 
-  // Xử lý thay đổi ô tìm kiếm từ khóa (giới hạn 100 ký tự theo BR-01, UC-03 E1)
+  // Xử lý thay đổi ô tìm kiếm từ khóa (giới hạn 100 ký tự)
   const handleKeywordChange = (e) => {
     const val = e.target.value;
     if (val.length > 100) {
-      setKeywordError('Từ khóa không được vượt quá 100 ký tự (UC-03 E1)');
+      setKeywordError('Từ khóa không được vượt quá 100 ký tự');
       return;
     }
     setKeywordError('');
@@ -121,7 +137,7 @@ export default function SearchAndFilterBar({
   const handleSearchSubmit = (e) => {
     if (e) e.preventDefault();
     if (keyword.length > 100) {
-      setKeywordError('Từ khóa không được vượt quá 100 ký tự (UC-03 E1)');
+      setKeywordError('Từ khóa không được vượt quá 100 ký tự');
       return;
     }
     setKeywordError('');
@@ -192,63 +208,48 @@ export default function SearchAndFilterBar({
     setShowFilterModal(false);
   };
 
+  // Khối Toolbar thanh tìm kiếm trên Header
+  const searchToolbarContent = (
+    <div className="flex items-center gap-2 bg-white hover:bg-white focus-within:bg-white p-1 sm:p-1.5 rounded-2xl border border-white/40 shadow-md focus-within:ring-2 focus-within:ring-emerald-300 transition-all w-full">
+      {/* Form Ô tìm kiếm */}
+      <form onSubmit={handleSearchSubmit} className="flex-1 relative flex items-center">
+        <Search className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 absolute left-3 sm:left-3.5 pointer-events-none" />
+        <input
+          type="text"
+          value={keyword}
+          onChange={handleKeywordChange}
+          placeholder="Tìm theo tên đồ cũ, mô tả..."
+          className="w-full pl-9 sm:pl-11 pr-8 py-2 sm:py-2.5 text-xs sm:text-sm bg-transparent border-none focus:outline-none text-slate-800 placeholder:text-slate-400 font-medium transition-all"
+          aria-label="Ô tìm kiếm từ khóa"
+        />
+        {keyword && (
+          <button
+            type="button"
+            onClick={handleClearKeyword}
+            className="absolute right-2 text-slate-400 hover:text-slate-600 p-1 rounded-lg active:scale-90 transition-transform cursor-pointer"
+            aria-label="Xóa từ khóa"
+          >
+            <X size={15} />
+          </button>
+        )}
+      </form>
+
+      {/* Nút Tìm kiếm: Tông Xanh ngọc nổi bật trên nền trắng của thanh search */}
+      <button
+        type="button"
+        onClick={handleSearchSubmit}
+        className="px-4 sm:px-6 py-2 sm:py-2.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer shrink-0 shadow-2xs hover:shadow active:scale-95 select-none"
+      >
+        <Search size={15} />
+        <span className="hidden sm:inline">Tìm</span>
+      </button>
+    </div>
+  );
+
   return (
-    <div className="relative z-20 space-y-2.5">
-      {/* Floating Modern Toolbar */}
-      <div className="flex items-center gap-2.5 bg-white/95 backdrop-blur-md p-2 sm:p-2.5 rounded-2xl border border-slate-200/90 shadow-xs hover:border-slate-300 transition-all">
-        {/* Form Ô tìm kiếm */}
-        <form onSubmit={handleSearchSubmit} className="flex-1 relative flex items-center">
-          <Search className="w-5 h-5 text-slate-400 absolute left-4 pointer-events-none" />
-          <input
-            type="text"
-            value={keyword}
-            onChange={handleKeywordChange}
-            placeholder="Tìm theo tên đồ cũ, mô tả..."
-            className="w-full pl-12 pr-10 py-3 text-sm sm:text-base bg-slate-50/70 hover:bg-slate-50 focus:bg-white rounded-xl border border-transparent focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100 text-slate-900 placeholder:text-slate-400 font-medium transition-all"
-            aria-label="Ô tìm kiếm từ khóa"
-          />
-          {keyword && (
-            <button
-              type="button"
-              onClick={handleClearKeyword}
-              className="absolute right-3 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg active:scale-90 transition-transform cursor-pointer"
-              aria-label="Xóa từ khóa"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </form>
-
-        {/* Nút Tìm kiếm */}
-        <button
-          type="button"
-          onClick={handleSearchSubmit}
-          className="px-5 sm:px-6 py-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer shrink-0 shadow-xs hover:shadow active:scale-95 select-none"
-        >
-          <Search size={16} />
-          <span className="hidden sm:inline">Tìm</span>
-        </button>
-
-        {/* Nút Bộ lọc kèm Badge số lượng */}
-        <button
-          type="button"
-          onClick={handleOpenModal}
-          className={`px-4 sm:px-5 py-3 rounded-xl text-sm font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer shrink-0 border select-none active:scale-95 ${
-            activeFilterCount > 0
-              ? 'bg-emerald-50 border-emerald-300 text-emerald-800 shadow-2xs hover:bg-emerald-100/70'
-              : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-2xs hover:border-slate-300'
-          }`}
-          aria-label="Mở bộ lọc"
-        >
-          <SlidersHorizontal size={16} className={activeFilterCount > 0 ? 'text-emerald-700' : 'text-slate-500'} />
-          <span className="hidden sm:inline">Bộ lọc</span>
-          {activeFilterCount > 0 && (
-            <span className="w-5 h-5 rounded-full bg-emerald-700 text-white text-xs font-black flex items-center justify-center">
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
-      </div>
+    <div className="relative z-20 space-y-2">
+      {/* 1. Thanh Search Toolbar: Nếu slot trên Header tồn tại thì portal lên Header, ngược lại hiển thị tại chỗ */}
+      {headerSlot ? createPortal(searchToolbarContent, headerSlot) : searchToolbarContent}
 
       {/* Thông báo lỗi vượt quá 100 ký tự (UC-03 E1) */}
       {keywordError && (
@@ -261,14 +262,36 @@ export default function SearchAndFilterBar({
         </div>
       )}
 
-      {/* Hàng Quick Category Chips: Lọc nhanh 1-chạm theo danh mục */}
+      {/* Hàng Quick Category Chips: Lọc nhanh 1-chạm theo danh mục kèm Nút Bộ lọc nâng cao ở đầu hàng */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar select-none text-xs">
+        {/* Nút Mở bộ lọc nâng cao chuyển về đầu hàng công cụ */}
+        <button
+          type="button"
+          onClick={handleOpenModal}
+          className={`px-3 py-1.5 rounded-xl font-bold transition-all duration-150 flex items-center gap-1.5 cursor-pointer shrink-0 border select-none active:scale-95 shadow-2xs ${
+            activeFilterCount > 0
+              ? 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100/70'
+              : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300'
+          }`}
+          aria-label="Mở bộ lọc"
+        >
+          <SlidersHorizontal size={14} className={activeFilterCount > 0 ? 'text-emerald-700' : 'text-slate-500'} />
+          <span>Bộ lọc</span>
+          {activeFilterCount > 0 && (
+            <span className="w-4 h-4 rounded-full bg-emerald-700 text-white text-[10px] font-bold flex items-center justify-center">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+
+        <span className="h-4 w-[1px] bg-slate-200 mx-0.5 shrink-0" aria-hidden="true"></span>
+
         <button
           type="button"
           onClick={() => handleQuickCategorySelect('')}
           className={`px-3 py-1.5 rounded-xl font-semibold shrink-0 transition-all cursor-pointer flex items-center gap-1 ${
             !filters.categoryId
-              ? 'bg-emerald-600 text-white shadow-2xs'
+              ? 'bg-emerald-800 text-white shadow-2xs'
               : 'bg-white hover:bg-slate-50 text-slate-600 border border-slate-200/80 shadow-2xs'
           }`}
         >
@@ -297,7 +320,7 @@ export default function SearchAndFilterBar({
       {/* MODAL / DRAWER BỘ LỌC CHI TIẾT (Portal ra document.body) */}
       {showFilterModal && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[9999] bg-slate-900/40 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
           onClick={() => setShowFilterModal(false)}
         >
           <div
@@ -312,7 +335,7 @@ export default function SearchAndFilterBar({
                   <SlidersHorizontal size={18} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-base">Bộ lọc tìm kiếm</h3>
+                  <h3 className="font-bold text-emerald-950 text-base">Bộ lọc tìm kiếm</h3>
                   <p className="text-[11px] text-slate-500">Tùy chỉnh khoảng cách, danh mục và chất lượng đồ cũ</p>
                 </div>
               </div>
@@ -464,9 +487,9 @@ export default function SearchAndFilterBar({
               <button
                 type="button"
                 onClick={handleResetModal}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-white text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-4 py-2.5 rounded-xl border border-slate-300/80 bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-700 hover:border-rose-300 text-xs font-bold flex items-center gap-2 transition-all shadow-2xs active:scale-95 cursor-pointer"
               >
-                <RotateCcw size={14} />
+                <RotateCcw size={14} className="text-slate-500 hover:text-rose-600 transition-colors" />
                 <span>Xóa bộ lọc</span>
               </button>
 

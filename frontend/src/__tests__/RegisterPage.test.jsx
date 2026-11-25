@@ -25,9 +25,9 @@ describe('RegisterPage Component (UC-01, FR-01, TE9C72F)', () => {
   test('Hiển thị form đăng ký đầy đủ 4 trường', () => {
     renderRegisterPage();
 
-    expect(screen.getByPlaceholderText(/Nguyễn Văn A/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/vidu@ecofind.vn/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/0912345678/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Trần Minh Khôi/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/minhkhoi.tran@gmail.com/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/0908 456 789/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/••••••••/i)).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /đăng ký tài khoản/i })
@@ -53,13 +53,13 @@ describe('RegisterPage Component (UC-01, FR-01, TE9C72F)', () => {
 
     renderRegisterPage();
 
-    fireEvent.change(screen.getByPlaceholderText(/Nguyễn Văn A/i), {
+    fireEvent.change(screen.getByPlaceholderText(/Trần Minh Khôi/i), {
       target: { value: 'Trần Thị B' },
     });
-    fireEvent.change(screen.getByPlaceholderText(/vidu@ecofind.vn/i), {
+    fireEvent.change(screen.getByPlaceholderText(/minhkhoi.tran@gmail.com/i), {
       target: { value: 'user@ecofind.vn' },
     });
-    fireEvent.change(screen.getByPlaceholderText(/0912345678/i), {
+    fireEvent.change(screen.getByPlaceholderText(/0908 456 789/i), {
       target: { value: '0987654321' },
     });
     fireEvent.change(screen.getByPlaceholderText(/••••••••/i), {
@@ -87,13 +87,13 @@ describe('RegisterPage Component (UC-01, FR-01, TE9C72F)', () => {
 
     renderRegisterPage();
 
-    fireEvent.change(screen.getByPlaceholderText(/Nguyễn Văn A/i), {
+    fireEvent.change(screen.getByPlaceholderText(/Trần Minh Khôi/i), {
       target: { value: 'Trần Thị B' },
     });
-    fireEvent.change(screen.getByPlaceholderText(/vidu@ecofind.vn/i), {
+    fireEvent.change(screen.getByPlaceholderText(/minhkhoi.tran@gmail.com/i), {
       target: { value: 'user.b@ecofind.vn' },
     });
-    fireEvent.change(screen.getByPlaceholderText(/0912345678/i), {
+    fireEvent.change(screen.getByPlaceholderText(/0908 456 789/i), {
       target: { value: '0987654321' },
     });
     fireEvent.change(screen.getByPlaceholderText(/••••••••/i), {

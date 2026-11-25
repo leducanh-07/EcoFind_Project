@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getListingDetailApi, reportListingApi } from '../api/listings';
@@ -35,6 +36,8 @@ export default function ListingDetailPage() {
   const [error, setError] = useState(null);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [copiedPhone, setCopiedPhone] = useState(false);
+  const [showFormula, setShowFormula] = useState(false);
+  const isAdmin = user?.role === 'admin';
 
   // Xác định xem người dùng hiện tại có phải là chủ nhân tin đăng không (E3, TE9C754)
   const currentUserId = user?.userId ?? user?.user_id ?? user?.id;
@@ -100,9 +103,15 @@ export default function ListingDetailPage() {
       } else {
         await removeFavoriteApi(id);
       }
-    } catch {
+    } catch (err) {
       // rollback if failed
       setIsSaved(!nextSaved);
+      if (err?.status === 401 || err?.code === 401) {
+        navigate('/login', {
+          state: { from: location.pathname, sessionExpired: true },
+          replace: true,
+        });
+      }
     }
   };
 
@@ -128,7 +137,13 @@ export default function ListingDetailPage() {
         setReportError(null);
       }, 1500);
     } catch (err) {
-      if (
+      if (err?.status === 401 || err?.code === 401) {
+        setShowReportModal(false);
+        navigate('/login', {
+          state: { from: location.pathname, sessionExpired: true },
+          replace: true,
+        });
+      } else if (
         err?.status === 409 ||
         err?.code === 409 ||
         (err?.message && err.message.toLowerCase().includes('đã báo cáo'))
@@ -174,7 +189,11 @@ export default function ListingDetailPage() {
 
   const handleCopyPhone = (phoneNum) => {
     if (!phoneNum) return;
-    navigator.clipboard.writeText(phoneNum);
+    try {
+      navigator.clipboard?.writeText?.(phoneNum);
+    } catch {
+      // Fallback gracefully in restricted environments
+    }
     setCopiedPhone(true);
     setTimeout(() => setCopiedPhone(false), 2000);
   };
@@ -241,7 +260,7 @@ export default function ListingDetailPage() {
         {/* ================= CỘT TRÁI: GALLERY ẢNH ================= */}
         <div className="lg:col-span-7 space-y-3">
           {/* Khung ảnh chính */}
-          <div className="relative aspect-[4/3] w-full bg-slate-900 rounded-3xl overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center group">
+          <div className="relative aspect-[4/3] w-full bg-slate-100 rounded-3xl overflow-hidden border border-slate-200/90 shadow-sm flex items-center justify-center group">
             {currentPhoto ? (
               <img
                 src={currentPhoto}
@@ -282,7 +301,7 @@ export default function ListingDetailPage() {
 
             {/* Badge đếm số ảnh */}
             {photos.length > 0 && (
-              <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-xs font-mono font-medium">
+              <div className="absolute bottom-3 right-3 px-2.5 py-1 rounded-full bg-slate-800/75 backdrop-blur-sm text-white text-xs font-medium">
                 Ảnh {activePhotoIndex + 1} / {photos.length}
               </div>
             )}
@@ -295,7 +314,7 @@ export default function ListingDetailPage() {
                 <button
                   key={p.id || idx}
                   onClick={() => setActivePhotoIndex(idx)}
-                  className={`relative shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${
+                  className={`relative shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
                     idx === activePhotoIndex
                       ? 'border-emerald-600 ring-2 ring-emerald-200'
                       : 'border-transparent opacity-70 hover:opacity-100'
@@ -309,7 +328,7 @@ export default function ListingDetailPage() {
 
           {/* Phần mô tả chi tiết sản phẩm */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-3">
-            <h3 className="font-bold text-slate-900 text-base">Mô tả sản phẩm</h3>
+            <h3 className="font-bold text-emerald-950 text-base">Mô tả sản phẩm</h3>
             <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line">
               {listing.description}
             </p>
@@ -334,10 +353,14 @@ export default function ListingDetailPage() {
             </div>
 
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight">
+              <h1 className="text-xl sm:text-2xl font-bold text-emerald-950 leading-tight">
                 {listing.title}
               </h1>
-              <div className="mt-2 text-2xl sm:text-3xl font-extrabold text-emerald-700 flex items-center gap-2">
+              <div
+                className={`mt-2 text-2xl sm:text-3xl font-bold flex items-center gap-2 ${
+                  Number(listing.price) === 0 ? 'text-emerald-700' : 'text-orange-700'
+                }`}
+              >
                 <span>{formattedPrice}</span>
                 {listing.price === 0 && (
                   <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider">
@@ -357,7 +380,7 @@ export default function ListingDetailPage() {
           <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-slate-900 text-base">Đánh giá tình trạng</h3>
+                <h3 className="font-bold text-emerald-950 text-base">Đánh giá tình trạng</h3>
                 <p className="text-xs text-slate-500">Chấm điểm theo tiêu chuẩn hệ thống</p>
               </div>
 
@@ -366,7 +389,7 @@ export default function ListingDetailPage() {
                 style={{ backgroundColor: rankColors.bg }}
                 className="px-3.5 py-1.5 rounded-2xl text-white text-center shadow-sm"
               >
-                <div className="text-lg font-black leading-none">{Number(listing.totalScore).toFixed(1)}</div>
+                <div className="text-lg font-bold leading-none">{Number(listing.totalScore).toFixed(1)}</div>
                 <div className="text-[10px] font-semibold tracking-wider uppercase mt-0.5">
                   {listing.rank}
                 </div>
@@ -418,32 +441,66 @@ export default function ListingDetailPage() {
               </div>
             </div>
 
-            {/* Khung giải thích công thức tính điểm BR-01 */}
-            <div className="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-3.5 text-xs text-emerald-900 space-y-1.5">
-              <div className="flex items-center gap-1.5 font-bold text-emerald-950">
-                <Info size={14} className="text-emerald-600" />
-                <span>Công thức tính điểm:</span>
-              </div>
-              <p className="font-mono text-[11px] text-emerald-800 bg-white/60 p-1.5 rounded-lg border border-emerald-200/50">
-                Điểm tổng = 0,4 × Ngoại quan + 0,4 × Chức năng + 0,2 × Phụ kiện
-              </p>
-              <p className="text-[11px] text-emerald-800 leading-tight">
-                *Với đồ dùng không có vi mạch điện tử (sách, quần áo, nội thất), điểm "Chức năng" thể hiện mức độ nguyên vẹn và khả năng sử dụng của món đồ.
-              </p>
+            {/* Nút xem công thức tính điểm BR-01 (thu gọn mặc định) */}
+            <div className="pt-1">
+              <button
+                type="button"
+                data-testid="toggle-formula-btn"
+                aria-expanded={showFormula}
+                onClick={() => setShowFormula((v) => !v)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50/80 hover:bg-emerald-100/80 border border-emerald-200/70 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+              >
+                <Info size={14} className="shrink-0" />
+                <span>Cách tính điểm</span>
+              </button>
+
+              {showFormula && (
+                <div
+                  data-testid="scoring-formula-box"
+                  className="mt-3 bg-emerald-50/70 border border-emerald-100 rounded-2xl p-3.5 text-xs text-emerald-900 space-y-1.5 animate-in fade-in duration-150"
+                >
+                  <div className="font-bold text-emerald-950">Công thức tính điểm:</div>
+                  <p className="font-mono text-[11px] text-emerald-800 bg-white/70 p-2 rounded-lg border border-emerald-200/60">
+                    Điểm tổng = 0,4 × Ngoại quan + 0,4 × Chức năng + 0,2 × Phụ kiện
+                  </p>
+                  <p className="text-[11px] text-emerald-800 leading-tight">
+                    *Với đồ dùng không có vi mạch điện tử (sách, quần áo, nội thất), điểm "Chức năng" thể hiện mức độ nguyên vẹn và khả năng sử dụng của món đồ.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
           {/* ================= KHỐI LIÊN HỆ NGƯỜI BÁN & SĐT (FR-07, TC-04) ================= */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
-            <h3 className="font-bold text-slate-900 text-base">Thông tin người bán</h3>
+            <h3 className="font-bold text-emerald-950 text-base">Thông tin người bán</h3>
 
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 font-bold text-lg flex items-center justify-center shadow-inner">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 font-bold text-lg flex items-center justify-center shadow-inner shrink-0">
                 {listing.sellerName ? listing.sellerName[0].toUpperCase() : 'U'}
               </div>
-              <div>
-                <div className="font-bold text-slate-800">{listing.sellerName}</div>
-                <div className="text-xs text-slate-500">Thành viên bán đồ cũ EcoFind</div>
+              <div className="min-w-0 flex-1">
+                {listing.sellerId ? (
+                  <Link
+                    to={`/sellers/${listing.sellerId}`}
+                    className="font-bold text-slate-800 hover:text-emerald-700 transition-colors block truncate"
+                  >
+                    {listing.sellerName}
+                  </Link>
+                ) : (
+                  <div className="font-bold text-slate-800 truncate">{listing.sellerName}</div>
+                )}
+                <div className="text-xs text-slate-500 mt-0.5">
+                  Thành viên bán đồ cũ EcoFind
+                </div>
+                {listing.sellerId && (
+                  <Link
+                    to={`/sellers/${listing.sellerId}`}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 mt-1"
+                  >
+                    <span>Xem trang cá nhân</span>
+                  </Link>
+                )}
               </div>
             </div>
 
@@ -452,30 +509,57 @@ export default function ListingDetailPage() {
               <div className="space-y-3 pt-2 border-t border-slate-100">
                 {listing.phone ? (
                   <>
-                    <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-2xl border border-emerald-200/80">
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-5 h-5 text-emerald-700" />
-                        <span className="font-bold text-emerald-900 font-mono text-base">
-                          {listing.phone}
-                        </span>
+                    <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200/80 space-y-1">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700/90">
+                        Số điện thoại liên hệ
                       </div>
-                      <button
-                        onClick={() => handleCopyPhone(listing.phone)}
-                        className="p-1.5 text-xs text-emerald-700 hover:text-emerald-900 hover:bg-emerald-100 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
-                        title="Sao chép số điện thoại"
-                      >
-                        {copiedPhone ? <CheckCircle size={15} /> : <Copy size={15} />}
-                        <span>{copiedPhone ? 'Đã chép' : 'Chép'}</span>
-                      </button>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Phone className="w-5 h-5 text-emerald-700 shrink-0" />
+                          <span className="font-bold text-emerald-950 font-mono text-base truncate">
+                            {listing.phone}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          data-testid="btn-copy-phone"
+                          onClick={() => handleCopyPhone(listing.phone)}
+                          className="px-2.5 py-1.5 text-xs font-semibold text-emerald-800 bg-white/85 hover:bg-white border border-emerald-200 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-2xs"
+                          title="Sao chép số điện thoại"
+                        >
+                          {copiedPhone ? (
+                            <CheckCircle size={14} className="text-emerald-600" />
+                          ) : (
+                            <Copy size={14} />
+                          )}
+                          <span>{copiedPhone ? 'Đã sao chép' : 'Sao chép SĐT'}</span>
+                        </button>
+                      </div>
                     </div>
 
-                    <a
-                      href={`tel:${listing.phone}`}
-                      className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-sm transition-all"
-                    >
-                      <Phone size={16} />
-                      Gọi điện cho người bán
-                    </a>
+                    {!isOwnListing && !isAdmin && (
+                      <div
+                        data-testid="contact-guidance-box"
+                        className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 space-y-1.5 leading-relaxed"
+                      >
+                        <div className="font-semibold text-emerald-900 flex items-center gap-1.5">
+                          <Info size={14} className="text-emerald-600 shrink-0" />
+                          <span>Liên lạc &amp; giao dịch trực tiếp</span>
+                        </div>
+                        <p>
+                          Vui lòng liên lạc qua số điện thoại trên và hẹn gặp trực tiếp
+                          {listing.address ? (
+                            <>
+                              {' '}tại <span className="font-semibold text-slate-800">{listing.address}</span>
+                            </>
+                          ) : null}{' '}
+                          để kiểm tra thực tế 3 tiêu chí tình trạng trước khi thanh toán.
+                        </p>
+                        <p className="text-[11px] text-slate-500">
+                          Lưu ý: EcoFind chỉ hỗ trợ kết nối qua SĐT, không có tính năng nhắn tin hay thanh toán trực tuyến trong ứng dụng.
+                        </p>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="p-3 bg-slate-50 rounded-xl text-center text-xs text-slate-500">
@@ -484,7 +568,8 @@ export default function ListingDetailPage() {
                 )}
 
                 {/* Các nút thao tác khi đã đăng nhập: Lưu & Báo cáo (UC-04, UC-08, TE9C73C, TE9C754) */}
-                {/* Ẩn nút Báo cáo với tin của chính mình (E3) */}
+                {/* Ẩn với Admin; ẩn nút Báo cáo với tin của chính mình (E3) */}
+                {!isAdmin && (
                 <div
                   className={`grid ${isOwnListing ? 'grid-cols-1' : 'grid-cols-2'} gap-2 pt-1 border-t border-slate-100`}
                 >
@@ -518,6 +603,7 @@ export default function ListingDetailPage() {
                     </button>
                   )}
                 </div>
+                )}
               </div>
             ) : (
               <div className="space-y-3 pt-2 border-t border-slate-100">
@@ -554,14 +640,16 @@ export default function ListingDetailPage() {
         </div>
       </div>
 
-      {/* Modal Báo cáo tin vi phạm (UC-08, FR-12, TE9C754) */}
-      {showReportModal && (
-        <div
-          data-testid="report-listing-dialog"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
-        >
+      {/* Modal Báo cáo tin vi phạm */}
+      {showReportModal &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            data-testid="report-listing-dialog"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+          >
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
-            <h3 className="text-base font-bold text-slate-900 mb-1 flex items-center gap-2">
+            <h3 className="text-base font-bold text-emerald-950 mb-1 flex items-center gap-2">
               <Flag size={18} className="text-rose-500" />
               <span>Báo cáo tin đăng vi phạm</span>
             </h3>
@@ -663,8 +751,9 @@ export default function ListingDetailPage() {
               </form>
             )}
           </div>
-        </div>
-      )}
+        </div>,
+        document.body
+        )}
     </div>
   );
 }

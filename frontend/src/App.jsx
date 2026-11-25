@@ -13,6 +13,7 @@ import PostListingPage from './pages/PostListingPage';
 import MyListingsPage from './pages/MyListingsPage';
 import FavoritesPage from './pages/FavoritesPage';
 import AdminPage from './pages/AdminPage';
+import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
@@ -26,8 +27,17 @@ export default function App() {
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="listings/:id" element={<ListingDetailPage />} />
+            <Route path="sellers/:userId" element={<ProfilePage />} />
 
             {/* Authenticated Protected Routes */}
+            <Route
+              path="profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="post"
               element={

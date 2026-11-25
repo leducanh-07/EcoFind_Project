@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, sessionExpired } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -15,10 +15,9 @@ export default function ProtectedRoute({ children }) {
   }
 
   if (!isAuthenticated) {
-    // Lưu lại URL ban đầu để quay về sau khi đăng nhập
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    // Lưu lại URL ban đầu và trạng thái hết phiên (nếu có) để quay về sau khi đăng nhập
+    return <Navigate to="/login" state={{ from: location, sessionExpired }} replace />;
   }
 
   return children;
 }
-

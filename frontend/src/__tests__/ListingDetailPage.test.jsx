@@ -103,7 +103,12 @@ describe('ListingDetailPage Component (UC-04, FR-07, BR-01, BR-05, TC-04, TE9C73
     expect(screen.getByText(/3. Phụ kiện đi kèm/i)).toBeInTheDocument();
     expect(screen.getByText('8 / 10')).toBeInTheDocument();
 
-    // Công thức BR-01
+    // Công thức BR-01 ẩn mặc định, bấm "Cách tính điểm" để mở
+    expect(
+      screen.queryByText(/Điểm tổng = 0,4 × Ngoại quan \+ 0,4 × Chức năng \+ 0,2 × Phụ kiện/i)
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('toggle-formula-btn'));
     expect(
       screen.getByText(/Điểm tổng = 0,4 × Ngoại quan \+ 0,4 × Chức năng \+ 0,2 × Phụ kiện/i)
     ).toBeInTheDocument();
@@ -152,7 +157,7 @@ describe('ListingDetailPage Component (UC-04, FR-07, BR-01, BR-05, TC-04, TE9C73
     expect(await screen.findByText('Trang đăng nhập')).toBeInTheDocument();
   });
 
-  test('6. Người dùng đã đăng nhập: hiển thị số điện thoại thực tế và nút gọi (TC-04)', async () => {
+  test('6. Người dùng đã đăng nhập: hiển thị số điện thoại, nút sao chép và ghi chú gặp trực tiếp (TC-04)', async () => {
     localStorage.setItem('access_token', 'mock_token');
     localStorage.setItem(
       'auth_user',
@@ -170,8 +175,18 @@ describe('ListingDetailPage Component (UC-04, FR-07, BR-01, BR-05, TC-04, TE9C73
       expect(screen.getByText('0987654321')).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/Gọi điện cho người bán/i)).toBeInTheDocument();
+    expect(screen.queryByTestId('btn-contact-seller')).not.toBeInTheDocument();
     expect(screen.queryByText('09•• ••• •••')).not.toBeInTheDocument();
+
+    const copyBtn = screen.getByTestId('btn-copy-phone');
+    expect(copyBtn).toHaveTextContent(/Sao chép SĐT/i);
+    fireEvent.click(copyBtn);
+    expect(copyBtn).toHaveTextContent(/Đã sao chép/i);
+
+    const guidanceBox = screen.getByTestId('contact-guidance-box');
+    expect(guidanceBox).toHaveTextContent(/Liên lạc & giao dịch trực tiếp/i);
+    expect(guidanceBox).toHaveTextContent(/hẹn gặp trực tiếp/i);
+    expect(guidanceBox).toHaveTextContent(/không có tính năng nhắn tin/i);
   });
 
   test('7. Hiển thị thông báo 404 khi tin bị xóa, ẩn hoặc không tìm thấy (UC-04 E1)', async () => {

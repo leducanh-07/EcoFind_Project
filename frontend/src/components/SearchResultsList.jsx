@@ -48,13 +48,13 @@ export default function SearchResultsList({
     const num = Number(price);
     if (num === 0) {
       return (
-        <span className="text-emerald-600 font-black text-base sm:text-lg tracking-tight">
+        <span className="text-emerald-700 font-bold text-base sm:text-lg">
           Cho tặng
         </span>
       );
     }
     return (
-      <span className="font-black text-emerald-800 text-base sm:text-lg tracking-tight">
+      <span className="font-bold text-orange-700 text-base sm:text-lg">
         {num.toLocaleString('vi-VN')} đ
       </span>
     );
@@ -100,7 +100,7 @@ export default function SearchResultsList({
       {/* Header danh sách */}
       <div className="px-4 py-3 sm:py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/90 shrink-0">
         <div className="flex items-center gap-2.5">
-          <span className="font-bold text-slate-900 text-sm sm:text-base">Kết quả tìm kiếm</span>
+          <span className="font-bold text-slate-800 text-sm sm:text-base">Kết quả tìm kiếm</span>
           {!loading && !error && (
             <span
               data-testid="results-count-badge"
@@ -247,7 +247,7 @@ export default function SearchResultsList({
                     {/* Badge điểm tình trạng trên ảnh */}
                     <div
                       style={{ backgroundColor: rankColor.bg }}
-                      className="absolute bottom-2 left-2 px-2.5 py-0.5 rounded-lg text-xs font-black text-white shadow-md flex items-center gap-0.5"
+                      className="absolute bottom-2 left-2 px-2.5 py-0.5 rounded-lg text-xs font-bold text-white shadow-md flex items-center gap-0.5"
                       title={`Điểm tình trạng: ${score.toFixed(1)}/10`}
                     >
                       <span>{score.toFixed(1)}</span>
@@ -259,7 +259,7 @@ export default function SearchResultsList({
                     <div>
                       {/* Tiêu đề & Cụm nhãn hạng */}
                       <div className="flex items-start justify-between gap-2.5 mb-1.5">
-                        <h4 className="text-sm sm:text-base font-bold text-slate-900 line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors">
+                        <h4 className="text-sm sm:text-base font-bold text-slate-800 line-clamp-2 leading-snug group-hover:text-emerald-700 transition-colors">
                           {item.title}
                         </h4>
                         <span
@@ -267,7 +267,7 @@ export default function SearchResultsList({
                             color: rankColor.border,
                             borderColor: rankColor.border,
                           }}
-                          className="text-xs font-extrabold px-2.5 py-0.5 rounded-lg border bg-white shadow-2xs shrink-0"
+                          className="text-xs font-bold px-2.5 py-0.5 rounded-lg border bg-white shadow-2xs shrink-0"
                         >
                           {item.rank || rankColor.label}
                         </span>
@@ -288,7 +288,7 @@ export default function SearchResultsList({
                         {distanceStr && (
                           <span
                             data-testid={`distance-badge-${item.id}`}
-                            className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200/70"
+                            className="text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200/80"
                           >
                             {distanceStr}
                           </span>
@@ -304,7 +304,7 @@ export default function SearchResultsList({
                             }}
                             title="Xem vị trí trên bản đồ"
                             aria-label="Xem vị trí trên bản đồ"
-                            className="p-1.5 rounded-lg bg-slate-50 hover:bg-emerald-50 text-slate-400 hover:text-emerald-700 border border-slate-200 hover:border-emerald-300 transition-all cursor-pointer active:scale-90 shadow-2xs"
+                            className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-700 border border-slate-200 hover:border-slate-300 transition-all cursor-pointer active:scale-90 shadow-2xs"
                           >
                             <Eye size={14} />
                           </button>

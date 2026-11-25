@@ -26,6 +26,7 @@ import {
   Loader2,
   Clock,
   EyeOff,
+  Gift,
 } from 'lucide-react';
 import PhotoUploader from '../components/PhotoUploader';
 import LocationPickerMap from '../components/LocationPickerMap';
@@ -264,7 +265,7 @@ export default function PostListingPage() {
           <PlusCircle size={26} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Đăng tin bán đồ cũ</h1>
+          <h1 className="text-2xl font-bold text-emerald-950">Đăng tin bán đồ cũ</h1>
           <p className="text-sm text-slate-500 mt-0.5">
             Tải ảnh thực tế, định vị trên bản đồ và tự chấm điểm tình trạng món đồ
           </p>
@@ -289,7 +290,7 @@ export default function PostListingPage() {
               Gửi tin đăng thành công!
             </p>
             <p className="text-sm text-slate-600 max-w-md mx-auto">
-              Tin đăng <strong>"{submitSuccess.title}"</strong> ({submitSuccess.photoCount} ảnh) đã được tiếp nhận và chuyển sang trạng thái <strong>Chờ duyệt (Pending)</strong>.
+              Tin đăng <strong>"{submitSuccess.title}"</strong> ({submitSuccess.photoCount} ảnh) đã được tiếp nhận và chuyển sang trạng thái <strong>Chờ duyệt</strong>.
             </p>
           </div>
 
@@ -357,8 +358,8 @@ export default function PostListingPage() {
             >
               <AlertCircle size={20} className="text-red-600 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-red-900">Không thể gửi duyệt tin đăng (Lỗi 400)</p>
-                <p className="text-xs text-red-700 mt-0.5">{globalError}</p>
+                <p className="font-semibold text-rose-900">Thông tin đăng tin chưa hợp lệ</p>
+                <p className="text-xs text-rose-700 mt-0.5">{globalError}</p>
               </div>
             </div>
           )}
@@ -494,10 +495,20 @@ export default function PostListingPage() {
                 </div>
                 {/* Gợi ý định dạng giá */}
                 {price !== '' && !errors.price && (
-                  <p className="text-[11px] text-slate-500 mt-1" data-testid="price-formatted-hint">
-                    {Number(price) === 0
-                      ? '🎁 Món đồ sẽ được đăng dưới dạng Cho tặng (Miễn phí)'
-                      : `Giá hiển thị: ${Number(price).toLocaleString('vi-VN')} đ`}
+                  <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1" data-testid="price-formatted-hint">
+                    {Number(price) === 0 ? (
+                      <>
+                        <Gift size={12} className="text-emerald-600 shrink-0" aria-hidden="true" />
+                        <span>Món đồ sẽ được đăng dưới dạng Cho tặng (Miễn phí)</span>
+                      </>
+                    ) : (
+                      <span>
+                        Giá hiển thị:{' '}
+                        <strong className="font-semibold text-orange-700">
+                          {Number(price).toLocaleString('vi-VN')} đ
+                        </strong>
+                      </span>
+                    )}
                   </p>
                 )}
                 {errors.price && (
@@ -580,20 +591,20 @@ export default function PostListingPage() {
             />
           </section>
 
-          {/* NÚT GỬI DUYỆT TIN (TE9C746) */}
+          {/* NÚT GỬI DUYỆT TIN */}
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={() => navigate(-1)}
               disabled={submitting}
-              className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors disabled:opacity-50"
+              className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors disabled:opacity-50 cursor-pointer"
             >
               Hủy bỏ
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-all shadow-md shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-semibold transition-all shadow-md shadow-emerald-700/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               data-testid="submit-listing-btn"
               aria-busy={submitting}
             >

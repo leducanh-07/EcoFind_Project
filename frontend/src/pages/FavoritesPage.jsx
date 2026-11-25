@@ -77,7 +77,7 @@ export default function FavoritesPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
+    <div className="max-w-5xl mx-auto px-4 py-8">
       {/* Toast Notification */}
       {toastMessage && (
         <div
@@ -126,7 +126,7 @@ export default function FavoritesPage() {
               <Heart size={24} className="fill-rose-500" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-800">Tin đăng yêu thích</h1>
+              <h1 className="text-xl font-bold text-emerald-950">Tin đăng yêu thích</h1>
               <p className="text-xs text-slate-500">
                 Danh sách các món đồ bạn đã lưu để theo dõi hoặc liên hệ sau
               </p>
@@ -135,7 +135,7 @@ export default function FavoritesPage() {
 
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 text-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
           >
             <Compass size={15} /> Khám phá bản đồ
           </Link>
@@ -175,7 +175,7 @@ export default function FavoritesPage() {
                   <div
                     key={listingId}
                     data-testid={`favorite-card-${listingId}`}
-                    className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-5"
+                    className="p-5 rounded-2xl border border-slate-200 bg-white hover:border-emerald-200 hover:shadow-md transition-all shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-5"
                   >
                     <div className="flex items-start gap-4 flex-1">
                       {item.thumbnailUrl ? (
@@ -224,7 +224,11 @@ export default function FavoritesPage() {
                         </h3>
 
                         <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                          <span className="font-bold text-sm text-emerald-700">
+                          <span
+                            className={`font-bold text-sm ${
+                              Number(item.price) === 0 ? 'text-emerald-700' : 'text-orange-700'
+                            }`}
+                          >
                             {Number(item.price) === 0
                               ? 'Cho tặng miễn phí'
                               : `${Number(item.price).toLocaleString('vi-VN')} đ`}

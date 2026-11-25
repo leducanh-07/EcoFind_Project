@@ -309,6 +309,37 @@ class ListingRepository:
         result = await db.execute(stmt)
         return list(result.scalars().all())
 
+    async def get_admin_listing_stats(self, db: AsyncSession) -> dict:
+        """Tổng hợp thống kê tin đăng theo trạng thái, điểm TB và danh mục cho Admin Dashboard."""
+        status_stmt = select(Listing.status, func.count(Listing.listing_id)).group_by(Listing.status)
+        status_rows = (await db.execute(status_stmt)).all()
+        status_counts = {str(st): int(cnt) for st, cnt in status_rows}
+
+        avg_stmt = select(func.avg(Listing.total_score)).where(
+            Listing.status == "selling",
+            Listing.hidden_by_admin.is_(False),
+        )
+        avg_val = (await db.execute(avg_stmt)).scalar()
+        avg_selling_score = round(float(avg_val), 1) if avg_val is not None else None
+
+        cat_stmt = (
+            select(Category.category_id, Category.name, func.count(Listing.listing_id))
+            .join(Listing, Listing.category_id == Category.category_id, isouter=True)
+            .group_by(Category.category_id, Category.name)
+            .order_by(func.count(Listing.listing_id).desc(), Category.name.asc())
+        )
+        cat_rows = (await db.execute(cat_stmt)).all()
+        categories = [
+            {"category_id": int(cid), "name": str(cname), "count": int(cnt)}
+            for cid, cname, cnt in cat_rows
+        ]
+
+        return {
+            "status_counts": status_counts,
+            "avg_selling_score": avg_selling_score,
+            "categories": categories,
+        }
+
     async def create(
         self,
         db: AsyncSession,

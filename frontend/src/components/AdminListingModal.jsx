@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   User,
@@ -15,6 +16,7 @@ import {
   Loader2,
   ChevronRight,
   Info,
+  Gift,
 } from 'lucide-react';
 import { calculateTotalScore, getConditionRank } from './ConditionScorer';
 import { approveListingApi, rejectListingApi, getAdminListingDetailApi } from '../api/admin';
@@ -227,20 +229,53 @@ export default function AdminListingModal({
     }
   };
 
-  return (
+  const statusBadgeMeta = {
+    pending: {
+      label: 'Chờ kiểm duyệt',
+      cls: 'bg-amber-100 text-amber-800 border-amber-200',
+    },
+    selling: {
+      label: 'Đang bán',
+      cls: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    },
+    rejected: {
+      label: 'Bị từ chối',
+      cls: 'bg-rose-100 text-rose-800 border-rose-200',
+    },
+    sold: {
+      label: 'Đã bán',
+      cls: 'bg-teal-100 text-teal-800 border-teal-200',
+    },
+    hidden: {
+      label: 'Đã ẩn',
+      cls: 'bg-slate-200 text-slate-700 border-slate-300',
+    },
+  }[listing?.status] || {
+    label: listing?.status || 'Đang tải',
+    cls: 'bg-slate-100 text-slate-700 border-slate-200',
+  };
+
+  const modalContent = (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="admin-detail-title"
       data-testid="admin-listing-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto animate-in fade-in"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150"
+      onClick={onClose}
     >
-      <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[92vh] flex flex-col">
+      <div
+        className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* HEADER MODAL */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/80 shrink-0">
           <div className="flex items-center gap-3">
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200" data-testid="modal-status-badge">
-              {listing?.status === 'pending' ? 'Chờ kiểm duyệt' : listing?.status}
+            <span
+              className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${statusBadgeMeta.cls}`}
+              data-testid="modal-status-badge"
+            >
+              {statusBadgeMeta.label}
             </span>
             <span className="text-xs text-slate-400">Mã tin: #{listing?.id || listingId}</span>
           </div>
@@ -249,7 +284,7 @@ export default function AdminListingModal({
             onClick={onClose}
             aria-label="Đóng chi tiết"
             data-testid="close-modal-btn"
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -306,7 +341,7 @@ export default function AdminListingModal({
                       className="w-full h-full object-cover"
                       onError={handleImageError}
                     />
-                    <div className="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-full bg-slate-900/70 text-white text-[11px] backdrop-blur-sm">
+                    <div className="absolute bottom-2.5 right-2.5 px-2.5 py-1 rounded-full bg-slate-800/75 text-white text-[11px] backdrop-blur-sm">
                       {photos.length > 0 ? `${activePhotoIdx + 1}/${photos.length} ảnh` : 'Chưa có ảnh'}
                     </div>
                   </div>
@@ -332,11 +367,23 @@ export default function AdminListingModal({
                 {/* THÔNG TIN SẢN PHẨM & NGƯỜI BÁN */}
                 <div className="space-y-4">
                   <div>
-                    <h2 id="admin-detail-title" className="text-xl font-bold text-slate-800" data-testid="modal-listing-title">
+                    <h2 id="admin-detail-title" className="text-xl font-bold text-emerald-950" data-testid="modal-listing-title">
                       {listing.title}
                     </h2>
-                    <p className="text-2xl font-black text-emerald-600 mt-1" data-testid="modal-listing-price">
-                      {Number(listing.price) === 0 ? '🎁 Cho tặng (0 đ)' : `${Number(listing.price).toLocaleString('vi-VN')} đ`}
+                    <p
+                      className={`text-2xl font-bold mt-1 flex items-center gap-1.5 ${
+                        Number(listing.price) === 0 ? 'text-emerald-700' : 'text-orange-700'
+                      }`}
+                      data-testid="modal-listing-price"
+                    >
+                      {Number(listing.price) === 0 ? (
+                        <>
+                          <Gift size={20} className="text-emerald-600 shrink-0" aria-hidden="true" />
+                          <span>Cho tặng (0 đ)</span>
+                        </>
+                      ) : (
+                        `${Number(listing.price).toLocaleString('vi-VN')} đ`
+                      )}
                     </p>
                   </div>
 
@@ -375,6 +422,24 @@ export default function AdminListingModal({
                 </div>
               </div>
 
+              {(listing.rejectReason || listing.reject_reason) && (
+                <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs sm:text-sm text-amber-950 space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-amber-900">
+                    <AlertCircle size={15} className="text-amber-700 shrink-0" />
+                    <span>
+                      {listing.status === 'rejected'
+                        ? 'Lý do từ chối tin đăng:'
+                        : listing.status === 'hidden'
+                        ? 'Lý do ẩn tin:'
+                        : 'Ghi chú kiểm duyệt của Admin:'}
+                    </span>
+                  </div>
+                  <p className="text-amber-900/90 leading-relaxed">
+                    {listing.rejectReason || listing.reject_reason}
+                  </p>
+                </div>
+              )}
+
               {/* MÔ TẢ CHI TIẾT */}
               <div className="space-y-2 pt-2 border-t border-slate-100">
                 <h3 className="text-sm font-bold text-slate-800">Mô tả sản phẩm</h3>
@@ -391,10 +456,10 @@ export default function AdminListingModal({
                   </h3>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-slate-500">Điểm tổng:</span>
-                    <span className="text-lg font-black text-slate-900" data-testid="modal-total-score">
+                    <span className="text-lg font-bold text-emerald-950" data-testid="modal-total-score">
                       {origTotal.toFixed(1)}/10
                     </span>
-                    <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-blue-100 text-blue-800" data-testid="modal-rank-badge">
+                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${getConditionRank(origTotal).badgeBg}`} data-testid="modal-rank-badge">
                       {origRank}
                     </span>
                   </div>
@@ -596,12 +661,12 @@ export default function AdminListingModal({
         </div>
 
         {/* FOOTER MODAL: NÚT THAO TÁC */}
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between gap-3">
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between gap-3 shrink-0">
           <button
             type="button"
             onClick={onClose}
             data-testid="modal-dismiss-btn"
-            className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-100 transition-colors"
+            className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-100 transition-colors cursor-pointer"
           >
             Đóng
           </button>
@@ -613,7 +678,7 @@ export default function AdminListingModal({
                 data-testid="modal-reject-btn"
                 onClick={() => setShowRejectForm(true)}
                 disabled={submittingAction}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-sm font-semibold transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-sm font-semibold transition-colors disabled:opacity-50 cursor-pointer"
               >
                 <XCircle size={16} />
                 <span>Từ chối</span>
@@ -623,7 +688,7 @@ export default function AdminListingModal({
                 data-testid="modal-approve-btn"
                 onClick={handleApprove}
                 disabled={submittingAction}
-                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
               >
                 {submittingAction ? (
                   <>
@@ -643,4 +708,6 @@ export default function AdminListingModal({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 }

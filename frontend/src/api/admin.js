@@ -18,7 +18,7 @@ export async function getAdminListingsApi({ status = 'pending', sort = 'asc' } =
 }
 
 /**
- * Lấy thông tin chi tiết một tin đăng chờ duyệt (TE9C747, FR-13)
+ * Lấy thông tin chi tiết một tin đăng (TE9C747, FR-13)
  * @param {number|string} id
  */
 export async function getAdminListingDetailApi(id) {
@@ -29,10 +29,6 @@ export async function getAdminListingDetailApi(id) {
 
 /**
  * Duyệt tin đăng và điều chỉnh hạ điểm nếu có (TE9C748, TE9C74B, FR-14)
- * @param {number|string} id
- * @param {Object} payload
- * @param {Object} [payload.adjustments]
- * @param {string} [payload.note]
  */
 export async function approveListingApi(id, { adjustments, note } = {}) {
   return await fetchWithAuth(`/api/admin/listings/${id}/approve`, {
@@ -43,9 +39,6 @@ export async function approveListingApi(id, { adjustments, note } = {}) {
 
 /**
  * Từ chối tin đăng kèm lý do bắt buộc (TE9C749, TE9C74B, FR-14)
- * @param {number|string} id
- * @param {Object} payload
- * @param {string} payload.reason
  */
 export async function rejectListingApi(id, { reason }) {
   return await fetchWithAuth(`/api/admin/listings/${id}/reject`, {
@@ -55,9 +48,35 @@ export async function rejectListingApi(id, { reason }) {
 }
 
 /**
- * Lấy danh sách báo cáo vi phạm trong hàng đợi (TE9C755, UC-09, FR-15)
- * @param {Object} options
- * @param {string} [options.status='new']
+ * Admin ẩn trực tiếp tin đăng vi phạm khỏi bản đồ
+ */
+export async function hideAdminListingApi(id, { reason } = {}) {
+  return await fetchWithAuth(`/api/admin/listings/${id}/hide`, {
+    method: 'POST',
+    body: JSON.stringify({ reason: reason || null }),
+  });
+}
+
+/**
+ * Admin khôi phục tin đăng đang ẩn về lại Đang bán
+ */
+export async function restoreAdminListingApi(id) {
+  return await fetchWithAuth(`/api/admin/listings/${id}/restore`, {
+    method: 'POST',
+  });
+}
+
+/**
+ * Lấy số liệu thống kê KPI và phân bổ danh mục toàn sàn cho Admin Dashboard
+ */
+export async function getAdminStatsApi() {
+  return await fetchWithAuth('/api/admin/stats', {
+    method: 'GET',
+  });
+}
+
+/**
+ * Lấy danh sách báo cáo vi phạm (new | resolved)
  */
 export async function getAdminReportsApi({ status = 'new' } = {}) {
   const params = new URLSearchParams();
@@ -70,9 +89,6 @@ export async function getAdminReportsApi({ status = 'new' } = {}) {
 
 /**
  * Xử lý báo cáo vi phạm: action = 'hide' hoặc 'dismiss' (TE9C755, UC-09, FR-15)
- * @param {number|string} id - Report ID
- * @param {Object} payload
- * @param {string} payload.action - 'hide' | 'dismiss'
  */
 export async function resolveAdminReportApi(id, { action }) {
   return await fetchWithAuth(`/api/admin/reports/${id}/resolve`, {
@@ -81,3 +97,30 @@ export async function resolveAdminReportApi(id, { action }) {
   });
 }
 
+/**
+ * Lấy danh sách tài khoản thành viên kèm thống kê tin/báo cáo
+ */
+export async function getAdminUsersApi() {
+  return await fetchWithAuth('/api/admin/users', {
+    method: 'GET',
+  });
+}
+
+/**
+ * Khóa tài khoản thành viên theo thời hạn (giờ)
+ */
+export async function lockAdminUserApi(userId, { durationHours }) {
+  return await fetchWithAuth(`/api/admin/users/${userId}/lock`, {
+    method: 'POST',
+    body: JSON.stringify({ durationHours }),
+  });
+}
+
+/**
+ * Mở khóa tài khoản thành viên
+ */
+export async function unlockAdminUserApi(userId) {
+  return await fetchWithAuth(`/api/admin/users/${userId}/unlock`, {
+    method: 'POST',
+  });
+}

@@ -178,4 +178,108 @@ describe('TE9C743: Form đăng tin – chọn vị trí trên bản đồ (UC-05
     const errorAddr = await screen.findByTestId('error-address');
     expect(errorAddr).toHaveTextContent(/Vui lòng nhập địa chỉ giao dịch/i);
   });
+
+  it('6. Hiển thị Autocomplete dropdown khi nhập và chọn gợi ý để ghim đúng mà không hiện banner xanh thừa', async () => {
+    const mockSuggest = vi.spyOn(geocodeModule, 'suggestAddressesApi').mockResolvedValue({
+      suggestions: [
+        {
+          text: '142 Đường Lê Văn Việt, Hiệp Phú, Tăng Nhơn Phú, Hồ Chí Minh',
+          magic_key: 'mk_142',
+        },
+      ],
+    });
+    const mockGeocode = vi.spyOn(geocodeModule, 'geocodeAddressApi').mockResolvedValue({
+      lat: 10.844915,
+      lng: 106.780327,
+      matched_address: '142 Đường Lê Văn Việt, Hiệp Phú, Tăng Nhơn Phú, Hồ Chí Minh',
+      accuracy: 'exact',
+      provider: 'arcgis',
+    });
+
+    const onAddressChange = vi.fn();
+    const onLocationChange = vi.fn();
+
+    render(
+      <LocationPickerMap
+        address="142 Lê Văn Việt"
+        lat={10.7769}
+        lng={106.7009}
+        onAddressChange={onAddressChange}
+        onLocationChange={onLocationChange}
+      />
+    );
+
+    const suggestItem = await screen.findByTestId('address-suggestion-item-0', {}, { timeout: 2000 });
+    expect(mockSuggest).toHaveBeenCalled();
+    fireEvent.mouseDown(suggestItem);
+
+    await waitFor(() => {
+      expect(onAddressChange).toHaveBeenCalledWith(
+        '142 Đường Lê Văn Việt, Hiệp Phú, Tăng Nhơn Phú, Hồ Chí Minh'
+      );
+      expect(mockGeocode).toHaveBeenCalledWith(
+        '142 Đường Lê Văn Việt, Hiệp Phú, Tăng Nhơn Phú, Hồ Chí Minh',
+        'mk_142'
+      );
+      expect(onLocationChange).toHaveBeenCalledWith({
+        lat: 10.844915,
+        lng: 106.780327,
+      });
+    });
+
+    // Không hiển thị banner xanh thừa khi đã khớp chính xác
+    expect(screen.queryByTestId('geocode-accuracy-notice')).not.toBeInTheDocument();
+  });
+
+  it('7. Bấm "Vị trí của tôi" luôn tự động cập nhật địa chỉ hiện tại lên thanh tìm kiếm (kể cả khi trước đó đã có chữ)', async () => {
+    const mockGetCurrentPosition = vi.fn().mockImplementation((success) => {
+      success({ coords: { latitude: 10.8325, longitude: 106.7863 } });
+    });
+    vi.stubGlobal('navigator', {
+      geolocation: { getCurrentPosition: mockGetCurrentPosition },
+    });
+
+    const mockReverse = vi.spyOn(geocodeModule, 'reverseGeocodeApi').mockResolvedValue({
+      address: '261/15/56 Hẻm 261/15 Đình Phong Phú, Tăng Nhơn Phú B, Tăng Nhơn Phú, Hồ Chí Minh',
+    });
+
+    const onAddressChange = vi.fn();
+    const { rerender } = render(
+      <LocationPickerMap
+        address=""
+        lat={10.7769}
+        lng={106.7009}
+        onAddressChange={onAddressChange}
+        onLocationChange={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('locate-me-btn'));
+    await waitFor(() => {
+      expect(mockReverse).toHaveBeenCalledWith(10.8325, 106.7863);
+      expect(onAddressChange).toHaveBeenCalledWith(
+        '261/15/56 Hẻm 261/15 Đình Phong Phú, Tăng Nhơn Phú B, Tăng Nhơn Phú, Hồ Chí Minh'
+      );
+    });
+
+    mockReverse.mockClear();
+    onAddressChange.mockClear();
+    rerender(
+      <LocationPickerMap
+        address="142 Lê Văn Việt"
+        lat={10.7769}
+        lng={106.7009}
+        onAddressChange={onAddressChange}
+        onLocationChange={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('locate-me-btn'));
+    await waitFor(() => {
+      expect(mockReverse).toHaveBeenCalledWith(10.8325, 106.7863);
+      expect(onAddressChange).toHaveBeenCalledWith(
+        '261/15/56 Hẻm 261/15 Đình Phong Phú, Tăng Nhơn Phú B, Tăng Nhơn Phú, Hồ Chí Minh'
+      );
+    });
+  });
 });

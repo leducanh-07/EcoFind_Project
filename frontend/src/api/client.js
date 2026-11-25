@@ -4,10 +4,20 @@
  * and HTTP helper methods (get, post, put, delete).
  */
 
+import { clearStoredAuth, emitAuthExpired } from '../utils/authToken';
+
 const RAW_API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   import.meta.env.VITE_API_BASE_URL ||
   'http://localhost:8000';
+
+function isCredentialEndpoint(endpoint) {
+  const cleanPath = String(endpoint || '')
+    .split('?')[0]
+    .replace(/^https?:\/\/[^/]+/, '')
+    .replace(/^\/api(?=\/|$)/, '');
+  return cleanPath === '/auth/login' || cleanPath === '/auth/register';
+}
 
 export function resolveUrl(endpoint) {
   if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
@@ -73,12 +83,16 @@ export async function fetchWithAuth(endpoint, options = {}) {
 
     const data = await response.json().catch(() => null);
 
-    // Handle 401 Unauthorized: clear stored tokens
+    // Handle 401 Unauthorized: clear stored tokens and notify AuthContext
     if (response.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('auth_user');
-      localStorage.removeItem('user');
+      const hadToken = Boolean(token);
+      clearStoredAuth();
+      if (!isCredentialEndpoint(endpoint)) {
+        emitAuthExpired({
+          reason: hadToken ? 'expired' : 'unauthenticated',
+          endpoint,
+        });
+      }
     }
 
     if (!response.ok) {

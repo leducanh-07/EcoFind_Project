@@ -30,6 +30,7 @@ class AdminListingItem(BaseSchema):
     total_score: float
     rank: str
     status: str
+    hidden_by_admin: bool = False
     address: str
     thumbnail_url: Optional[str] = None
     photos: List[PhotoItem] = []
@@ -57,6 +58,7 @@ class AdminListingDetailResponse(BaseSchema):
     total_score: float
     rank: str
     status: str
+    hidden_by_admin: bool = False
     photos: List[PhotoItem] = []
     created_at: datetime
     reject_reason: Optional[str] = None
@@ -131,3 +133,64 @@ class ModerationActionResponse(BaseSchema):
     reject_reason: Optional[str] = None
     review_note: Optional[str] = None
     note: Optional[str] = None
+
+
+class AdminCategoryBreakdown(BaseSchema):
+    """Phân bổ số lượng tin theo danh mục."""
+    category_id: int
+    name: str
+    count: int
+
+
+class AdminStatusCounts(BaseSchema):
+    """Số lượng tin, báo cáo và tài khoản theo trạng thái cho KPI Admin."""
+    pending: int = 0
+    selling: int = 0
+    hidden: int = 0
+    rejected: int = 0
+    sold: int = 0
+    reports_new: int = 0
+    reports_resolved: int = 0
+    users_total: int = 0
+    users_locked: int = 0
+
+
+class AdminDashboardStatsResponse(BaseSchema):
+    """Tổng hợp số liệu KPI và phân bổ danh mục trên Admin Dashboard."""
+    counts: AdminStatusCounts
+    avg_selling_score: Optional[float] = None
+    categories: List[AdminCategoryBreakdown] = []
+
+
+class AdminHideRestoreRequest(BaseSchema):
+    """Payload tùy chọn lý do khi Admin ẩn trực tiếp tin đăng."""
+    reason: Optional[str] = None
+
+
+class AdminUserItem(BaseSchema):
+    """Thông tin tài khoản kèm thống kê phục vụ Quản trị Thành viên."""
+    user_id: int
+    full_name: str
+    email: str
+    phone: Optional[str] = None
+    role: str
+    failed_attempts: int = 0
+    locked_until: Optional[datetime] = None
+    is_locked: bool = False
+    listings_count: int = 0
+    selling_count: int = 0
+    hidden_by_admin_count: int = 0
+    reports_received_count: int = 0
+
+
+class AdminUserLockRequest(BaseSchema):
+    """Thời hạn khóa tài khoản người dùng (tính bằng giờ)."""
+    duration_hours: int = Field(..., ge=1, le=87600)
+
+
+class AdminUserLockResponse(BaseSchema):
+    """Phản hồi sau khi khóa hoặc mở khóa tài khoản thành viên."""
+    user_id: int
+    is_locked: bool
+    locked_until: Optional[datetime] = None
+    message: str

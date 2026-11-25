@@ -8,7 +8,7 @@
 
 Theo yêu cầu của tài liệu SRS (mục 2.4) và SDD (mục 3, 4, 5), dự án EcoFind được thiết kế theo **Kiến trúc 3 tầng phân tách chặt chẽ (3-Tier Layered Architecture)**:
 1. **Presentation Tier (Giao diện người dùng):** React 18, Vite, Tailwind CSS, Leaflet kết hợp Google Maps Tiles (Google Tiles).
-2. **Business Logic Tier (Nghiệp vụ ứng dụng):** FastAPI Controllers (APIRouters), Domain Services (`ListingService`, `AuthService`, `ModerationService`, `ScoreCalculator`, `ReportService`, `FavoriteService`), và các Adapter tích hợp dịch vụ ngoài.
+2. **Business Logic Tier (Nghiệp vụ ứng dụng):** FastAPI Controllers (APIRouters), Domain Services (`ListingService`, `AuthService`, `ModerationService`, `ScoreCalculator`, `ReportService`, `FavoriteService`, `UserService`, `GeocodeService`), và các Adapter tích hợp dịch vụ ngoài.
 3. **Data Access Tier (Truy xuất dữ liệu):** SQLAlchemy 2.0 Async Repositories và CSDL PostgreSQL.
 
 **Mục tiêu của đợt rà soát TE9C75C:**
@@ -37,14 +37,15 @@ Theo yêu cầu của tài liệu SRS (mục 2.4) và SDD (mục 3, 4, 5), dự 
 │  ┌────────────────────────────────▼─────────────────────────────────┐  │
 │  │ 2. Domain Services (app/services/):                              │  │
 │  │    ListingService, AuthService, ModerationService,               │  │
-│  │    ScoreCalculator, ReportService, FavoriteService               │  │
+│  │    ScoreCalculator, ReportService, FavoriteService,              │  │
+│  │    UserService, GeocodeService                                   │  │
 │  └──────────────────┬─────────────────────────────┬─────────────────┘  │
 │                     │                             │                    │
 │                     ▼                             ▼                    │
 │      ┌──────────────────────────────┐ ┌─────────────────────────────┐  │
 │      │ Repositories (Data Access)   │ │ Adapter Layer (app/adapters)│  │
 │      │ ListingRepo, UserRepo,       │ │ - ImageStorageAdapter       │  │
-│      │ CategoryRepo, ReportRepo,... │ │ - GeocodeAdapter (Nominatim)│  │
+│      │ CategoryRepo, ReportRepo,... │ │ - GeocodeAdapter (Đa nguồn) │  │
 │      └──────────────┬───────────────┘ └─────────────────────────────┘  │
 └─────────────────────┼──────────────────────────────────────────────────┘
                       │ SQLAlchemy 2.0 Async Engine (asyncpg)
@@ -61,17 +62,18 @@ Theo yêu cầu của tài liệu SRS (mục 2.4) và SDD (mục 3, 4, 5), dự 
 
 Tất cả các API Router trong thư mục `app/routers/` chỉ làm nhiệm vụ điều phối HTTP: nhận request, validate qua Pydantic schema, kiểm tra quyền từ dependency token, gọi xuống tầng Service hoặc Repository và trả về dữ liệu. Tuyệt đối không chứa câu lệnh SQL thô (`text(...)`) hoặc các câu lệnh truy vấn ORM trực tiếp (`select(...)`, `update(...)`, `delete(...)`).
 
-### Bảng đối chiếu chi tiết 8 Router:
+### Bảng đối chiếu chi tiết 10 Router:
 
 | Tên Router | Tệp nguồn | Đánh giá truy vấn SQL | Tầng phụ thuộc được gọi | Kết luận |
 | :--- | :--- | :--- | :--- | :--- |
 | **Auth** | `app/routers/auth.py` | ✅ Không có SQL | `AuthService` | ĐẠT CHUẨN |
 | **Listings** | `app/routers/listings.py`| ✅ Không có SQL | `ListingService`, `ListingRepository` | ĐẠT CHUẨN |
 | **Categories** | `app/routers/categories.py`| ✅ Không có SQL | `CategoryRepository` | ĐẠT CHUẨN |
-| **Admin** | `app/routers/admin.py` | ✅ Không có SQL | `ModerationService`, `ListingRepository`, `ReportRepository` | ĐẠT CHUẨN |
+| **Admin** | `app/routers/admin.py` | ✅ Không có SQL | `ModerationService`, `ReportService`, `UserService` | ĐẠT CHUẨN |
 | **Favorites**| `app/routers/favorites.py`| ✅ Không có SQL | `FavoriteService` | ĐẠT CHUẨN |
 | **Reports** | `app/routers/reports.py` | ✅ Không có SQL | `ReportService` | ĐẠT CHUẨN |
-| **Me** | `app/routers/me.py` | ✅ Không có SQL | `ListingRepository` | ĐẠT CHUẨN |
+| **Me** | `app/routers/me.py` | ✅ Không có SQL | `ListingService`, `FavoriteService`, `UserService` | ĐẠT CHUẨN |
+| **Users** | `app/routers/users.py` | ✅ Không có SQL | `UserService` | ĐẠT CHUẨN |
 | **Upload** | `app/routers/upload.py` | ✅ Không có SQL | `ImageStorageAdapter` | ĐẠT CHUẨN |
 | **Geocode** | `app/routers/geocode.py`| ✅ Không có SQL | `GeocodeService` | ĐẠT CHUẨN |
 
@@ -96,6 +98,8 @@ Các Service trong `app/services/` là trái tim nghiệp vụ của hệ thốn
 | **ModerationService**| `app/services/moderation_service.py`| Nhận ID, adjustments, review note | Bắn `ConflictException` (409 nếu tin đã duyệt), `NotFoundException` (404) | ĐẠT CHUẨN |
 | **ReportService** | `app/services/report_service.py` | Nhận ID tin, reporter_id, reason | Bắn `ConflictException` (báo cáo trùng), `ForbiddenException` (tự báo cáo) | ĐẠT CHUẨN |
 | **FavoriteService**| `app/services/favorite_service.py`| Nhận user_id, listing_id | Bắn `NotFoundException`, `ConflictException` | ĐẠT CHUẨN |
+| **UserService** | `app/services/user_service.py` | Nhận profile DTO / user_id / admin lock params | Bắn `NotFoundException`, `BadRequestException`, `ForbiddenException` | ĐẠT CHUẨN |
+| **GeocodeService** | `app/services/geocode_service.py` | Nhận chuỗi địa chỉ, `magic_key` hoặc `(lat, lng)` | Bắn `BadRequestException`, `NotFoundException` | ĐẠT CHUẨN |
 
 ### Cơ chế chuyển đổi Exception tập trung tại `app/core/exceptions.py`:
 Tầng HTTP Middleware tiếp nhận các ngoại lệ từ Service và tự động chuyển hóa thành mã HTTP tương ứng trả về cho Client:
@@ -117,11 +121,11 @@ Mọi tương tác với hệ thống bên thứ ba hoặc hạ tầng phần c�
    - Nếu tương lai chuyển sang AWS S3 hoặc Cloudinary, chỉ cần viết lại nội dung bên trong class `ImageStorageAdapter`, không một dòng code nào trong `ListingService` hay `upload.py` bị ảnh hưởng.
 
 2. **Dịch vụ chuyển đổi tọa độ Geocoding (`app/adapters/geocode_adapter.py`):**
-   - Đóng gói lời gọi HTTP sang OpenStreetMap Nominatim API, xử lý timeout, gắn User-Agent tuân thủ chính sách sử dụng, và trả về cặp tọa độ `(lat, lng)`.
-   - Tầng Router/Service chỉ tương tác qua hàm `geocode(address)`.
+   - Đóng gói lời gọi HTTP đa nguồn (Google Geocoding nếu có API key, ArcGIS PointAddress và OpenStreetMap Nominatim fallback), xử lý timeout, lọc phạm vi TP.HCM, hỗ trợ gợi ý autocomplete và định vị ngược GPS.
+   - Tầng Router/Service chỉ tương tác qua `GeocodeService` và `GeocodeAdapter`.
 
 3. **Module Hiển thị Bản đồ (Frontend Client):**
-   - Tách biệt lớp hiển thị bản đồ thành các Component tái sử dụng: `frontend/src/components/MapView.jsx` và `frontend/src/components/LocationPickerMap.jsx`.
+   - Tách biệt lớp hiển thị bản đồ và cấu hình tile thành `frontend/src/utils/leafletCluster.js` (`GOOGLE_MAP_TILE_URL`, `GOOGLE_MAP_TILE_OPTIONS`), `frontend/src/components/MapView.jsx` và `frontend/src/components/LocationPickerMap.jsx`.
    - Backend API (`/api/listings?bbox=...` hoặc `radius=...`) hoàn toàn độc lập với công nghệ bản đồ phía client, chỉ trao đổi dữ liệu số thực (`lat`, `lng`, `totalScore`, `rank`).
 
 ---
@@ -133,22 +137,21 @@ Ban đầu, tài liệu thiết kế SDD mục 3 định hướng sử dụng g�
 `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`
 Tuy nhiên, trong quá trình thử nghiệm thực tế tại Việt Nam:
 - Máy chủ OSM đặt tại Châu Âu thường bị nghẽn mạng, độ trễ cao, tải gạch bản đồ chậm trên mạng di động 4G.
-- Nhóm phát triển quyết định chuyển sang sử dụng **Google Maps Tiles (Google Tiles - chuẩn đường phố `lyrs=m`)**:
-`https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}` với CDN máy chủ Google đặt tại Việt Nam, mang lại tốc độ phản hồi cực nhanh dưới 100ms.
+- Nhóm phát triển quyết định chuyển sang sử dụng **Google Maps Tiles (chuẩn đường phố tiếng Việt `lyrs=m&hl=vi&gl=VN`)**:
+`https://mt1.google.com/vt/lyrs=m&hl=vi&gl=VN&x={x}&y={y}&z={z}` tập trung tại `GOOGLE_MAP_TILE_URL` trong [leafletCluster.js](file:///d:/Virtual%20Studio%20Code/EcoFind/frontend/src/utils/leafletCluster.js), mang lại tốc độ phản hồi nhanh và tránh lỗi xé nhãn/hiển thị sai ngôn ngữ.
 
-### Minh chứng thay đổi mã nguồn (Chỉ sửa duy nhất 1 vị trí):
+### Minh chứng thay đổi mã nguồn (Chỉ sửa cấu hình Tile dùng chung):
 
-Trong component [MapView.jsx](file:///d:/Virtual%20Studio%20Code/EcoFind/frontend/src/components/MapView.jsx) (dòng 127–132):
+Trong [leafletCluster.js](file:///d:/Virtual%20Studio%20Code/EcoFind/frontend/src/utils/leafletCluster.js) (dùng chung cho `MapView.jsx` và `LocationPickerMap.jsx`):
 ```javascript
-// TRƯỚC ĐÂY (OpenStreetMap):
-// L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { ... }).addTo(map);
+export const GOOGLE_MAP_TILE_URL =
+  'https://mt1.google.com/vt/lyrs=m&hl=vi&gl=VN&x={x}&y={y}&z={z}';
 
-// HIỆN TẠI (Google Maps Tiles - CDN tốc độ cao tại Việt Nam):
-L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+export const GOOGLE_MAP_TILE_OPTIONS = {
   maxZoom: 20,
-  subdomains: ['0', '1', '2', '3'],
+  tileSize: 256,
   attribution: '&copy; Google Maps',
-}).addTo(map);
+};
 ```
 
 ### Bảng đánh giá tác động lan truyền (Ripple Effect Analysis):
@@ -160,8 +163,8 @@ L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
 | **Backend Repositories** | **0** | Hoàn toàn không bị ảnh hưởng |
 | **Database Schema / DDL** | **0** | Hoàn toàn không bị ảnh hưởng |
 | **API Data Contracts (JSON)** | **0** | Tọa độ `lat, lng` giữ nguyên chuẩn WGS84 |
-| **Bộ kiểm thử tự động (Pytest)** | **0** | 202/202 bài kiểm thử tiếp tục PASS 100% |
-| **Bộ kiểm thử tự động (Vitest)** | **0** | 140/140 bài kiểm thử tiếp tục PASS 100% |
+| **Bộ kiểm thử tự động (Pytest)** | **0** | 219/219 bài kiểm thử tiếp tục PASS 100% |
+| **Bộ kiểm thử tự động (Vitest)** | **0** | 152/152 bài kiểm thử tiếp tục PASS 100% |
 
 **Kết luận thực nghiệm:** Việc thay đổi nhà cung cấp lớp bản đồ chỉ cần chỉnh sửa đúng 1 dòng cấu hình TileLayer trong component giao diện. Kiến trúc 3 tầng đạt mức độc lập và khả năng bảo trì (NFR-MNT-01) tuyệt đối.
 

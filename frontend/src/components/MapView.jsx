@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import L from '../utils/leafletCluster';
+import L, { GOOGLE_MAP_TILE_URL, GOOGLE_MAP_TILE_OPTIONS } from '../utils/leafletCluster';
 import { Locate, Loader2, AlertCircle, X, Plus, Minus, RotateCw } from 'lucide-react';
 import { getListingsMapApi } from '../api/listings';
 
@@ -115,6 +115,8 @@ export default function MapView({
       const map = L.map(mapContainerRef.current, {
         center: [coords.lat, coords.lng],
         zoom: 14,
+        zoomSnap: 1,
+        zoomDelta: 1,
         zoomControl: false, // Tự đặt zoom control góc phải dưới
         maxBounds: [
           [-85.06, -180],
@@ -124,12 +126,8 @@ export default function MapView({
         worldCopyJump: false,
       });
 
-      // Thêm tile layer Google Maps (đường phố tiêu chuẩn, CDN máy chủ đặt tại VN cực nhanh, không giật lag)
-      L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-        maxZoom: 20,
-        subdomains: ['0', '1', '2', '3'],
-        attribution: '&copy; Google Maps',
-      }).addTo(map);
+      // Khóa ngôn ngữ tiếng Việt (hl=vi&gl=VN) trên 1 host đồng bộ để tránh lệch/xé chữ và lẫn chữ Trung
+      L.tileLayer(GOOGLE_MAP_TILE_URL, GOOGLE_MAP_TILE_OPTIONS).addTo(map);
 
       // Kích hoạt tính lại kích thước để tránh hiện tượng khung xám khi layout render
       setTimeout(() => {
@@ -416,7 +414,7 @@ export default function MapView({
             className: 'custom-listing-marker',
             html: `
               <div style="background-color: ${colors.bg}; border-color: ${colors.border};" 
-                   class="px-2.5 py-1 rounded-full text-white text-xs font-black shadow-md border flex items-center gap-1 cursor-pointer transform hover:scale-110 transition-transform select-none"
+                   class="px-2.5 py-1 rounded-full text-white text-xs font-bold shadow-md border flex items-center gap-1 cursor-pointer transform hover:scale-110 transition-transform select-none"
                    title="${colors.label} - ${Number(item.totalScore).toFixed(1)} điểm">
                 <span>${Number(item.totalScore).toFixed(1)}</span>
               </div>
@@ -428,15 +426,17 @@ export default function MapView({
           const marker = L.marker([item.lat, item.lng], { icon: itemIcon });
           markersMapRef.current[itemIdStr] = marker;
 
+          const priceColorClass =
+            Number(item.price) === 0 ? 'text-emerald-700' : 'text-orange-700';
           const formattedPrice =
             Number(item.price) === 0
-              ? '<span class="text-emerald-600 font-bold">Cho tặng</span>'
+              ? 'Cho tặng'
               : `${Number(item.price).toLocaleString('vi-VN')} đ`;
 
           const popupContent = `
             <div class="p-1 min-w-[200px]">
               <div class="font-bold text-slate-800 text-sm mb-1">${item.title}</div>
-              <div class="text-sm font-extrabold text-emerald-700 mb-1">${formattedPrice}</div>
+              <div class="text-sm font-bold ${priceColorClass} mb-1">${formattedPrice}</div>
               <div class="text-xs text-slate-500 mb-2">${item.address || ''}</div>
               <div class="flex items-center justify-between text-xs pt-1.5 border-t border-slate-100">
                 <span style="color: ${colors.border}" class="font-bold">${item.rank || colors.label} (${Number(item.totalScore).toFixed(1)})</span>

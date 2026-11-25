@@ -12,6 +12,8 @@ import {
   Sparkles,
   Info,
   AlertCircle,
+  AlertTriangle,
+  Lightbulb,
   HelpCircle,
   ChevronDown,
   ChevronUp,
@@ -135,14 +137,14 @@ export default function ConditionScorer({
         </div>
 
         {/* Thẻ hiển thị điểm tổng tạm tính và phân hạng */}
-        <div className="flex items-center gap-2 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200" data-testid="total-score-card">
+        <div className="flex items-center gap-2.5 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200" data-testid="total-score-card">
           <div className="text-right">
             <div className="text-[11px] text-slate-500 font-medium">Điểm tổng tạm tính</div>
-            <div className="text-base font-extrabold text-slate-800">
+            <div className="text-base font-bold text-emerald-950">
               {hasAnyError ? '--' : totalScore.toFixed(1)} <span className="text-xs font-normal text-slate-400">/ 10</span>
             </div>
           </div>
-          <div className="h-8 w-px bg-slate-200 mx-1" />
+          <div className="h-8 w-px bg-slate-200 mx-0.5" />
           <span
             className={`px-3 py-1 rounded-lg text-xs font-bold shadow-xs ${conditionRank.color}`}
             data-testid="condition-rank-badge"
@@ -276,9 +278,12 @@ export default function ConditionScorer({
             aria-label="Thanh trượt điểm chức năng"
           />
 
-          <p className="text-[11px] text-emerald-700 bg-emerald-50/60 p-2 rounded-lg mt-2 border border-emerald-100">
-            💡 <strong>Gợi ý:</strong> Với đồ không có chức năng điện tử (bàn ghế, quần áo, sách truyện...), điểm này thể hiện <strong>độ nguyên vẹn, kết cấu chắc chắn, không rách gãy</strong>.
-          </p>
+          <div className="text-[11px] text-emerald-800 bg-emerald-50/70 p-2.5 rounded-lg mt-2.5 border border-emerald-100 flex items-start gap-2 leading-relaxed">
+            <Lightbulb size={14} className="text-emerald-600 shrink-0 mt-0.5" aria-hidden="true" />
+            <span>
+              <strong>Gợi ý:</strong> Với đồ không có chức năng điện tử (bàn ghế, quần áo, sách truyện...), điểm này thể hiện <strong>độ nguyên vẹn, kết cấu chắc chắn, không rách gãy</strong>.
+            </span>
+          </div>
         </div>
 
         {/* 3. Điểm Phụ kiện (20%) */}
@@ -343,7 +348,7 @@ export default function ConditionScorer({
         <button
           type="button"
           onClick={() => setShowGuide(!showGuide)}
-          className="w-full flex items-center justify-between p-3 text-xs font-semibold text-slate-700 hover:bg-slate-100/70 transition-colors"
+          className="w-full flex items-center justify-between p-3 text-xs font-semibold text-slate-700 hover:bg-slate-100/70 transition-colors cursor-pointer"
           data-testid="toggle-scoring-guide"
         >
           <span className="flex items-center gap-1.5">
@@ -354,7 +359,7 @@ export default function ConditionScorer({
         </button>
 
         {showGuide && (
-          <div className="p-3.5 pt-0 text-xs text-slate-600 space-y-2 border-t border-slate-200/60 bg-white" data-testid="scoring-guide-content">
+          <div className="p-3.5 pt-2.5 text-xs text-slate-600 space-y-2 border-t border-slate-200/60 bg-white" data-testid="scoring-guide-content">
             <p>
               • <strong>Điểm Ngoại quan (40%):</strong> Đánh giá mức độ trầy xước, móp méo, độ mới của bề mặt vỏ/nước sơn bên ngoài.
             </p>
@@ -364,8 +369,11 @@ export default function ConditionScorer({
             <p>
               • <strong>Điểm Phụ kiện (20%):</strong> Còn hộp gốc, dây sạc zin, ốc vít, chân đế, sách hướng dẫn kèm theo hay chỉ có sản phẩm đơn lẻ.
             </p>
-            <div className="p-2.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-[11px]">
-              ⚠️ <strong>Lưu ý quan trọng:</strong> Điểm tạm tính phía trên chỉ mang tính tham khảo cho người bán. Khi gửi duyệt, <strong>Server sẽ tính lại điểm tổng độc lập</strong> và Admin sẽ đối chiếu với hình ảnh thực tế, có quyền hạ điểm nếu không khớp.
+            <div className="p-2.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-[11px] flex items-start gap-2 leading-relaxed">
+              <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" aria-hidden="true" />
+              <span>
+                <strong>Lưu ý quan trọng:</strong> Điểm tạm tính phía trên chỉ mang tính tham khảo cho người bán. Khi gửi duyệt, <strong>Server sẽ tính lại điểm tổng độc lập</strong> và Admin sẽ đối chiếu với hình ảnh thực tế, có quyền hạ điểm nếu không khớp.
+              </span>
             </div>
           </div>
         )}

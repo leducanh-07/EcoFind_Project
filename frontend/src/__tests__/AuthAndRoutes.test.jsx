@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
@@ -10,6 +10,15 @@ import MyListingsPage from '../pages/MyListingsPage';
 import FavoritesPage from '../pages/FavoritesPage';
 import AdminPage from '../pages/AdminPage';
 import LoginPage from '../pages/LoginPage';
+import { get } from '../api/client';
+
+function createFakeJwt(expSecondsFromNow) {
+  const encode = (obj) =>
+    btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const header = encode({ alg: 'HS256', typ: 'JWT' });
+  const payload = encode({ sub: '1', exp: Math.floor(Date.now() / 1000) + expSecondsFromNow });
+  return `${header}.${payload}.signature`;
+}
 
 function TestApp({ initialRoute = '/', prefillAuth = null }) {
   if (prefillAuth) {
@@ -77,7 +86,7 @@ describe('Auth State, Logout & Route Guard (FR-02, NFR-SEC-03, TE9C730)', () => 
     expect(screen.queryByRole('button', { name: /đăng xuất/i })).not.toBeInTheDocument();
   });
 
-  test('Khi đã đăng nhập: Header hiển thị tên người dùng và nút Đăng xuất', () => {
+  test('Khi đã đăng nhập: Header hiển thị tên người dùng, link Trang cá nhân và nút Đăng xuất', () => {
     render(
       <TestApp
         initialRoute="/"
@@ -88,7 +97,9 @@ describe('Auth State, Logout & Route Guard (FR-02, NFR-SEC-03, TE9C730)', () => 
       />
     );
 
-    expect(screen.getByText('Nguyễn Văn A')).toBeInTheDocument();
+    expect(screen.getAllByText('Nguyễn Văn A').length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText(/Tài khoản:/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /trang cá nhân/i })).toHaveAttribute('href', '/profile');
     expect(screen.getByRole('button', { name: /đăng xuất/i })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /đăng nhập/i })).not.toBeInTheDocument();
   });
@@ -152,18 +163,100 @@ describe('Auth State, Logout & Route Guard (FR-02, NFR-SEC-03, TE9C730)', () => 
     expect(screen.queryByText(/Bảng điều khiển Quản trị viên/i)).not.toBeInTheDocument();
   });
 
-  test('Quản trị viên role admin truy cập /admin thành công', () => {
+  test('Quản trị viên role admin truy cập /admin thành công và ẩn nút Đăng tin trên Header', () => {
     render(
       <TestApp
         initialRoute="/admin"
         prefillAuth={{
           token: 'token_admin',
-          user: { userId: 99, fullName: 'Admin EcoFind', email: 'admin@ecofind.vn', role: 'admin' },
+          user: {
+            userId: 99,
+            fullName: 'Quản trị viên Hệ thống',
+            email: 'admin@ecofind.vn',
+            role: 'admin',
+          },
         }}
       />
     );
 
     expect(screen.getByText(/Bảng điều khiển Quản trị viên/i)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /đăng tin/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /tin của tôi/i })).not.toBeInTheDocument();
+    const adminLinks = screen.getAllByRole('link', { name: /quản trị$/i });
+    expect(adminLinks.length).toBeGreaterThanOrEqual(1);
+    adminLinks.forEach((link) => expect(link).toHaveAttribute('href', '/admin'));
+  });
+
+  test('Token JWT đã hết hạn trong localStorage: vào /post bị đá về /login kèm thông báo hết phiên', () => {
+    const expiredJwt = createFakeJwt(-3600);
+    render(
+      <TestApp
+        initialRoute="/post"
+        prefillAuth={{
+          token: expiredJwt,
+          user: { userId: 1, fullName: 'Nguyễn Văn A', email: 'user@ecofind.vn', role: 'user' },
+        }}
+      />
+    );
+
+    expect(localStorage.getItem('access_token')).toBeNull();
+    expect(screen.getByRole('heading', { name: /đăng nhập tài khoản/i })).toBeInTheDocument();
+    expect(screen.getByTestId('session-expired-banner')).toHaveTextContent(/Phiên đăng nhập đã hết hạn/i);
+  });
+
+  test('Token JWT đã hết hạn trong localStorage: vào Trang chủ (/) tự dọn session và giữ ở chế độ Khách', () => {
+    const expiredJwt = createFakeJwt(-3600);
+    render(
+      <TestApp
+        initialRoute="/"
+        prefillAuth={{
+          token: expiredJwt,
+          user: { userId: 1, fullName: 'Nguyễn Văn A', email: 'user@ecofind.vn', role: 'user' },
+        }}
+      />
+    );
+
+    expect(localStorage.getItem('access_token')).toBeNull();
+    expect(screen.getByText('Trang chủ')).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /đăng nhập/i })[0]).toBeInTheDocument();
+  });
+
+  test('Đang ở trang bảo vệ mà API trả về 401: tự động xóa session và chuyển hướng về /login', async () => {
+    const validJwt = createFakeJwt(3600);
+    const prevFetch = global.fetch;
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: { message: 'Phiên làm việc (token) đã hết hạn' } }),
+    });
+
+    try {
+      render(
+        <TestApp
+          initialRoute="/post"
+          prefillAuth={{
+            token: validJwt,
+            user: { userId: 1, fullName: 'Nguyễn Văn A', email: 'user@ecofind.vn', role: 'user' },
+          }}
+        />
+      );
+
+      // Đang ở /post trước khi API trả 401
+      expect(screen.getByText(/Đăng tin bán đồ cũ/i)).toBeInTheDocument();
+
+      // Gọi một API bảo vệ bị trả 401
+      await act(async () => {
+        await expect(get('/api/geocode?address=test')).rejects.toThrow();
+      });
+
+      await waitFor(() => {
+        expect(localStorage.getItem('access_token')).toBeNull();
+        expect(screen.getByRole('heading', { name: /đăng nhập tài khoản/i })).toBeInTheDocument();
+        expect(screen.getByTestId('session-expired-banner')).toBeInTheDocument();
+      });
+    } finally {
+      global.fetch = prevFetch;
+    }
   });
 });
 

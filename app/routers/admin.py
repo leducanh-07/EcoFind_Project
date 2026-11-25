@@ -6,8 +6,13 @@ from app.core.database import get_db
 from app.core.dependencies import require_role
 from app.models.user import User
 from app.schemas.admin import (
+    AdminDashboardStatsResponse,
+    AdminHideRestoreRequest,
     AdminListingDetailResponse,
     AdminListingItem,
+    AdminUserItem,
+    AdminUserLockRequest,
+    AdminUserLockResponse,
     ApproveListingRequest,
     ModerationActionResponse,
     RejectListingRequest,
@@ -19,6 +24,7 @@ from app.schemas.report import (
 )
 from app.services.moderation_service import ModerationService
 from app.services.report_service import report_service
+from app.services.user_service import user_service
 
 router = APIRouter(prefix="/admin", tags=["Admin Moderation"])
 moderation_service = ModerationService()
@@ -179,4 +185,109 @@ async def resolve_admin_report(
         admin=current_admin,
         action=request.action,
     )
+
+
+@router.get(
+    "/stats",
+    response_model=AdminDashboardStatsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Lấy số liệu thống kê tổng quan & phân bổ danh mục cho Admin",
+)
+async def get_admin_dashboard_stats(
+    current_admin: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Lấy số liệu KPI toàn sàn phục vụ bảng điều khiển Quản trị viên."""
+    return await moderation_service.get_dashboard_stats(db)
+
+
+@router.post(
+    "/listings/{listing_id}/hide",
+    response_model=ModerationActionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Admin ẩn trực tiếp tin đăng vi phạm khỏi bản đồ",
+)
+async def hide_listing_by_admin(
+    listing_id: int,
+    request: Optional[AdminHideRestoreRequest] = None,
+    current_admin: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Ẩn tin đăng đang bán hoặc vi phạm (đánh dấu hidden_by_admin = True)."""
+    reason = request.reason if request else None
+    return await moderation_service.hide_listing(
+        db,
+        listing_id=listing_id,
+        admin_id=current_admin.user_id,
+        reason=reason,
+    )
+
+
+@router.post(
+    "/listings/{listing_id}/restore",
+    response_model=ModerationActionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Admin khôi phục tin đăng đang ẩn về lại Đang bán",
+)
+async def restore_listing_by_admin(
+    listing_id: int,
+    current_admin: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Khôi phục tin đăng đang ẩn về trạng thái selling."""
+    return await moderation_service.restore_listing(
+        db,
+        listing_id=listing_id,
+        admin_id=current_admin.user_id,
+    )
+
+
+@router.get(
+    "/users",
+    response_model=List[AdminUserItem],
+    status_code=status.HTTP_200_OK,
+    summary="Lấy danh sách tài khoản thành viên kèm thống kê hoạt động",
+)
+async def get_admin_users(
+    current_admin: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Lấy danh sách thành viên để Admin theo dõi, khóa hoặc mở khóa tài khoản."""
+    return await user_service.get_admin_users_list(db)
+
+
+@router.post(
+    "/users/{user_id}/lock",
+    response_model=AdminUserLockResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Khóa tài khoản người dùng theo thời hạn",
+)
+async def lock_user_account(
+    user_id: int,
+    payload: AdminUserLockRequest,
+    current_admin: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Khóa tài khoản thành viên bằng cột locked_until (chặn khóa tài khoản Admin)."""
+    return await user_service.lock_user_by_admin(
+        db,
+        target_user_id=user_id,
+        admin=current_admin,
+        duration_hours=payload.duration_hours,
+    )
+
+
+@router.post(
+    "/users/{user_id}/unlock",
+    response_model=AdminUserLockResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Mở khóa tài khoản người dùng",
+)
+async def unlock_user_account(
+    user_id: int,
+    current_admin: User = Depends(require_role("admin")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Mở khóa ngay lập tức tài khoản đang bị khóa (xóa locked_until và failed_attempts)."""
+    return await user_service.unlock_user_by_admin(db, target_user_id=user_id)
 

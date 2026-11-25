@@ -6,8 +6,6 @@ import {
   MapPin,
   RefreshCw,
   AlertCircle,
-  PanelLeftClose,
-  PanelLeftOpen,
   Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -35,7 +33,6 @@ export default function HomePage() {
   const [selectedListingId, setSelectedListingId] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [mobileTab, setMobileTab] = useState('map'); // 'map' | 'list'
-  const [isListCollapsed, setIsListCollapsed] = useState(false); // Thu gọn danh sách để xem Full Map
 
   // Khi người dùng đăng xuất: Reset toàn bộ bộ lọc và từ khóa về mặc định
   useEffect(() => {
@@ -75,7 +72,7 @@ export default function HomePage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
             </span>
-            <span className="font-semibold text-slate-900">
+            <span className="font-semibold text-slate-800">
               {isFallback ? 'Vị trí mặc định: TP. Hồ Chí Minh' : 'Định vị GPS thực tế'}
             </span>
           </div>
@@ -102,26 +99,6 @@ export default function HomePage() {
               <MapPin size={12} /> Bật GPS của tôi
             </button>
           )}
-
-          {/* Desktop Toggle Button: Thu gọn / Mở rộng danh sách để xem Full Map */}
-          <button
-            type="button"
-            onClick={() => setIsListCollapsed(!isListCollapsed)}
-            className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-700 hover:text-emerald-800 bg-white hover:bg-slate-50 px-3 py-1 rounded-lg border border-slate-200/90 shadow-2xs transition-all cursor-pointer select-none"
-            title={isListCollapsed ? 'Mở lại danh sách kết quả' : 'Mở rộng bản đồ 100% toàn màn hình'}
-          >
-            {isListCollapsed ? (
-              <>
-                <PanelLeftOpen size={13} className="text-emerald-600" />
-                <span>Hiện danh sách ({listings.length})</span>
-              </>
-            ) : (
-              <>
-                <PanelLeftClose size={13} className="text-slate-500" />
-                <span>Toàn màn hình bản đồ</span>
-              </>
-            )}
-          </button>
         </div>
       </div>
 
@@ -161,13 +138,13 @@ export default function HomePage() {
         </button>
       </div>
 
-      {/* Khu vực hiển thị: Cột danh sách kết quả cạnh bản đồ (Desktop 45/55 Split) & Tab View (Mobile) */}
+      {/* Khu vực hiển thị: Cột danh sách kết quả cạnh bản đồ (Desktop 45/55 Split cố định) & Tab View (Mobile) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 lg:gap-4 items-start">
-        {/* Cột Danh sách kết quả: Chiếm 5/12 (~42-45%) rộng rãi cho thẻ ngang, có thể thu gọn */}
+        {/* Cột Danh sách kết quả: Chiếm 5/12 (~42-45%) rộng rãi cho thẻ ngang */}
         <div
-          className={`h-[calc(100vh-12rem)] min-h-[580px] xl:min-h-[640px] transition-all duration-300 ${
-            isListCollapsed ? 'hidden' : 'lg:col-span-5 xl:col-span-5 2xl:col-span-5'
-          } ${mobileTab === 'list' ? 'block' : 'hidden lg:block'}`}
+          className={`h-[calc(100vh-9.5rem)] min-h-[600px] xl:min-h-[680px] lg:col-span-5 xl:col-span-5 2xl:col-span-5 ${
+            mobileTab === 'list' ? 'block' : 'hidden lg:block'
+          }`}
         >
           <SearchResultsList
             listings={listings}
@@ -182,13 +159,11 @@ export default function HomePage() {
           />
         </div>
 
-        {/* Cột Bản đồ: Tự động mở rộng sang 12/12 khi danh sách thu gọn, hoặc 7/12 bình thường */}
+        {/* Cột Bản đồ: Chiếm 7/12 (~55-58%) hiển thị ổn định, không bị lỗi kích thước */}
         <div
-          className={`transition-all duration-300 ${
-            isListCollapsed
-              ? 'lg:col-span-12'
-              : 'lg:col-span-7 xl:col-span-7 2xl:col-span-7'
-          } ${mobileTab === 'map' ? 'block' : 'hidden lg:block'}`}
+          className={`h-[calc(100vh-9.5rem)] min-h-[600px] xl:min-h-[680px] lg:col-span-7 xl:col-span-7 2xl:col-span-7 ${
+            mobileTab === 'map' ? 'block' : 'hidden lg:block'
+          }`}
         >
           <MapView
             coords={coords}

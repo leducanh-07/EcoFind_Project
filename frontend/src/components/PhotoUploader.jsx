@@ -348,7 +348,7 @@ export default function PhotoUploader({
                           <Star size={11} className="fill-white" /> Ảnh bìa
                         </span>
                       ) : (
-                        <span className="px-1.5 py-0.5 rounded-md bg-black/60 text-white text-[11px] font-semibold backdrop-blur-xs">
+                        <span className="px-1.5 py-0.5 rounded-md bg-slate-800/80 text-white text-[11px] font-semibold backdrop-blur-xs">
                           #{index + 1}
                         </span>
                       )}
@@ -361,7 +361,7 @@ export default function PhotoUploader({
                         e.stopPropagation();
                         handleDeletePhoto(index);
                       }}
-                      className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/60 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-sm"
+                      className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-sm"
                       aria-label={`Xóa ảnh ${index + 1}`}
                       data-testid={`delete-photo-${index}`}
                       title="Xóa ảnh"

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { registerApi } from '../api/auth';
@@ -9,7 +9,13 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/';
+  const rawFrom = location.state?.from;
+  const from =
+    typeof rawFrom === 'string'
+      ? rawFrom
+      : rawFrom
+        ? `${rawFrom.pathname || '/'}${rawFrom.search || ''}${rawFrom.hash || ''}`
+        : '/';
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -22,6 +28,19 @@ export default function RegisterPage() {
   const [clientErrors, setClientErrors] = useState({});
   const [apiError, setApiError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [registerSuccess, setRegisterSuccess] = useState(false);
+  const isMountedRef = useRef(true);
+  const redirectTimerRef = useRef(null);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
 
   const validate = () => {
     const errors = {};
@@ -35,7 +54,7 @@ export default function RegisterPage() {
     if (!formData.email.trim()) {
       errors.email = 'Vui lòng nhập địa chỉ email';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      errors.email = 'Email không hợp lệ (ví dụ: hoten@gmail.com)';
+      errors.email = 'Địa chỉ email không hợp lệ';
     }
 
     if (!formData.phone.trim()) {
@@ -80,6 +99,17 @@ export default function RegisterPage() {
 
       // Lưu JWT và đăng nhập luôn
       login(response);
+      setRegisterSuccess(true);
+
+      // Tạo khoảng nghỉ ngắn để người dùng kịp quan sát phản hồi đăng ký thành công
+      const redirectDelay = import.meta.env.MODE === 'test' ? 0 : 650;
+      if (redirectDelay > 0) {
+        await new Promise((resolve) => {
+          redirectTimerRef.current = setTimeout(resolve, redirectDelay);
+        });
+        if (!isMountedRef.current) return;
+      }
+
       navigate(from, { replace: true });
     } catch (err) {
       if (err.status === 409 || err.code === 409) {
@@ -100,17 +130,34 @@ export default function RegisterPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] py-8 px-4 sm:px-6">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 sm:p-8">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-md border border-slate-200/80 p-6 sm:p-8">
         {/* Brand Header */}
         <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-emerald-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm">
+          <div className="w-12 h-12 bg-gradient-to-br from-emerald-900 via-teal-900 to-emerald-950 text-emerald-300 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md">
             <Compass size={28} className="stroke-[2.2]" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Tạo tài khoản mới</h1>
+          <h1 className="text-2xl font-bold text-emerald-950">Tạo tài khoản mới</h1>
           <p className="text-sm text-slate-500 mt-1">
             Đăng ký để đăng bán và liên hệ trực tiếp người bán đồ cũ
           </p>
         </div>
+
+        {/* Thông báo đăng ký thành công trước khi chuyển trang */}
+        {registerSuccess && !apiError && (
+          <div
+            role="status"
+            data-testid="register-success-banner"
+            className="p-4 rounded-xl mb-6 text-sm flex items-start gap-3 bg-emerald-50 border border-emerald-200 text-emerald-900"
+          >
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <span className="font-semibold block">Đăng ký tài khoản thành công!</span>
+              <p className="mt-0.5 leading-relaxed text-emerald-800">
+                Tài khoản đã được kích hoạt, đang chuyển trang...
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Thông báo lỗi từ API (E3, E4) */}
         {apiError && (
@@ -139,7 +186,7 @@ export default function RegisterPage() {
                 name="fullName"
                 value={formData.fullName}
                 onChange={handleChange}
-                placeholder="Nguyễn Văn A"
+                placeholder="Trần Minh Khôi"
                 autoComplete="name"
                 autoFocus
                 className={`w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none transition-all ${
@@ -170,7 +217,7 @@ export default function RegisterPage() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="vidu@ecofind.vn"
+                placeholder="minhkhoi.tran@gmail.com"
                 autoComplete="email"
                 className={`w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none transition-all ${
                   clientErrors.email
@@ -200,7 +247,7 @@ export default function RegisterPage() {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                placeholder="0912345678"
+                placeholder="0908 456 789"
                 autoComplete="tel"
                 className={`w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none transition-all ${
                   clientErrors.phone
@@ -261,10 +308,15 @@ export default function RegisterPage() {
           <div className="pt-2">
             <button
               type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={loading || registerSuccess}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-emerald-700 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 transition-all shadow-sm disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer"
             >
-              {loading ? (
+              {registerSuccess ? (
+                <>
+                  <CheckCircle2 size={16} />
+                  <span>Tạo tài khoản thành công! Đang chuyển...</span>
+                </>
+              ) : loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   <span>Đang xử lý đăng ký...</span>

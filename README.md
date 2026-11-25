@@ -11,9 +11,9 @@
 
 ### Các phân hệ chính (Modules):
 - 🗺️ **Bản đồ tương tác (Interactive Map - Leaflet & Google Maps Tiles)**: Tìm kiếm tin đăng theo khung nhìn (bounding box), bán kính (1–20 km theo Haversine), quận/huyện, từ khóa và bộ lọc giá / điểm tình trạng. Sử dụng gạch bản đồ Google Maps Tiles cho trải nghiệm mượt mà, tốc độ cao và hiển thị marker điểm tình trạng trực quan.
-- 🔐 **Xác thực & Phân quyền (Authentication & Authorization)**: Đăng ký, đăng nhập JWT access token, kiểm tra vai trò (Admin / User), bảo mật mật khẩu với thuật toán Bcrypt.
-- 📝 **Đăng tin & Chấm điểm (Post Listing & Condition Scoring - BR-01/BR-02)**: Đăng tin kèm tải nhiều ảnh, tự động tính điểm trung bình có trọng số, cảnh báo quy tắc duyệt lại khi sửa điểm/ảnh.
-- 🛡️ **Kiểm duyệt tin đăng (Admin Moderation - UC-09, BR-01, FR-14)**: Admin duyệt tin (có thể hạ điểm thành phần nếu người bán tự chấm quá cao), từ chối tin kèm lý do vi phạm chi tiết, ngăn chặn duyệt trùng lặp (HTTP 409 Conflict).
+- 🔐 **Xác thực, Phân quyền & Hồ sơ cá nhân (Authentication, Profile - UC-01, UC-10)**: Đăng ký, đăng nhập JWT access token (tự động đăng xuất và chuyển về `/login` khi phiên `401` hết hạn), kiểm tra vai trò (Admin / User), xem/sửa hồ sơ, đổi mật khẩu, xem trang người bán công khai, bảo mật mật khẩu với Bcrypt.
+- 📝 **Đăng tin & Chấm điểm (Post Listing & Condition Scoring - BR-01/BR-02)**: Đăng tin kèm tải nhiều ảnh, gợi ý địa chỉ tự động (`Autocomplete`) và định vị ngược GPS, tự động tính điểm trung bình có trọng số, cảnh báo quy tắc duyệt lại khi sửa điểm/ảnh.
+- 🛡️ **Kiểm duyệt & Quản trị nâng cao (Admin Moderation - UC-09, FR-14, FR-17)**: Admin duyệt tin (có thể hạ điểm thành phần nếu người bán tự chấm quá cao), từ chối tin kèm lý do, ẩn trực tiếp/khôi phục tin, theo dõi KPI toàn sàn, xử lý báo cáo vi phạm và khóa/mở khóa tài khoản thành viên.
 - 📦 **Quản lý tin của tôi (My Listings Management - UC-06, FR-10)**: Phân loại theo 5 trạng thái (`selling`, `pending`, `hidden`, `sold`, `rejected`). Chuyển đổi trạng thái linh hoạt, hỗ trợ sửa tin đăng và nộp duyệt lại tin bị từ chối.
 - 🚨 **Báo cáo tin vi phạm (Report Listing - UC-08, FR-12)**: Báo cáo với 4 lý do chuẩn hóa (`wrong_score`, `scam`, `prohibited`, `other`), kèm ghi chú tối đa 200 ký tự và ngăn chặn báo cáo tin của chính mình / báo cáo trùng lặp.
 - ⭐ **Tin lưu yêu thích (Favorites)**: Lưu và quản lý danh sách tin quan tâm nhanh chóng.
@@ -31,16 +31,16 @@ EcoFind_Project/
 │   ├── core/                    # Cấu hình tập trung (config, database, security, geo, exceptions)
 │   ├── models/                  # SQLAlchemy ORM Models (User, Listing, Category, Photo, Favorite, Report)
 │   ├── schemas/                 # Pydantic Schemas (Validation, camelCase serialization)
-│   ├── routers/                 # API Endpoints (auth, listings, categories, admin, favorites, reports, me)
-│   ├── services/                # Business Logic Tier (Quy tắc BR-01 -> BR-05, moderation, score calc)
+│   ├── routers/                 # API Endpoints (auth, listings, categories, admin, favorites, reports, me, users, geocode, upload)
+│   ├── services/                # Business Logic Tier (Quy tắc BR-01 -> BR-05, moderation, score calc, user profile, geocode)
 │   ├── repositories/            # Data Access Tier (SQLAlchemy async queries, parameterized)
-│   └── adapters/                # Tích hợp dịch vụ ngoài (Storage ảnh, Geocoding)
+│   └── adapters/                # Tích hợp dịch vụ ngoài (Storage ảnh, Geocoding đa nguồn)
 ├── frontend/                    # Frontend (React 18 + Vite + Tailwind CSS + Lucide Icons + Leaflet & Google Tiles)
 │   ├── src/
-│   │   ├── api/                 # Axios HTTP client cấu hình JWT interceptor
-│   │   ├── components/          # UI Components (Navbar, MapView, ListingCard, AuthModal, ReportDialog...)
-│   │   ├── context/             # React Contexts (AuthContext, NotificationContext)
-│   │   ├── pages/               # Trang ứng dụng (HomePage, PostListingPage, MyListingsPage, AdminModeration...)
+│   │   ├── api/                 # Axios HTTP client / fetch wrapper cấu hình JWT & 401 handler
+│   │   ├── components/          # UI Components (Header, Footer, BottomNav, MapView, LocationPickerMap, AdminListingModal...)
+│   │   ├── context/             # React Contexts (AuthContext)
+│   │   ├── pages/               # Trang ứng dụng (HomePage, ListingDetailPage, PostListingPage, MyListingsPage, ProfilePage, AdminPage...)
 │   │   └── index.css            # Tailwind CSS styling & custom animations
 │   ├── Dockerfile               # Multi-stage Docker build cho Frontend
 │   ├── nginx.conf               # Nginx reverse proxy + Gzip + HTTPS security headers
@@ -49,14 +49,14 @@ EcoFind_Project/
 │   ├── PERFORMANCE_REPORT_10K.md# Báo cáo đo lường hiệu năng với 10.000 tin mẫu (TC-02, TC-03)
 │   └── benchmark_results.json   # Dữ liệu đo lường chi tiết 10 lần chạy
 ├── scripts/                     # Scripts hỗ trợ CSDL, Seed Demo & Benchmark
-│   ├── seed_demo_data.py        # Seed dữ liệu demo TP.HCM (7 danh mục, 3 tài khoản, 20+ tin mẫu đa dạng)
+│   ├── seed_demo_listings.py    # Seed dữ liệu demo TP.HCM (7 danh mục, 5 tài khoản, 65 tin mẫu đa dạng)
 │   ├── generate_10k_listings.py # Script sinh 10.000 tin mẫu tại 20 quận/huyện TP.HCM
 │   ├── benchmark_performance.py # Script đo lường hiệu năng tự động TC-02 & TC-03
 │   ├── add_pg_trgm.sql          # Script cấu hình chỉ mục PostgreSQL Trigram (pg_trgm)
 │   ├── create_tables.sql        # DDL tạo cấu trúc 6 bảng CSDL
 │   ├── create_indexes.sql       # Chỉ mục tối ưu hóa hiệu năng (idx_listings_map, idx_listings_seller...)
 │   └── seed_data.sql            # Dữ liệu khởi tạo (Danh mục & Admin)
-├── tests/                       # Bộ kiểm thử tự động Backend (198 tests gồm test luồng E2E)
+├── tests/                       # Bộ kiểm thử tự động Backend (219 tests gồm test luồng E2E)
 ├── Dockerfile                   # Dockerfile cho Backend FastAPI
 ├── docker-compose.yml           # Khởi chạy trọn gói: Postgres 15 + Backend + Frontend
 ├── .env.docker                  # Biến môi trường mẫu cho Docker
@@ -187,7 +187,7 @@ Bài test `test_complete_end_to_end_user_journey` tự động thực thi 10 bư
 
 Dự án sở hữu bộ kiểm thử tự động toàn diện với độ bao phủ cao (High Coverage):
 
-### 6.1. Kiểm thử Backend (198 tests - 100% Pass)
+### 6.1. Kiểm thử Backend (219 tests - 100% Pass)
 ```powershell
 pytest -v
 ```
@@ -200,7 +200,7 @@ pytest -v
 - `tests/test_report_listing_api.py`: Báo cáo tin vi phạm
 - `tests/test_e2e_flow.py`: Kiểm thử luồng nghiệp vụ khép kín từ đăng ký đến duyệt tin hiển thị trên bản đồ
 
-### 6.2. Kiểm thử Frontend (140 tests - 100% Pass)
+### 6.2. Kiểm thử Frontend (152 tests - 100% Pass)
 ```powershell
 cd frontend
 npm test
@@ -230,4 +230,4 @@ Bao gồm kiểm thử tương tác bản đồ, bộ lọc tìm kiếm, bộ đ
 
 - **Nhánh chính**: `main` (Production), `dev` (Tích hợp Sprint).
 - **Quy ước Commit**: `<Mã Task>: <Mô tả chi tiết>` (Ví dụ: `TE9C75A: devops: trien khai docker-compose, script khoi chay 1 lenh va kiem thu luong e2e`).
-- **Truy vết**: Đầy đủ các Use Cases (UC-01 đến UC-10), Functional Requirements (FR-01 đến FR-15) và Non-functional Requirements (NFR-PER, NFR-SEC, NFR-USA, NFR-MNT).
+- **Truy vết**: Đầy đủ các Use Cases (UC-01 đến UC-10), Functional Requirements (FR-01 đến FR-17) và Non-functional Requirements (NFR-PER, NFR-SEC, NFR-USA, NFR-MNT).

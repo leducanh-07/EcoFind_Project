@@ -51,28 +51,28 @@ DEMO_USERS = [
     },
     {
         "email": "seller@ecofind.vn",
-        "full_name": "Nguyễn Văn Người Bán (Mặc Định)",
+        "full_name": "Nguyễn Văn Người Bán",
         "phone": "0901234568",
         "password": "Seller@123",
         "role": "user",
     },
     {
         "email": "seller1@ecofind.vn",
-        "full_name": "Nguyễn Văn Hùng (Chuyên Đồ Công Nghệ)",
+        "full_name": "Nguyễn Văn Hùng",
         "phone": "0901234567",
         "password": "Demo@1234",
         "role": "user",
     },
     {
         "email": "seller2@ecofind.vn",
-        "full_name": "Trần Thị Mai (Thanh Lý Gia Dụng & Nội Thất)",
+        "full_name": "Trần Thị Mai",
         "phone": "0912345678",
         "password": "Demo@1234",
         "role": "user",
     },
     {
         "email": "buyer@ecofind.vn",
-        "full_name": "Lê Hoàng Nam (Người Mua Sắm)",
+        "full_name": "Lê Hoàng Nam",
         "phone": "0987654321",
         "password": "Demo@1234",
         "role": "user",
@@ -851,7 +851,7 @@ DEMO_LISTINGS = [
         "score_app": 9.5, "score_fn": 9.5, "score_acc": 9.0,
         "status": "selling",
         "photos": [
-            "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=800&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=800&auto=format&fit=crop",
         ],
     },
     {
@@ -1044,7 +1044,7 @@ DEMO_LISTINGS = [
         "score_app": 8.5, "score_fn": 9.0, "score_acc": 8.5,
         "status": "sold",
         "photos": [
-            "https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&auto=format&fit=crop",
+            "https://images.unsplash.com/photo-1633680889715-2c9752bf0840?w=800&auto=format&fit=crop",
         ],
     },
 ]
@@ -1092,7 +1092,7 @@ def seed_demo(clean: bool = True):
             print("  -> Đã xóa sạch tin đăng và dữ liệu giao dịch cũ của các tài khoản demo.")
 
         # 2. Tạo hoặc cập nhật tài khoản demo
-        print("\n[2/5] Đang tạo / cập nhật 4 tài khoản demo...")
+        print("\n[2/5] Đang tạo / cập nhật 5 tài khoản demo...")
         user_ids = {}
         for u in DEMO_USERS:
             # Kiểm tra xem user đã tồn tại chưa
@@ -1141,7 +1141,7 @@ def seed_demo(clean: bool = True):
             user_ids[u["email"]] = uid
 
         # 3. Tạo tin đăng mẫu (Listings & Photos)
-        print("\n[3/5] Đang tạo 35 tin đăng mẫu cùng ảnh thực tế...")
+        print(f"\n[3/5] Đang tạo {len(DEMO_LISTINGS)} tin đăng mẫu cùng ảnh thực tế...")
         inserted_listing_ids = []
         now = datetime.now(timezone.utc)
 
@@ -1261,12 +1261,12 @@ def seed_demo(clean: bool = True):
     print("┌───────────────────────────┬──────────────┬────────┬───────────────────────────────────────┐")
     print("│ Email                     │ Mật khẩu     │ Vai trò│ Kịch bản trải nghiệm chính            │")
     print("├───────────────────────────┼──────────────┼────────┼───────────────────────────────────────┤")
-    print("│ admin@ecofind.vn          │ Admin@123    │ admin  │ Duyệt 3 tin chờ duyệt & xử lý 2 report│")
+    print("│ admin@ecofind.vn          │ Admin@123    │ admin  │ Duyệt 6 tin chờ duyệt & xử lý 4 report│")
     print("│ seller1@ecofind.vn        │ Demo@1234    │ user   │ Quản lý tin công nghệ, sửa tin, ẩn tin│")
     print("│ seller2@ecofind.vn        │ Demo@1234    │ user   │ Quản lý tin gia dụng & nội thất       │")
-    print("│ buyer@ecofind.vn          │ Demo@1234    │ user   │ Xem 3 tin Yêu thích, xem SĐT, báo cáo │")
+    print("│ buyer@ecofind.vn          │ Demo@1234    │ user   │ Xem 4 tin Yêu thích, xem SĐT, báo cáo │")
     print("└───────────────────────────┴──────────────┴────────┴───────────────────────────────────────┘")
-    print("\n📍 BẢN ĐỒ: 28 tin đang bán đã sẵn sàng hiển thị tại trung tâm TP.HCM!")
+    print(f"\n📍 BẢN ĐỒ: {len(selling_listings)} tin đang bán (trong tổng {len(DEMO_LISTINGS)} tin) đã sẵn sàng trên bản đồ TP.HCM!")
     print("==================================================================\n")
 
 

@@ -12,8 +12,10 @@ from app.core.exceptions import BadRequestException
 from app.models.user import User
 from app.schemas.listing import MyListingItem
 from app.schemas.favorite import FavoriteItemResponse
+from app.schemas.user import ChangePasswordRequest, MyProfileResponse, ProfileUpdateRequest
 from app.services.listing_service import ListingService
 from app.services.favorite_service import favorite_service
+from app.services.user_service import user_service
 
 router = APIRouter(prefix="/me", tags=["My Listings"])
 listing_service = ListingService()
@@ -78,4 +80,47 @@ async def get_my_favorites(
       - Sắp xếp theo thứ tự lưu mới nhất.
     """
     return await favorite_service.get_user_favorites(db, user_id=current_user.user_id)
+
+
+@router.get(
+    "/profile",
+    response_model=MyProfileResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Xem thông tin trang cá nhân của tài khoản đang đăng nhập",
+)
+async def get_my_profile(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Trả về thông tin cá nhân, vai trò/giới thiệu và thống kê hoạt động của chính người dùng."""
+    return await user_service.get_my_profile(db, user=current_user)
+
+
+@router.put(
+    "/profile",
+    response_model=MyProfileResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Cập nhật họ tên và số điện thoại cá nhân",
+)
+async def update_my_profile(
+    payload: ProfileUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Cập nhật họ tên và số điện thoại của chính người dùng."""
+    return await user_service.update_my_profile(db, user=current_user, payload=payload)
+
+
+@router.put(
+    "/password",
+    status_code=status.HTTP_200_OK,
+    summary="Đổi mật khẩu cho tài khoản đang đăng nhập",
+)
+async def change_my_password(
+    payload: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Đổi mật khẩu (áp dụng cho cả tài khoản thành viên và quản trị viên)."""
+    return await user_service.change_password(db, user=current_user, payload=payload)
 

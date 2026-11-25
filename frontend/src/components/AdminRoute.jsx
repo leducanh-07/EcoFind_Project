@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
 
 export default function AdminRoute({ children }) {
-  const { isAuthenticated, isAdmin, loading } = useAuth();
+  const { isAuthenticated, isAdmin, loading, sessionExpired } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -15,9 +15,9 @@ export default function AdminRoute({ children }) {
     );
   }
 
-  // Nếu chưa đăng nhập -> chuyển về /login kèm vị trí mong muốn
+  // Nếu chưa đăng nhập -> chuyển về /login kèm vị trí mong muốn và thông báo hết phiên
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location, sessionExpired }} replace />;
   }
 
   // Nếu đã đăng nhập nhưng không phải admin -> chặn truy cập 403 (NFR-SEC-03)

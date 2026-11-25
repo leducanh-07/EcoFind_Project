@@ -25,7 +25,7 @@ describe('LoginPage Component (UC-01, FR-02, TE9C72F)', () => {
   test('Hiển thị form đăng nhập đầy đủ 2 trường và nút đăng nhập', () => {
     renderLoginPage();
 
-    expect(screen.getByPlaceholderText(/vidu@ecofind.vn/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/minhnguyen@gmail.com/i)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/••••••••/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /đăng nhập/i })).toBeInTheDocument();
   });
@@ -39,7 +39,7 @@ describe('LoginPage Component (UC-01, FR-02, TE9C72F)', () => {
     expect(await screen.findByText(/Vui lòng nhập địa chỉ email/i)).toBeInTheDocument();
     expect(await screen.findByText(/Vui lòng nhập mật khẩu/i)).toBeInTheDocument();
 
-    const emailInput = screen.getByPlaceholderText(/vidu@ecofind.vn/i);
+    const emailInput = screen.getByPlaceholderText(/minhnguyen@gmail.com/i);
     const passwordInput = screen.getByPlaceholderText(/••••••••/i);
 
     fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
@@ -57,7 +57,7 @@ describe('LoginPage Component (UC-01, FR-02, TE9C72F)', () => {
 
     renderLoginPage();
 
-    fireEvent.change(screen.getByPlaceholderText(/vidu@ecofind.vn/i), {
+    fireEvent.change(screen.getByPlaceholderText(/minhnguyen@gmail.com/i), {
       target: { value: 'user@ecofind.vn' },
     });
     fireEvent.change(screen.getByPlaceholderText(/••••••••/i), {
@@ -81,7 +81,7 @@ describe('LoginPage Component (UC-01, FR-02, TE9C72F)', () => {
 
     renderLoginPage();
 
-    fireEvent.change(screen.getByPlaceholderText(/vidu@ecofind.vn/i), {
+    fireEvent.change(screen.getByPlaceholderText(/minhnguyen@gmail.com/i), {
       target: { value: 'user@ecofind.vn' },
     });
     fireEvent.change(screen.getByPlaceholderText(/••••••••/i), {
@@ -90,7 +90,7 @@ describe('LoginPage Component (UC-01, FR-02, TE9C72F)', () => {
     fireEvent.click(screen.getByRole('button', { name: /đăng nhập/i }));
 
     expect(
-      await screen.findByText(/Tài khoản tạm khóa \(423\)/i)
+      await screen.findByText('Tài khoản tạm thời bị khóa')
     ).toBeInTheDocument();
     expect(
       await screen.findByText(/khóa 15 phút do nhập sai mật khẩu quá 5 lần/i)
@@ -112,7 +112,7 @@ describe('LoginPage Component (UC-01, FR-02, TE9C72F)', () => {
 
     renderLoginPage();
 
-    fireEvent.change(screen.getByPlaceholderText(/vidu@ecofind.vn/i), {
+    fireEvent.change(screen.getByPlaceholderText(/minhnguyen@gmail.com/i), {
       target: { value: 'user@ecofind.vn' },
     });
     fireEvent.change(screen.getByPlaceholderText(/••••••••/i), {

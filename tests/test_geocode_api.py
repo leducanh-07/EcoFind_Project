@@ -341,3 +341,158 @@ def test_nfr_mnt_01_swappable_geocode_adapter():
         assert "Không tìm thấy" in str(excinfo.value)
 
     asyncio.run(_run())
+
+
+def test_vietnamese_address_house_number_interpolation():
+    """
+    Kiểm tra thuật toán chuẩn hóa và tìm tọa độ địa chỉ tiếng Việt:
+    '142 Đ. Lê Văn Việt, Tăng Nhơn Phú, Hồ Chí Minh, Vietnam' phải định vị chính xác
+    gần đoạn Hồ Thị Tư - Trương Văn Hải (lat ~ 10.8449, lon ~ 106.7803), không rơi vào Hẻm C6 (lon > 106.795).
+    """
+    from app.adapters.geocode_adapter import default_geocode_adapter
+    async def _run():
+        res = await default_geocode_adapter.geocode("142 Đ. Lê Văn Việt, Tăng Nhơn Phú, Hồ Chí Minh, Vietnam")
+        assert res is not None
+        lat, lon = res
+        assert 10.843 <= lat <= 10.847
+        assert 106.778 <= lon <= 106.784, f"Kinh độ {lon} bị lệch xa khỏi đoạn số nhà 142!"
+
+    asyncio.run(_run())
+
+
+def test_arcgis_rejects_coarse_locality_and_picks_street_name():
+    """ArcGIS không được trả về tâm phường (Locality) mà phải chọn tối thiểu mức StreetName trở lên."""
+    from app.adapters.geocode_adapter import ArcGISGeocodeAdapter
+
+    async def _run():
+        adapter = ArcGISGeocodeAdapter()
+        coarse_resp = MagicMock()
+        coarse_resp.status_code = 200
+        coarse_resp.json.return_value = {
+            "candidates": [
+                {
+                    "address": "Phước Long B, Hồ Chí Minh",
+                    "score": 88.0,
+                    "location": {"x": 106.7690, "y": 10.8383},
+                    "attributes": {"Addr_type": "Locality", "Score": 88.0},
+                }
+            ]
+        }
+
+        street_resp = MagicMock()
+        street_resp.status_code = 200
+        street_resp.json.return_value = {
+            "candidates": [
+                {
+                    "address": "Đường Đỗ Xuân Hợp, Phước Long B, Hồ Chí Minh, 71210, VNM",
+                    "score": 92.5,
+                    "location": {"x": 106.779575, "y": 10.799517},
+                    "attributes": {"Addr_type": "StreetName", "Score": 92.5},
+                }
+            ]
+        }
+
+        with patch("httpx.AsyncClient.get", side_effect=[coarse_resp, street_resp]):
+            res = await adapter.geocode_detailed("450 Đỗ Xuân Hợp, Phước Long B, Thủ Đức, Hồ Chí Minh")
+            assert res is not None
+            assert res.accuracy == "street"
+            assert res.lat == pytest.approx(10.799517, rel=1e-5)
+            assert res.lng == pytest.approx(106.779575, rel=1e-5)
+            assert "VNM" not in (res.matched_address or "")
+
+    asyncio.run(_run())
+
+
+def test_google_request_denied_falls_back_cleanly_to_arcgis():
+    """Khi Google Geocode trả REQUEST_DENIED (chưa bật Billing), SmartGeocodeAdapter rơi về ArcGIS an toàn."""
+    from app.adapters.geocode_adapter import (
+        GoogleGeocodeAdapter,
+        ArcGISGeocodeAdapter,
+        NominatimGeocodeAdapter,
+        SmartGeocodeAdapter,
+    )
+
+    async def _run():
+        google = GoogleGeocodeAdapter(api_key="fake-unbilled-key")
+        arcgis = ArcGISGeocodeAdapter()
+        nominatim = NominatimGeocodeAdapter(min_interval=0.0)
+        smart = SmartGeocodeAdapter(google_adapter=google, arcgis_adapter=arcgis, nominatim_adapter=nominatim)
+
+        google_denied = MagicMock()
+        google_denied.status_code = 200
+        google_denied.json.return_value = {
+            "status": "REQUEST_DENIED",
+            "error_message": "You must enable Billing on the Google Cloud Project",
+            "results": [],
+        }
+
+        arcgis_ok = MagicMock()
+        arcgis_ok.status_code = 200
+        arcgis_ok.json.return_value = {
+            "candidates": [
+                {
+                    "address": "142 Đường Lê Văn Việt, Hiệp Phú, Tăng Nhơn Phú, Hồ Chí Minh, 71206",
+                    "score": 96.7,
+                    "location": {"x": 106.780327, "y": 10.844915},
+                    "attributes": {"Addr_type": "PointAddress", "Score": 96.7},
+                }
+            ]
+        }
+
+        with patch("httpx.AsyncClient.get", side_effect=[google_denied, arcgis_ok]):
+            res = await smart.geocode_detailed("142 Đ. Lê Văn Việt, Tăng Nhơn Phú, Hồ Chí Minh")
+            assert res is not None
+            assert res.provider == "arcgis"
+            assert res.accuracy == "exact"
+            assert res.lat == pytest.approx(10.844915, rel=1e-5)
+            assert google._denied_key == "fake-unbilled-key"
+
+    asyncio.run(_run())
+
+
+def test_geocode_suggest_and_reverse_endpoints(mock_user, auth_headers):
+    """Kiểm tra xác thực và phản hồi cho GET /api/geocode/suggest và GET /api/geocode/reverse."""
+    # Chưa đăng nhập -> 401
+    assert client.get("/api/geocode/suggest?q=142+Le+Van+Viet").status_code == 401
+    assert client.get("/api/geocode/reverse?lat=10.8449&lng=106.7803").status_code == 401
+
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    try:
+        suggest_resp = MagicMock()
+        suggest_resp.status_code = 200
+        suggest_resp.json.return_value = {
+            "suggestions": [
+                {
+                    "text": "142 Đường Lê Văn Việt, Hiệp Phú, Tăng Nhơn Phú, Hồ Chí Minh, 71206, VNM",
+                    "magicKey": "abc123magic",
+                }
+            ]
+        }
+
+        with patch("httpx.AsyncClient.get", return_value=suggest_resp):
+            r_sug = client.get("/api/geocode/suggest?q=142+Le+Van+Viet", headers=auth_headers)
+            assert r_sug.status_code == 200
+            sug_data = r_sug.json()
+            assert len(sug_data["suggestions"]) == 1
+            assert sug_data["suggestions"][0]["magicKey"] == "abc123magic"
+            assert "VNM" not in sug_data["suggestions"][0]["text"]
+
+        reverse_resp = MagicMock()
+        reverse_resp.status_code = 200
+        reverse_resp.json.return_value = {
+            "address": {
+                "LongLabel": "142 Đường Lê Văn Việt, Tăng Nhơn Phú, Hồ Chí Minh, 71206, VNM"
+            }
+        }
+
+        with patch("httpx.AsyncClient.get", return_value=reverse_resp):
+            r_rev = client.get("/api/geocode/reverse?lat=10.844915&lng=106.780327", headers=auth_headers)
+            assert r_rev.status_code == 200
+            assert "142 Đường Lê Văn Việt" in r_rev.json()["address"]
+
+        # Tọa độ ngoài phạm vi hợp lệ -> 400
+        r_bad = client.get("/api/geocode/reverse?lat=999&lng=106.78", headers=auth_headers)
+        assert r_bad.status_code == 400
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
+

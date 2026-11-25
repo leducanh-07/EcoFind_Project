@@ -6,14 +6,14 @@ Tài liệu này hướng dẫn chi tiết kịch bản sử dụng bộ dữ li
 
 ## 1. Danh Sách Tài Khoản Demo
 
-Hệ thống đã chuẩn bị sẵn 4 tài khoản đại diện cho đầy đủ các vai trò:
+Hệ thống đã chuẩn bị sẵn bộ tài khoản đại diện cho đầy đủ các vai trò (`seed_demo_listings.py` đồng thời khởi tạo thêm `seller@ecofind.vn` / `Seller@123` để tương thích kịch bản kiểm thử gốc):
 
 | Email | Mật khẩu | Vai trò | Tên hiển thị | Số điện thoại | Kịch bản demo chính |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`admin@ecofind.vn`** | `Admin@123` | **Quản trị viên** | Quản trị viên Hệ thống | `0900000001` | Duyệt tin chờ duyệt, đối soát 3 điểm tình trạng, hạ điểm, xử lý báo cáo vi phạm. |
-| **`seller1@ecofind.vn`** | `Demo@1234` | **Người bán** | Nguyễn Văn Hùng | `0901234567` | Quản lý tin đồ công nghệ (Laptop, bàn phím, tai nghe), sửa tin, ẩn/hiện tin, đánh dấu đã bán. |
-| **`seller2@ecofind.vn`** | `Demo@1234` | **Người bán** | Trần Thị Mai | `0912345678` | Quản lý tin đồ gia dụng, nội thất, thời trang, xem tin bị từ chối kèm lý do. |
-| **`buyer@ecofind.vn`** | `Demo@1234` | **Người mua** | Lê Hoàng Nam | `0987654321` | Xem 3 tin đã lưu sẵn trong mục Yêu thích, xem số điện thoại người bán, gửi báo cáo vi phạm. |
+| **`admin@ecofind.vn`** | `Admin@123` | **Quản trị viên** | Quản trị viên Hệ thống | `0900000001` | Duyệt tin chờ duyệt, đối soát 3 điểm tình trạng, hạ điểm, ẩn/khôi phục tin, quản lý thành viên & xử lý báo cáo vi phạm. |
+| **`seller1@ecofind.vn`** | `Demo@1234` | **Người bán** | Nguyễn Văn Hùng | `0901234567` | Quản lý tin đồ công nghệ (Laptop, bàn phím, tai nghe), sửa tin, ẩn/hiện tin, xem tin bị từ chối kèm lý do. |
+| **`seller2@ecofind.vn`** | `Demo@1234` | **Người bán** | Trần Thị Mai | `0912345678` | Quản lý tin đồ gia dụng, nội thất, thời trang, đánh dấu tin đã bán. |
+| **`buyer@ecofind.vn`** | `Demo@1234` | **Người mua** | Lê Hoàng Nam | `0987654321` | Xem 4 tin đã lưu sẵn trong mục Yêu thích, xem & sao chép số điện thoại người bán, xem hồ sơ công khai, gửi báo cáo vi phạm. |
 
 > [!TIP]
 > **Khôi phục / Reset dữ liệu bất cứ lúc nào:**
@@ -45,10 +45,11 @@ Hệ thống đã chuẩn bị sẵn 4 tài khoản đại diện cho đầy đ�
 
 ### Kịch bản 2: Trải nghiệm Người mua (`buyer@ecofind.vn` / `Demo@1234`)
 1. Bấm **Đăng nhập** ở góc phải trên cùng $\rightarrow$ Nhập `buyer@ecofind.vn` / `Demo@1234`.
-2. **Xem số điện thoại người bán:**
-   - Truy cập bất kỳ tin đăng nào $\rightarrow$ Số điện thoại người bán (ví dụ: `0901234567`) hiện đầy đủ kèm nút bấm gọi điện trực tiếp.
-3. **Quản lý danh sách Yêu thích:**
-   - Bấm vào mục **Yêu thích** trên thanh điều hướng $\rightarrow$ Hiển thị sẵn 3 món đồ đã được lưu trước đó.
+2. **Xem số điện thoại người bán & liên hệ trực tiếp:**
+   - Truy cập bất kỳ tin đăng nào $\rightarrow$ Số điện thoại người bán (ví dụ: `0901234567`) hiện đầy đủ kèm nút **Sao chép SĐT** và ghi chú liên lạc qua SĐT, hẹn gặp trực tiếp kiểm tra đồ (v1.0 không có nhắn tin trong app). Có thể bấm xem trang cá nhân công khai của người bán.
+3. **Quản lý danh sách Yêu thích & Trang cá nhân:**
+   - Bấm vào mục **Yêu thích** trên thanh điều hướng $\rightarrow$ Hiển thị sẵn 4 món đồ đã được lưu trước đó.
+   - Vào **Trang cá nhân** để cập nhật họ tên, số điện thoại hoặc đổi mật khẩu.
    - Thử bấm nút trái tim để bỏ lưu hoặc vào tin khác bấm lưu mới.
 4. **Báo cáo tin vi phạm:**
    - Trong trang chi tiết tin đăng, bấm nút **Báo cáo tin vi phạm**.
@@ -76,11 +77,12 @@ Hệ thống đã chuẩn bị sẵn 4 tài khoản đại diện cho đầy đ�
 ### Kịch bản 4: Trải nghiệm Quản trị viên (`admin@ecofind.vn` / `Admin@123`)
 1. Đăng xuất tài khoản thường và đăng nhập tài khoản Quản trị: `admin@ecofind.vn` / `Admin@123`.
 2. Header xuất hiện nút **Quản trị** màu vàng đồng. Bấm vào để vào **Bảng điều khiển Quản trị viên**.
-3. **Tab Chờ duyệt (Pending Queue):**
-   - Xem 3 tin đăng đang chờ duyệt (Máy ảnh Canon, Tủ quần áo, Bộ tạ tay).
+3. **Tab Chờ duyệt & Quản trị nâng cao (Pending, Đang bán, Đã ẩn, Thành viên):**
+   - Xem 6 tin đăng đang chờ duyệt (Máy ảnh Canon, Tủ quần áo, Bộ tạ tay...).
+   - Theo dõi KPI toàn sàn, ẩn trực tiếp hoặc khôi phục tin trong tab **Đang bán** / **Đã ẩn**, và quản lý khóa/mở khóa tài khoản thành viên trong tab **Thành viên**.
    - Mở xem tin *"Máy ảnh cơ Canon EOS M50"*: Người bán tự chấm Ngoại quan $10/10$.
    - **Demo tính năng Hạ điểm:** Tích chọn *"Hạ điểm thành phần nếu người bán tự chấm cao hơn thực tế"*, hạ điểm Ngoại quan xuống $7.0$ $\rightarrow$ Hệ thống tự động tính lại điểm tổng và phân hạng mới.
    - Bấm **Duyệt tin** $\rightarrow$ Tin được duyệt và xuất hiện ngay lập tức trên bản đồ công khai.
 4. **Tab Báo cáo vi phạm (Reports Queue):**
-   - Xem 2 báo cáo vi phạm do `buyer@ecofind.vn` gửi lên với lý do khai khống điểm số và nghi vấn thông tin ảo.
+   - Xem 4 báo cáo vi phạm do `buyer@ecofind.vn` gửi lên (đủ 4 nhóm lý do: `wrong_score`, `scam`, `prohibited`, `other`).
    - Bấm xem chi tiết báo cáo $\rightarrow$ Thử thao tác **Ẩn tin vi phạm** hoặc **Bỏ qua báo cáo**.

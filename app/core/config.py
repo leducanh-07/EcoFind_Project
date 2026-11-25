@@ -28,6 +28,8 @@ try:
 
         # External Adapters & Storage
         NOMINATIM_USER_AGENT: str = "EcoFindApp/1.0"
+        GOOGLE_MAPS_API_KEY: Optional[str] = None
+        GEOCODE_PROVIDER: str = "auto"
         UPLOAD_DIR: str = "uploads"
         MAX_IMAGE_SIZE_BYTES: int = 5 * 1024 * 1024  # 5 MB
         MAX_IMAGE_COUNT: int = 5
@@ -88,6 +90,8 @@ except ImportError:
 
         # External Adapters & Storage
         NOMINATIM_USER_AGENT: str = os.getenv("NOMINATIM_USER_AGENT", "EcoFindApp/1.0")
+        GOOGLE_MAPS_API_KEY: Optional[str] = os.getenv("GOOGLE_MAPS_API_KEY")
+        GEOCODE_PROVIDER: str = os.getenv("GEOCODE_PROVIDER", "auto")
         UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "uploads")
         MAX_IMAGE_SIZE_BYTES: int = int(os.getenv("MAX_IMAGE_SIZE_BYTES", str(5 * 1024 * 1024)))
         MAX_IMAGE_COUNT: int = int(os.getenv("MAX_IMAGE_COUNT", "5"))

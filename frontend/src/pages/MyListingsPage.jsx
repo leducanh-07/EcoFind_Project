@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useLocation, Link } from 'react-router-dom';
 import {
   Package,
@@ -388,14 +389,18 @@ export default function MyListingsPage() {
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
-                <Clock size={11} /> Chờ duyệt (Pending)
+                <Clock size={11} /> Chờ duyệt
               </span>
               <span className="text-xs text-slate-500">Mã tin: #{newListing.id || 'Mới'}</span>
             </div>
             <h3 className="text-base font-bold text-slate-800">{newListing.title || 'Món đồ vừa đăng'}</h3>
             <div className="flex items-center gap-3 text-xs text-slate-500">
               {newListing.price !== undefined && (
-                <span className="font-semibold text-emerald-700">
+                <span
+                  className={`font-semibold ${
+                    Number(newListing.price) === 0 ? 'text-emerald-700' : 'text-orange-700'
+                  }`}
+                >
                   {Number(newListing.price) === 0
                     ? 'Cho tặng miễn phí'
                     : `${Number(newListing.price).toLocaleString('vi-VN')} đ`}
@@ -463,13 +468,13 @@ export default function MyListingsPage() {
               <Package size={24} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-800">Quản lý tin của tôi</h1>
+              <h1 className="text-xl font-bold text-emerald-950">Quản lý tin của tôi</h1>
               <p className="text-xs text-slate-500">Xem, chỉnh sửa và quản lý trạng thái các tin bạn đã đăng</p>
             </div>
           </div>
           <Link
             to="/post"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm cursor-pointer"
           >
             <PlusCircle size={17} /> Đăng tin mới
           </Link>
@@ -484,9 +489,9 @@ export default function MyListingsPage() {
                 key={tab.key}
                 data-testid={`tab-${tab.key}`}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-2 rounded-xl font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                className={`px-4 py-2 rounded-xl font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                   isActive
-                    ? 'bg-emerald-600 text-white shadow-sm'
+                    ? 'bg-emerald-700 text-white shadow-sm'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80 hover:text-slate-800'
                 }`}
               >
@@ -565,7 +570,11 @@ export default function MyListingsPage() {
                         </h3>
 
                         <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                          <span className="font-bold text-sm text-emerald-700">
+                          <span
+                            className={`font-bold text-sm ${
+                              Number(item.price) === 0 ? 'text-emerald-700' : 'text-orange-700'
+                            }`}
+                          >
                             {Number(item.price) === 0
                               ? 'Cho tặng miễn phí'
                               : `${Number(item.price).toLocaleString('vi-VN')} đ`}
@@ -611,7 +620,7 @@ export default function MyListingsPage() {
                           <button
                             data-testid={`btn-edit-${item.id}`}
                             onClick={() => handleOpenEdit(item)}
-                            className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                            className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                           >
                             <Edit3 size={13} /> Sửa
                           </button>
@@ -619,7 +628,7 @@ export default function MyListingsPage() {
                             data-testid={`btn-hide-${item.id}`}
                             disabled={isActionLoading}
                             onClick={() => handleStatusChange(item.id, 'hidden')}
-                            className="px-3 py-1.5 rounded-xl border border-amber-200 text-amber-800 bg-amber-50 hover:bg-amber-100 text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                            className="px-3 py-1.5 rounded-xl border border-amber-200 text-amber-800 bg-amber-50 hover:bg-amber-100 text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
                           >
                             <EyeOff size={13} /> Ẩn tin
                           </button>
@@ -627,7 +636,7 @@ export default function MyListingsPage() {
                             data-testid={`btn-sold-${item.id}`}
                             disabled={isActionLoading}
                             onClick={() => handleStatusChange(item.id, 'sold')}
-                            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                            className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
                           >
                             <Check size={13} /> Đã bán
                           </button>
@@ -640,7 +649,7 @@ export default function MyListingsPage() {
                           <button
                             data-testid={`btn-edit-${item.id}`}
                             onClick={() => handleOpenEdit(item)}
-                            className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                            className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                           >
                             <Edit3 size={13} /> Sửa
                           </button>
@@ -649,7 +658,7 @@ export default function MyListingsPage() {
                               data-testid={`btn-unhide-${item.id}`}
                               disabled={isActionLoading}
                               onClick={() => handleStatusChange(item.id, 'selling')}
-                              className="px-3 py-1.5 rounded-xl border border-emerald-200 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                              className="px-3 py-1.5 rounded-xl border border-emerald-200 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
                             >
                               <Eye size={13} /> Hiện lại
                             </button>
@@ -658,7 +667,7 @@ export default function MyListingsPage() {
                             data-testid={`btn-sold-${item.id}`}
                             disabled={isActionLoading}
                             onClick={() => handleStatusChange(item.id, 'sold')}
-                            className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                            className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
                           >
                             <Check size={13} /> Đã bán
                           </button>
@@ -712,25 +721,27 @@ export default function MyListingsPage() {
         </div>
       </div>
 
-      {/* Edit Modal (Form sửa tin - R47) */}
-      {editingListing && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          data-testid="edit-listing-modal"
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
-        >
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 my-8">
+      {/* Edit Modal (Form sửa tin) */}
+      {editingListing &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            data-testid="edit-listing-modal"
+            className="fixed inset-0 z-[9999] bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4"
+          >
+            <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <Edit3 size={20} className="text-emerald-600" />
-                <h2 className="text-lg font-bold text-slate-800">
+                <h2 className="text-lg font-bold text-emerald-950">
                   {editingListing.status === 'rejected' ? 'Sửa & Gửi lại tin đăng' : 'Chỉnh sửa tin đăng'}
                 </h2>
               </div>
               <button
                 onClick={() => setEditingListing(null)}
-                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -758,7 +769,7 @@ export default function MyListingsPage() {
               <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
               <div>
                 <strong className="font-bold text-amber-950">Lưu ý kiểm duyệt:</strong> Sửa điểm hoặc ảnh sẽ phải duyệt lại. Sửa điểm tình trạng hoặc ảnh sản phẩm sẽ khiến tin chuyển về trạng thái{' '}
-                <span className="font-semibold underline">Chờ duyệt (Pending)</span> để Quản trị viên duyệt lại trước khi hiện trên bản đồ. Nếu chỉ sửa tiêu đề, giá, mô tả hoặc địa chỉ, tin vẫn giữ nguyên trạng thái hiện tại.
+                <span className="font-semibold underline">Chờ duyệt</span> để Quản trị viên duyệt lại trước khi hiện trên bản đồ. Nếu chỉ sửa tiêu đề, giá, mô tả hoặc địa chỉ, tin vẫn giữ nguyên trạng thái hiện tại.
               </div>
             </div>
 
@@ -898,15 +909,17 @@ export default function MyListingsPage() {
                   )}
                 </div>
                 <ConditionScorer
-                  appearanceScore={editFormData.scoreAppearance}
-                  functionScore={editFormData.scoreFunction}
-                  accessoriesScore={editFormData.scoreAccessories}
-                  onChange={({ appearance, functionScore, accessories }) => {
+                  values={{
+                    appearance: editFormData.scoreAppearance,
+                    function: editFormData.scoreFunction,
+                    accessories: editFormData.scoreAccessories,
+                  }}
+                  onChange={(nextScores) => {
                     setEditFormData((prev) => ({
                       ...prev,
-                      scoreAppearance: appearance,
-                      scoreFunction: functionScore,
-                      scoreAccessories: accessories,
+                      scoreAppearance: nextScores.appearance,
+                      scoreFunction: nextScores.function,
+                      scoreAccessories: nextScores.accessories,
                     }));
                   }}
                 />
@@ -926,7 +939,7 @@ export default function MyListingsPage() {
                     <p className="text-amber-800 mt-0.5">
                       {editingListing.status === 'rejected'
                         ? 'Tin bị từ chối khi gửi lại sẽ được chuyển về trạng thái Chờ duyệt để Admin kiểm duyệt lại.'
-                        : 'Do bạn đã thay đổi điểm tình trạng hoặc ảnh sản phẩm, tin đăng sẽ chuyển về trạng thái Chờ duyệt (Pending) sau khi lưu.'}
+                        : 'Do bạn đã thay đổi điểm tình trạng hoặc ảnh sản phẩm, tin đăng sẽ chuyển về trạng thái Chờ duyệt sau khi lưu.'}
                     </p>
                   </div>
                 </div>
@@ -972,7 +985,8 @@ export default function MyListingsPage() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

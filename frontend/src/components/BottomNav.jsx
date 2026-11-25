@@ -25,40 +25,53 @@ export default function BottomNav() {
           <span className="text-[11px] leading-tight">Bản đồ</span>
         </NavLink>
 
-        {/* 2. Post Listing */}
-        <NavLink to="/post" className={navLinkClass}>
-          <PlusCircle size={20} className="mb-0.5 text-emerald-600" />
-          <span className="text-[11px] leading-tight">Đăng tin</span>
-        </NavLink>
+        {!isAdmin ? (
+          <>
+            {/* 2. Post Listing */}
+            <NavLink to="/post" className={navLinkClass}>
+              <PlusCircle size={20} className="mb-0.5 text-emerald-600" />
+              <span className="text-[11px] leading-tight">Đăng tin</span>
+            </NavLink>
 
-        {/* 3. My Listings */}
-        <NavLink to="/my-listings" className={navLinkClass}>
-          <Package size={20} className="mb-0.5" />
-          <span className="text-[11px] leading-tight">Tin của tôi</span>
-        </NavLink>
+            {/* 3. My Listings */}
+            <NavLink to="/my-listings" className={navLinkClass}>
+              <Package size={20} className="mb-0.5" />
+              <span className="text-[11px] leading-tight">Tin của tôi</span>
+            </NavLink>
 
-        {/* 4. Favorites */}
-        <NavLink to="/favorites" className={navLinkClass}>
-          <Heart size={20} className="mb-0.5" />
-          <span className="text-[11px] leading-tight">Yêu thích</span>
-        </NavLink>
+            {/* 4. Favorites */}
+            <NavLink to="/favorites" className={navLinkClass}>
+              <Heart size={20} className="mb-0.5" />
+              <span className="text-[11px] leading-tight">Yêu thích</span>
+            </NavLink>
 
-        {/* 5. Admin or Profile / Login */}
-        {isAdmin ? (
-          <NavLink to="/admin" className={navLinkClass}>
-            <Shield size={20} className="mb-0.5 text-amber-600" />
-            <span className="text-[11px] leading-tight text-amber-700 font-semibold">Admin</span>
-          </NavLink>
-        ) : isAuthenticated ? (
-          <NavLink to="/my-listings" className={navLinkClass}>
-            <User size={20} className="mb-0.5" />
-            <span className="text-[11px] leading-tight">Tài khoản</span>
-          </NavLink>
+            {/* 5. Profile / Login */}
+            {isAuthenticated ? (
+              <NavLink to="/profile" className={navLinkClass}>
+                <User size={20} className="mb-0.5" />
+                <span className="text-[11px] leading-tight">Cá nhân</span>
+              </NavLink>
+            ) : (
+              <NavLink to="/login" className={navLinkClass}>
+                <LogIn size={20} className="mb-0.5" />
+                <span className="text-[11px] leading-tight">Đăng nhập</span>
+              </NavLink>
+            )}
+          </>
         ) : (
-          <NavLink to="/login" className={navLinkClass}>
-            <LogIn size={20} className="mb-0.5" />
-            <span className="text-[11px] leading-tight">Đăng nhập</span>
-          </NavLink>
+          <>
+            {/* Admin Moderation Tab */}
+            <NavLink to="/admin" className={navLinkClass}>
+              <Shield size={20} className="mb-0.5 text-amber-600" />
+              <span className="text-[11px] leading-tight text-amber-700 font-semibold">Quản trị</span>
+            </NavLink>
+
+            {/* Admin Profile */}
+            <NavLink to="/profile" className={navLinkClass}>
+              <User size={20} className="mb-0.5" />
+              <span className="text-[11px] leading-tight">Cá nhân</span>
+            </NavLink>
+          </>
         )}
       </div>
     </nav>

@@ -9,10 +9,14 @@ from app.core.exceptions import (
 )
 from app.models.listing import Listing
 from app.repositories.listing_repository import ListingRepository
+from app.repositories.user_repository import UserRepository
 from app.schemas.admin import (
+    AdminCategoryBreakdown,
+    AdminDashboardStatsResponse,
     AdminListingDetailResponse,
     AdminListingItem,
     AdminSellerInfo,
+    AdminStatusCounts,
     ModerationActionResponse,
     ScoreAdjustments,
 )
@@ -23,8 +27,13 @@ from app.services.score_calculator import ScoreCalculator
 class ModerationService:
     """Service xử lý nghiệp vụ kiểm duyệt tin đăng của Admin."""
 
-    def __init__(self, listing_repository: Optional[ListingRepository] = None):
+    def __init__(
+        self,
+        listing_repository: Optional[ListingRepository] = None,
+        user_repository: Optional[UserRepository] = None,
+    ):
         self.listing_repo = listing_repository or ListingRepository()
+        self.user_repo = user_repository or UserRepository()
 
     @staticmethod
     def _map_to_admin_item(listing: Listing) -> AdminListingItem:
@@ -61,6 +70,7 @@ class ModerationService:
             total_score=total_score_fl,
             rank=rank_str,
             status=listing.status,
+            hidden_by_admin=bool(listing.hidden_by_admin),
             address=listing.address,
             thumbnail_url=thumbnail_url,
             photos=photos,
@@ -122,6 +132,7 @@ class ModerationService:
             total_score=total_score_fl,
             rank=rank_str,
             status=listing.status,
+            hidden_by_admin=bool(listing.hidden_by_admin),
             photos=photos,
             created_at=listing.created_at,
             reject_reason=listing.reject_reason,
@@ -270,4 +281,112 @@ class ModerationService:
             reject_reason=listing.reject_reason,
             review_note=listing.reject_reason,
             note=listing.reject_reason,
+        )
+
+    async def hide_listing(
+        self,
+        db: AsyncSession,
+        listing_id: int,
+        admin_id: int,
+        reason: Optional[str] = None,
+    ) -> ModerationActionResponse:
+        """Admin ẩn trực tiếp tin đăng vi phạm hoặc không phù hợp khỏi hệ thống."""
+        listing = await self.listing_repo.find_by_id_with_relations(db, listing_id)
+        if not listing:
+            raise NotFoundException(message=f"Không tìm thấy tin đăng với ID {listing_id}")
+
+        if listing.status == "sold":
+            raise BadRequestException(message="Không thể ẩn tin đăng đã đánh dấu đã bán")
+
+        if listing.status == "hidden" and listing.hidden_by_admin:
+            raise ConflictException(message="Tin đăng này đã được Quản trị viên ẩn trước đó")
+
+        listing.status = "hidden"
+        listing.hidden_by_admin = True
+        listing.reviewed_by = admin_id
+        listing.reviewed_at = datetime.now(timezone.utc)
+        if reason and reason.strip():
+            listing.reject_reason = reason.strip()
+
+        await db.commit()
+        await db.refresh(listing)
+
+        total_score_fl = float(listing.total_score)
+        return ModerationActionResponse(
+            id=listing.listing_id,
+            status="hidden",
+            total_score=total_score_fl,
+            rank=ScoreCalculator.get_rank(total_score_fl),
+            message="Đã ẩn tin đăng vi phạm khỏi bản đồ công khai",
+            reviewed_by=listing.reviewed_by,
+            reviewed_at=listing.reviewed_at,
+            reject_reason=listing.reject_reason,
+            review_note=listing.reject_reason,
+            note=listing.reject_reason,
+        )
+
+    async def restore_listing(
+        self,
+        db: AsyncSession,
+        listing_id: int,
+        admin_id: int,
+    ) -> ModerationActionResponse:
+        """Admin khôi phục tin đăng đang ở trạng thái ẩn về lại Đang bán."""
+        listing = await self.listing_repo.find_by_id_with_relations(db, listing_id)
+        if not listing:
+            raise NotFoundException(message=f"Không tìm thấy tin đăng với ID {listing_id}")
+
+        if listing.status != "hidden":
+            raise ConflictException(
+                message=f"Chỉ có thể khôi phục tin đăng đang ở trạng thái ẩn (hiện tại: {listing.status})"
+            )
+
+        listing.status = "selling"
+        listing.hidden_by_admin = False
+        listing.reviewed_by = admin_id
+        listing.reviewed_at = datetime.now(timezone.utc)
+
+        await db.commit()
+        await db.refresh(listing)
+
+        total_score_fl = float(listing.total_score)
+        return ModerationActionResponse(
+            id=listing.listing_id,
+            status="selling",
+            total_score=total_score_fl,
+            rank=ScoreCalculator.get_rank(total_score_fl),
+            message="Đã khôi phục tin đăng hiển thị lại trên bản đồ",
+            reviewed_by=listing.reviewed_by,
+            reviewed_at=listing.reviewed_at,
+            reject_reason=listing.reject_reason,
+            review_note=listing.reject_reason,
+            note=listing.reject_reason,
+        )
+
+    async def get_dashboard_stats(self, db: AsyncSession) -> AdminDashboardStatsResponse:
+        """Tổng hợp thống kê KPI & phân bổ danh mục phục vụ Admin Dashboard."""
+        now_dt = datetime.now(timezone.utc)
+        listing_stats = await self.listing_repo.get_admin_listing_stats(db)
+        other_counts = await self.user_repo.get_admin_reports_and_user_counts(db, now_dt)
+
+        status_counts = listing_stats.get("status_counts", {})
+        counts = AdminStatusCounts(
+            pending=status_counts.get("pending", 0),
+            selling=status_counts.get("selling", 0),
+            hidden=status_counts.get("hidden", 0),
+            rejected=status_counts.get("rejected", 0),
+            sold=status_counts.get("sold", 0),
+            reports_new=other_counts.get("reports_new", 0),
+            reports_resolved=other_counts.get("reports_resolved", 0),
+            users_total=other_counts.get("users_total", 0),
+            users_locked=other_counts.get("users_locked", 0),
+        )
+        categories = [
+            AdminCategoryBreakdown(**cat) for cat in listing_stats.get("categories", [])
+        ]
+
+        return AdminDashboardStatsResponse(
+            counts=counts,
+            avg_selling_score=listing_stats.get("avg_selling_score"),
+            categories=categories,
         )

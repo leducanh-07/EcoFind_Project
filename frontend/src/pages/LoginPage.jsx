@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { loginApi } from '../api/auth';
-import { Mail, Lock, Eye, EyeOff, AlertCircle, Clock, ArrowRight, Compass } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, Clock, ArrowRight, CheckCircle2, Compass } from 'lucide-react';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, sessionExpired } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // URL ban đầu người dùng định truy cập (nếu bị ProtectedRoute redirect hoặc từ nút Lưu tin)
-  const from = location.state?.from?.pathname || location.state?.from || '/';
+  const fromState = location.state?.from;
+  const from =
+    typeof fromState === 'string'
+      ? fromState
+      : fromState?.pathname
+      ? `${fromState.pathname}${fromState.search || ''}`
+      : '/';
+  const isSessionExpiredNotice = Boolean(location.state?.sessionExpired || sessionExpired);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -22,6 +29,19 @@ export default function LoginPage() {
   const [apiError, setApiError] = useState(null);
   const [isLocked, setIsLocked] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
+  const isMountedRef = useRef(true);
+  const redirectTimerRef = useRef(null);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
 
   const validate = () => {
     const errors = {};
@@ -63,6 +83,17 @@ export default function LoginPage() {
       const response = await loginApi(formData.email.trim(), formData.password);
       // Lưu JWT và thông tin người dùng
       login(response);
+      setLoginSuccess(true);
+
+      // Tạo khoảng nghỉ ngắn để người dùng kịp nhìn thấy trạng thái đăng nhập thành công
+      const redirectDelay = import.meta.env.MODE === 'test' ? 0 : 650;
+      if (redirectDelay > 0) {
+        await new Promise((resolve) => {
+          redirectTimerRef.current = setTimeout(resolve, redirectDelay);
+        });
+        if (!isMountedRef.current) return;
+      }
+
       // Quay về màn hình trước đó
       navigate(from, { replace: true });
     } catch (err) {
@@ -84,17 +115,51 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-12rem)] py-8 px-4 sm:px-6">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 sm:p-8">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-md border border-slate-200/80 p-6 sm:p-8">
         {/* Brand Header */}
         <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-emerald-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm">
+          <div className="w-12 h-12 bg-gradient-to-br from-emerald-900 via-teal-900 to-emerald-950 text-emerald-300 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md">
             <Compass size={28} className="stroke-[2.2]" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Đăng nhập tài khoản</h1>
+          <h1 className="text-2xl font-bold text-emerald-950">Đăng nhập tài khoản</h1>
           <p className="text-sm text-slate-500 mt-1">
             Chào mừng bạn quay trở lại với Chợ đồ cũ EcoFind
           </p>
         </div>
+
+        {/* Thông báo phiên đăng nhập hết hạn khi bị chuyển về từ trang cần quyền / API 401 */}
+        {isSessionExpiredNotice && !apiError && (
+          <div
+            role="status"
+            data-testid="session-expired-banner"
+            className="p-4 rounded-xl mb-6 text-sm flex items-start gap-3 border bg-amber-50 border-amber-200 text-amber-900"
+          >
+            <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <span className="font-semibold block">Phiên đăng nhập đã hết hạn</span>
+              <p className="mt-0.5 leading-relaxed text-amber-800">
+                Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại để tiếp tục thao tác.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Thông báo đăng nhập thành công trước khi chuyển trang */}
+        {loginSuccess && !apiError && (
+          <div
+            role="status"
+            data-testid="login-success-banner"
+            className="p-4 rounded-xl mb-6 text-sm flex items-start gap-3 border bg-emerald-50 border-emerald-200 text-emerald-900"
+          >
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <span className="font-semibold block">Đăng nhập thành công!</span>
+              <p className="mt-0.5 leading-relaxed text-emerald-800">
+                Đang chuyển bạn đến trang tiếp theo...
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Thông báo lỗi từ API (E1, E2, E4) */}
         {apiError && (
@@ -112,7 +177,7 @@ export default function LoginPage() {
             )}
             <div className="flex-1">
               <span className="font-semibold block">
-                {isLocked ? 'Tài khoản tạm khóa (423)' : 'Đăng nhập thất bại'}
+                {isLocked ? 'Tài khoản tạm thời bị khóa' : 'Đăng nhập thất bại'}
               </span>
               <p className="mt-0.5 leading-relaxed">{apiError}</p>
             </div>
@@ -135,7 +200,7 @@ export default function LoginPage() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="vidu@ecofind.vn"
+                placeholder="minhnguyen@gmail.com"
                 autoComplete="email"
                 autoFocus
                 className={`w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none transition-all ${
@@ -197,10 +262,15 @@ export default function LoginPage() {
           <div className="pt-2">
             <button
               type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={loading || loginSuccess}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-emerald-700 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 transition-all shadow-sm disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer"
             >
-              {loading ? (
+              {loginSuccess ? (
+                <>
+                  <CheckCircle2 size={16} />
+                  <span>Đăng nhập thành công! Đang chuyển...</span>
+                </>
+              ) : loading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   <span>Đang xác thực...</span>
