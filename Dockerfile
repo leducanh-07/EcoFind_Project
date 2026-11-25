@@ -25,12 +25,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Sao chép mã nguồn ứng dụng và thư mục dữ liệu
+# Sao chép mã nguồn ứng dụng và thư mục scripts
 COPY app ./app
 COPY scripts ./scripts
-COPY uploads ./uploads
 
-# Tạo thư mục uploads nếu chưa tồn tại
+# Tạo thư mục uploads trống (tránh lỗi build khi máy vừa clone chưa có uploads/)
 RUN mkdir -p uploads
 
 # Khai báo cổng ứng dụng
